@@ -1,0 +1,27 @@
+include: package:flutter_lints/flutter.yaml
+
+linter:
+  rules:
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    avoid_print: true
+    avoid_empty_else: true
+    avoid_unnecessary_containers: true
+    prefer_final_fields: true
+    prefer_final_locals: true
+    use_key_in_widget_constructors: true
+    prefer_const_constructors_in_immutables: true
+    await_only_futures: true
+    unnecessary_await_in_return: true
+    unnecessary_brace_in_string_interps: true
+    unnecessary_const: true
+    unnecessary_new: true
+    prefer_is_empty: true
+    prefer_is_not_empty: true
+
+analyzer:
+  exclude:
+    - "**/*.g.dart"
+    - "**/*.freezed.dart"
+  errors:
+    invalid_annotation_target: ignore
