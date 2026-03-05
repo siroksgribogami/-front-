@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
 
-/// Экран задач с акцентом на streak и зелёной палитрой
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
 
@@ -60,8 +60,12 @@ class _TasksScreenState extends State<TasksScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
+    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: scaffoldBg,
       body: CustomScrollView(
         slivers: [
           SliverToBoxAdapter(
@@ -69,11 +73,13 @@ class _TasksScreenState extends State<TasksScreen> {
               padding: const EdgeInsets.fromLTRB(20, 36, 20, 20),
               child: Text(
                 'Задачи',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'Gropled',
-                  color: AppTheme.textPrimary,
+                  fontFamily: AppTextStyle.fontFamily,
+                  color: textMain,
+                  height: AppTextStyle.defaultHeight,
+                  leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                 ),
               ),
             ),
@@ -81,24 +87,31 @@ class _TasksScreenState extends State<TasksScreen> {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  _buildStatCard(
-                    value: _completedCount.toString(),
-                    label: 'выполнено',
-                    color: Colors.white,
-                    background: AppTheme.primaryColor,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStatCard(
-                    value: _remainingCount.toString(),
-                    label: 'осталось',
-                    color: Colors.white,
-                    background: AppTheme.primaryColor,
-                  ),
-                  const SizedBox(width: 12),
-                  _buildStreakCard(days: _streakDays),
-                ],
+              child: SizedBox(
+                height: 95,
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    _buildStatSquare(
+                      value: _completedCount.toString(),
+                      label: 'выполнено',
+                      color: Colors.white,
+                      background: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 10),
+                    _buildStatSquare(
+                      value: _remainingCount.toString(),
+                      label: 'осталось',
+                      color: Colors.white,
+                      background: AppTheme.primaryColor,
+                    ),
+                    const SizedBox(width: 10),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 200),
+                      child: _buildStreakCard(days: _streakDays),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),
@@ -141,42 +154,36 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  Widget _buildStatCard({
+  Widget _buildStatSquare({
     required String value,
     required String label,
     required Color color,
     required Color background,
   }) {
-    return Expanded(
+    return AspectRatio(
+      aspectRatio: 1.0,
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
         decoration: BoxDecoration(
           color: background,
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: background.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Text(
               value,
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Gropled',
+                fontFamily: 'Roboto',
                 color: color,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 2),
             Text(
               label,
               style: TextStyle(
-                fontSize: 11,
+                fontSize: 10,
                 color: color.withOpacity(0.65),
               ),
             ),
@@ -187,61 +194,97 @@ class _TasksScreenState extends State<TasksScreen> {
   }
 
   Widget _buildStreakCard({required int days}) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: AppTheme.accentColor.withOpacity(0.9),
-          borderRadius: BorderRadius.circular(14),
-          boxShadow: [
-            BoxShadow(
-              color: AppTheme.accentColor.withOpacity(0.3),
-              blurRadius: 12,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Text('🔥', style: TextStyle(fontSize: 22)),
-                const SizedBox(width: 4),
-                Text(
-                  days.toString(),
-                  style: const TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: 'Gropled',
-                    color: Colors.white,
-                  ),
+    const milestones = [3, 7, 14, 30, 60, 100];
+    final nextMilestone = milestones.firstWhere(
+      (m) => m > days,
+      orElse: () => milestones.last,
+    );
+    final prevMilestone = milestones.lastWhere(
+      (m) => m <= days,
+      orElse: () => 0,
+    );
+    final double progress = nextMilestone == prevMilestone
+        ? 1.0
+        : (days - prevMilestone) / (nextMilestone - prevMilestone);
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      decoration: BoxDecoration(
+        color: AppTheme.accentColor.withOpacity(0.9),
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Text('🔥', style: TextStyle(fontSize: 16)),
+              const SizedBox(width: 4),
+              Text(
+                days.toString(),
+                style: const TextStyle(
+                  fontSize: 26,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: 'Roboto',
+                  color: Colors.white,
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              'подряд',
-              style: TextStyle(
-                fontSize: 11,
-                color: Colors.white.withOpacity(0.65),
               ),
-            ),
-          ],
-        ),
+              const Spacer(),
+              Text(
+                'до $nextMilestone дн.',
+                style: TextStyle(
+                  fontSize: 10,
+                  color: Colors.white.withOpacity(0.65),
+                ),
+              ),
+            ],
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'подряд',
+                style: TextStyle(
+                  fontSize: 9,
+                  color: Colors.white.withOpacity(0.6),
+                  letterSpacing: 0.5,
+                ),
+              ),
+              const SizedBox(height: 5),
+              ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: progress.clamp(0.0, 1.0),
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                  minHeight: 5,
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTaskCard(_Task task) {
     final isDone = task.isDone;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return GestureDetector(
       onTap: () => _toggleTask(task.id),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: isDone ? AppTheme.primaryPale.withOpacity(0.18) : Colors.white,
+          color: isDark
+              ? (isDone
+                  ? AppTheme.primaryColor.withOpacity(0.12)
+                  : AppTheme.darkCard)
+              : (isDone
+                  ? AppTheme.primaryPale.withOpacity(0.18)
+                  : Colors.white),
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
             color: isDone
@@ -267,12 +310,12 @@ class _TasksScreenState extends State<TasksScreen> {
                 border: Border.all(
                   color: isDone
                       ? AppTheme.primaryColor
-                      : AppTheme.warmGrey.withOpacity(0.4),
+                      : AppTheme.primaryColor.withOpacity(0.35),
                   width: 2,
                 ),
               ),
               child: isDone
-                  ? const Icon(Icons.check, color: Colors.white, size: 18)
+                  ? const Icon(Icons.check, size: 16, color: Colors.white)
                   : null,
             ),
             const SizedBox(width: 14),
@@ -287,34 +330,35 @@ class _TasksScreenState extends State<TasksScreen> {
                     style: TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.w600,
-                      color: isDone ? AppTheme.textSecondary : AppTheme.textPrimary,
+                      color: isDone
+                          ? (isDark ? AppTheme.darkTextHint : AppTheme.textHint)
+                          : (isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary),
                       decoration: isDone ? TextDecoration.lineThrough : null,
-                      decorationColor: AppTheme.warmGrey,
                     ),
                   ),
-                  if (task.time != null || task.room != null) ...[
-                    const SizedBox(height: 6),
-                    Wrap(
-                      spacing: 8,
-                      runSpacing: 6,
-                      children: [
-                        if (task.time != null)
-                          _buildChip(
-                            icon: Icons.schedule,
-                            label: task.time!,
-                            color: AppTheme.textSecondary,
-                            background: AppTheme.backgroundColor,
-                          ),
-                        if (task.room != null)
-                          _buildChip(
-                            icon: Icons.room_preferences_outlined,
-                            label: task.room!,
-                            color: AppTheme.primaryColor,
-                            background: AppTheme.primaryColor.withOpacity(0.12),
-                          ),
-                      ],
-                    ),
-                  ],
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      if (task.time != null)
+                        _buildChip(
+                          icon: Icons.schedule,
+                          label: task.time!,
+                          color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
+                          background: isDark
+                              ? AppTheme.darkBorder.withOpacity(0.7)
+                              : AppTheme.secondaryColor.withOpacity(0.45),
+                        ),
+                      if (task.time != null && task.room != null)
+                        const SizedBox(width: 8),
+                      if (task.room != null)
+                        _buildChip(
+                          icon: Icons.home_outlined,
+                          label: task.room!,
+                          color: AppTheme.primaryColor,
+                          background: AppTheme.primaryColor.withOpacity(0.12),
+                        ),
+                    ],
+                  ),
                 ],
               ),
             ),
@@ -323,7 +367,9 @@ class _TasksScreenState extends State<TasksScreen> {
               width: 8,
               height: 48,
               decoration: BoxDecoration(
-                color: isDone ? AppTheme.primaryColor : AppTheme.accentColor,
+                color: isDone
+                    ? AppTheme.primaryColor.withOpacity(0.55)
+                    : AppTheme.accentColor.withOpacity(0.65),
                 borderRadius: BorderRadius.circular(8),
               ),
             ),
@@ -353,8 +399,8 @@ class _TasksScreenState extends State<TasksScreen> {
           Text(
             label,
             style: TextStyle(
-              fontSize: 12,
               color: color,
+              fontSize: 11,
               fontWeight: FontWeight.w600,
             ),
           ),

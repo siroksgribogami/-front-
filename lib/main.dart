@@ -5,6 +5,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'config/app_theme.dart';
 import 'providers/auth_provider.dart';
 import 'providers/apartment_provider.dart';
+import 'providers/theme_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -27,12 +28,34 @@ class ARThouseApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ApartmentProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
-      child: MaterialApp(
-        title: 'АРТхаус',
-        debugShowCheckedModeBanner: false,
-        theme: AppTheme.lightTheme,
-        home: const AppRoot(),
+      child: Consumer<ThemeProvider>(
+        builder: (context, themeProv, _) {
+          return MediaQuery(
+            data: MediaQuery.of(context).copyWith(
+              textScaler: TextScaler.linear(themeProv.fontScale),
+            ),
+            child: MaterialApp(
+              title: 'АРТхаус',
+              debugShowCheckedModeBanner: false,
+              theme: AppTheme.lightTheme,
+              darkTheme: AppTheme.darkTheme,
+              themeMode: themeProv.themeMode,
+              // Глобальный фоллбэк на OpenMoji для всех эмодзи в приложении
+              builder: (context, child) {
+                return DefaultTextStyle(
+                  style: DefaultTextStyle.of(context).style.copyWith(
+                    // Primary fallback for emoji: Noto Color Emoji (add TTF to fonts/)
+                    fontFamilyFallback: const ['NotoColorEmoji', 'OpenMoji'],
+                  ),
+                  child: child!,
+                );
+              },
+              home: const AppRoot(),
+            ),
+          );
+        },
       ),
     );
   }

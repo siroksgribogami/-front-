@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
 import '../../providers/auth_provider.dart';
 import '../tasks/tasks_screen.dart';
 import '../map/map_screen.dart';
@@ -46,8 +47,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: scaffoldBg,
       body: SafeArea(
         child: Row(
           children: [
@@ -63,19 +67,25 @@ class _HomeScreenState extends State<HomeScreen> {
 
   /// Боковая навигация в стиле АРТхаус
   Widget _buildSidebar() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final sidebarBg = isDark ? AppTheme.darkCard : Colors.white;
+    final borderC = isDark ? AppTheme.darkBorder : AppTheme.secondaryColor;
+    final textHintC = isDark ? AppTheme.darkTextHint : AppTheme.textHint;
+    final textMainC = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+
     return Container(
       width: 220,
       decoration: BoxDecoration(
-        color: Colors.white,
+        color: sidebarBg,
         border: Border(
           right: BorderSide(
-            color: AppTheme.secondaryColor,
+            color: borderC,
             width: 1,
           ),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.03),
+            color: Colors.black.withOpacity(isDark ? 0.15 : 0.03),
             blurRadius: 12,
             offset: const Offset(4, 0),
           ),
@@ -90,9 +100,10 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               fontSize: 22,
               fontWeight: FontWeight.w700,
-              fontFamily: 'Gropled',
-              color: AppTheme.primaryColor,
+              fontFamily: AppTextStyle.fontFamily,
+              color: isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor,
               letterSpacing: -1,
+              height: AppTextStyle.defaultHeight,
             ),
           ),
           const SizedBox(height: 6),
@@ -101,12 +112,14 @@ class _HomeScreenState extends State<HomeScreen> {
             style: TextStyle(
               fontSize: 9,
               letterSpacing: 2,
-              color: AppTheme.textHint,
-              fontFamily: 'Gropled',
+              color: textHintC,
+              fontFamily: AppTextStyle.fontFamily,
+              height: AppTextStyle.defaultHeight,
+              leadingDistribution: AppTextStyle.defaultLeadingDistribution,
             ),
           ),
           const SizedBox(height: 32),
-          Divider(color: AppTheme.secondaryColor, height: 1),
+          Divider(color: borderC, height: 1),
           const SizedBox(height: 12),
 
           // Навигационные элементы
@@ -126,7 +139,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final username = auth.user?.username ?? '';
                 return Column(
                   children: [
-                    Divider(color: AppTheme.secondaryColor, height: 1),
+                    Divider(color: borderC, height: 1),
                     const SizedBox(height: 14),
                     Row(
                       children: [
@@ -152,10 +165,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         Expanded(
                           child: Text(
                             username,
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 13,
                               fontWeight: FontWeight.w600,
-                              color: AppTheme.textPrimary,
+                              color: textMainC,
                             ),
                             overflow: TextOverflow.ellipsis,
                           ),
@@ -174,6 +187,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildNavTile(_NavItem item, bool isSelected, int index) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
       child: Material(
@@ -186,7 +201,9 @@ class _HomeScreenState extends State<HomeScreen> {
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
             decoration: BoxDecoration(
               color: isSelected
-                  ? AppTheme.primaryColor.withOpacity(0.1)
+                  ? (isDark
+                      ? Colors.white.withOpacity(0.08)
+                      : AppTheme.primaryColor.withOpacity(0.1))
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
@@ -195,8 +212,10 @@ class _HomeScreenState extends State<HomeScreen> {
                 Icon(
                   isSelected ? item.selectedIcon : item.icon,
                   color: isSelected
-                      ? AppTheme.primaryColor
-                      : AppTheme.textHint,
+                      ? (isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor)
+                      : (isDark
+                          ? AppTheme.darkTextSecondary
+                          : AppTheme.textHint),
                   size: 20,
                 ),
                 const SizedBox(width: 12),
@@ -205,9 +224,14 @@ class _HomeScreenState extends State<HomeScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                    fontFamily: AppTextStyle.fontFamily,
+                    height: AppTextStyle.defaultHeight,
+                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                     color: isSelected
-                        ? AppTheme.primaryColor
-                        : AppTheme.textSecondary,
+                      ? (isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor)
+                      : (isDark
+                            ? AppTheme.darkTextSecondary
+                            : AppTheme.textSecondary),
                   ),
                 ),
               ],

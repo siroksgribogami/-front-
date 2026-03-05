@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
 
 /// Экран входа - в стиле HTML дизайна (шалфейно-зеленый фон)
 class LoginScreen extends StatefulWidget {
@@ -86,8 +87,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
                         letterSpacing: -2.5,
-                        fontFamily: 'Gropled',
-                        height: 1.0,
+                        fontFamily: AppTextStyle.fontFamily,
+                        height: AppTextStyle.defaultHeight,
+                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -97,7 +99,9 @@ class _LoginScreenState extends State<LoginScreen> {
                         fontSize: 16,
                         color: Colors.white.withOpacity(0.55),
                         letterSpacing: 3,
-                        fontFamily: 'Gropled',
+                        fontFamily: AppTextStyle.fontFamily,
+                        height: AppTextStyle.defaultHeight,
+                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                       ),
                     ),
                     const SizedBox(height: 48),
@@ -157,7 +161,9 @@ class _LoginScreenState extends State<LoginScreen> {
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    fontFamily: 'Georgia',
+                    fontFamily: AppTextStyle.fontFamily,
+                    height: AppTextStyle.defaultHeight,
+                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -166,7 +172,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.7),
-                    fontFamily: 'Georgia',
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -318,8 +323,10 @@ class _LoginScreenState extends State<LoginScreen> {
       fontSize: 18,
       fontWeight: FontWeight.w700,
       color: outlined ? Colors.white : AppTheme.primaryColor,
-      fontFamily: 'Gropled',
+      fontFamily: AppTextStyle.fontFamily,
       letterSpacing: 0.5,
+      height: AppTextStyle.defaultHeight,
+      leadingDistribution: AppTextStyle.defaultLeadingDistribution,
     );
 
     final decoration = BoxDecoration(
@@ -346,7 +353,7 @@ class _LoginScreenState extends State<LoginScreen> {
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
           decoration: decoration,
           alignment: Alignment.center,
           child: Text(label, style: baseStyle),

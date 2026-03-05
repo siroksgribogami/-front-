@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'text_theme.dart';
 
 /// Тема приложения АРТхаус - уютный дом и комфорт
 /// Цветовая схема 60-30-10 (Кремовый + терракот):
@@ -47,43 +48,13 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       fontFamily: 'Inter',
-      textTheme: ThemeData().textTheme.copyWith(
-            displayLarge: const TextStyle(
-              fontFamily: 'Gropled',
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1.5,
-              color: textPrimary,
-            ),
-            displayMedium: const TextStyle(
-              fontFamily: 'Gropled',
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1.2,
-              color: textPrimary,
-            ),
-            displaySmall: const TextStyle(
-              fontFamily: 'Gropled',
-              fontWeight: FontWeight.w700,
-              letterSpacing: -1.0,
-              color: textPrimary,
-            ),
-            headlineLarge: const TextStyle(
-              fontFamily: 'Gropled',
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.8,
-              color: textPrimary,
-            ),
-            headlineMedium: const TextStyle(
-              fontFamily: 'Gropled',
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.6,
-              color: textPrimary,
-            ),
-            titleLarge: const TextStyle(
-              fontFamily: 'Gropled',
-              fontWeight: FontWeight.w700,
-              letterSpacing: -0.4,
-              color: textPrimary,
-            ),
+      textTheme: TextTheme(
+            displayLarge: gropled(fontSize: 80, fontWeight: FontWeight.w700, letterSpacing: -1.5),
+            displayMedium: gropled(fontSize: 48, fontWeight: FontWeight.w700, letterSpacing: -1.2),
+            displaySmall: gropled(fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -1.0),
+            headlineLarge: gropled(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.8),
+            headlineMedium: gropled(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.6),
+            titleLarge: gropled(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.4),
           ),
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
@@ -247,27 +218,276 @@ class AppTheme {
     switch (roomType.toLowerCase()) {
       case 'гостиная':
       case 'living':
-        return const Color(0xFFE8F0E9); // Светло-шалфейный
+        return const Color(0xFFC8DFC9); // Насыщенный шалфейный
       case 'спальня':
       case 'bedroom':
-        return const Color(0xFFF5EDE8); // Теплый кремовый
+        return const Color(0xFFEFD9C8); // Персиково-розовый
       case 'кухня':
       case 'kitchen':
-        return const Color(0xFFF0E8E0); // Персиково-бежевый
+        return const Color(0xFFEFD8A8); // Тёплый янтарный
       case 'ванная':
       case 'bathroom':
-        return const Color(0xFFE8F0F0); // Светло-мятный
+        return const Color(0xFFB8DADA); // Насыщенный мятный
       case 'детская':
       case 'kids':
-        return const Color(0xFFF0EDF5); // Лавандовый
+        return const Color(0xFFCFC4E6); // Лавандовый
       case 'кабинет':
       case 'office':
-        return const Color(0xFFECEFEC); // Серо-зеленый
+        return const Color(0xFFBECDBE); // Оливково-зелёный
+      case 'прихожая':
+        return const Color(0xFFE0CEB8); // Тёплый песочный
+      case 'балкон':
+      case 'лоджия':
+        return const Color(0xFFB8D0D8); // Небесно-голубой
+      case 'гардероб':
+        return const Color(0xFFD8C4DE); // Сиреневый
+      case 'столовая':
+        return const Color(0xFFE6CCA6); // Карамельный
+      case 'терраса':
+        return const Color(0xFFB8D4BA); // Садово-зелёный
+      case 'коридор':
+        return const Color(0xFFD4D4D0); // Нейтральный серый
+      case 'кладовая':
+        return const Color(0xFFD8C9B0); // Песочный
+      case 'гостевая':
+        return const Color(0xFFE6CCCC); // Нежно-розовый
+      case 'игровая':
+        return const Color(0xFFB8C8E6); // Васильковый
       default:
         return backgroundColor;
     }
   }
-  
+
+  /// Цвета комнат для тёмной темы — приглушённые тёмные тона
+  static Color getRoomColorDark(String roomType) {
+    switch (roomType.toLowerCase()) {
+      case 'гостиная':
+      case 'living':
+        return const Color(0xFF243028); // тёмный шалфей
+      case 'спальня':
+      case 'bedroom':
+        return const Color(0xFF332820); // тёмный персик
+      case 'кухня':
+      case 'kitchen':
+        return const Color(0xFF302A18); // тёмный янтарь
+      case 'ванная':
+      case 'bathroom':
+        return const Color(0xFF1A2E2E); // тёмная мята
+      case 'детская':
+      case 'kids':
+        return const Color(0xFF28243A); // тёмная лаванда
+      case 'кабинет':
+      case 'office':
+        return const Color(0xFF202820); // тёмный оливковый
+      case 'прихожая':
+        return const Color(0xFF2E2618); // тёмный песок
+      case 'балкон':
+      case 'лоджия':
+        return const Color(0xFF1A2A30); // тёмное небо
+      case 'гардероб':
+        return const Color(0xFF2A2032); // тёмная сирень
+      case 'столовая':
+        return const Color(0xFF2E2418); // тёмная карамель
+      case 'терраса':
+        return const Color(0xFF1E2C1E); // тёмный сад
+      case 'коридор':
+        return const Color(0xFF282828); // нейтральный тёмный
+      case 'кладовая':
+        return const Color(0xFF2A2418); // тёмный песчаник
+      case 'гостевая':
+        return const Color(0xFF2E2020); // тёмная роза
+      case 'игровая':
+        return const Color(0xFF1E2232); // тёмный василёк
+      default:
+        return darkCard;
+    }
+  }
+
+  // ============================================================
+  // ТЁМНАЯ ТЕМА — «Уголь + шалфей»
+  // 60% #1C1E1C · 30% #6C8671 · 10% #D4956A
+  // ============================================================
+
+  // Тёмная палитра — «Уголь» (нейтральный, без зелени) + шалфей как акцент
+  static const Color darkBackground = Color(0xFF1A1A1A);
+  static const Color darkSurface    = Color(0xFF1E1E1E); // nav bg
+  static const Color darkCard       = Color(0xFF252525);
+  static const Color darkBorder     = Color(0xFF2E2E2E);
+  static const Color darkAccent     = Color(0xFFD4956A); // терракот — как в светлой
+  static const Color darkAccentDark = Color(0xFFB8784E);
+  static const Color darkTextPrimary    = Color(0xFFEAE8E4);
+  static const Color darkTextSecondary  = Color(0xFFADABA6);
+  static const Color darkTextHint       = Color(0xFF787674);
+  static const Color darkSecondary      = Color(0xFF222222);
+
+  /// Тёмная тема АРТхаус
+  static ThemeData get darkTheme {
+    return ThemeData(
+      useMaterial3: true,
+      fontFamily: 'Inter',
+      brightness: Brightness.dark,
+      textTheme: TextTheme(
+        displayLarge: gropled(fontSize: 80, fontWeight: FontWeight.w700, letterSpacing: -1.5, color: darkTextPrimary),
+        displayMedium: gropled(fontSize: 48, fontWeight: FontWeight.w700, letterSpacing: -1.2, color: darkTextPrimary),
+        displaySmall: gropled(fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -1.0, color: darkTextPrimary),
+        headlineLarge: gropled(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.8, color: darkTextPrimary),
+        headlineMedium: gropled(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.6, color: darkTextPrimary),
+        titleLarge: gropled(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.4, color: darkTextPrimary),
+      ),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: primaryColor,
+        brightness: Brightness.dark,
+        primary: primaryColor,
+        secondary: darkSecondary,
+        tertiary: darkAccent,
+        error: errorColor,
+        surface: darkSurface,
+        surfaceContainerHighest: darkBackground,
+      ),
+      scaffoldBackgroundColor: darkBackground,
+      appBarTheme: const AppBarTheme(
+        elevation: 0,
+        centerTitle: true,
+        backgroundColor: Color(0xFF1E1E1E),
+        foregroundColor: darkTextPrimary,
+        titleTextStyle: TextStyle(
+          color: darkTextPrimary,
+          fontSize: 17,
+          fontWeight: FontWeight.w600,
+          letterSpacing: 0.3,
+        ),
+      ),
+      cardTheme: CardTheme(
+        elevation: 0,
+        shadowColor: Colors.black26,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(18),
+        ),
+        color: darkCard,
+        margin: const EdgeInsets.symmetric(horizontal: 0, vertical: 4),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryColor,
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(100),
+          ),
+          elevation: 0,
+          textStyle: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.2,
+          ),
+        ),
+      ),
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: darkAccent,
+          foregroundColor: darkBackground,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(100),
+          ),
+        ),
+      ),
+      outlinedButtonTheme: OutlinedButtonThemeData(
+        style: OutlinedButton.styleFrom(
+          foregroundColor: darkTextPrimary,
+          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(100),
+          ),
+          side: BorderSide(color: darkTextPrimary.withOpacity(0.3), width: 1.5),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryLight,
+          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+        ),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: darkSurface,
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: darkBorder),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: BorderSide(color: darkBorder),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: primaryColor, width: 2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(14),
+          borderSide: const BorderSide(color: errorColor),
+        ),
+        labelStyle: const TextStyle(color: darkTextSecondary),
+        hintStyle: const TextStyle(color: darkTextHint),
+        prefixIconColor: darkTextSecondary,
+        suffixIconColor: darkTextSecondary,
+      ),
+      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+        backgroundColor: darkAccent,
+        foregroundColor: Colors.white,
+        elevation: 2,
+        shape: CircleBorder(),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: darkCard,
+        selectedItemColor: primaryLight,
+        unselectedItemColor: darkTextHint,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: darkCard,
+        indicatorColor: primaryColor.withOpacity(0.2),
+        iconTheme: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const IconThemeData(color: primaryLight);
+          }
+          return const IconThemeData(color: darkTextHint);
+        }),
+        labelTextStyle: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return const TextStyle(color: primaryLight, fontWeight: FontWeight.w600, fontSize: 12);
+          }
+          return const TextStyle(color: darkTextHint, fontSize: 12);
+        }),
+      ),
+      snackBarTheme: SnackBarThemeData(
+        behavior: SnackBarBehavior.floating,
+        backgroundColor: darkTextPrimary,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+        ),
+      ),
+      chipTheme: ChipThemeData(
+        backgroundColor: darkSurface,
+        selectedColor: primaryColor.withOpacity(0.3),
+        labelStyle: const TextStyle(color: darkTextPrimary),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(8),
+        ),
+      ),
+      dividerTheme: DividerThemeData(
+        color: darkBorder.withOpacity(0.4),
+        thickness: 1,
+      ),
+      iconTheme: const IconThemeData(
+        color: darkTextSecondary,
+      ),
+    );
+  }
+
   /// Chip/Tag стиль для комнат и задач
   static BoxDecoration get tagDecoration => BoxDecoration(
     color: backgroundColor,

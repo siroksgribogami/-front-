@@ -32,3 +32,6 @@ flutter:
       fonts:
         - asset: Gropled-Bold.otf
           weight: 700
+    - family: NotoColorEmoji
+      fonts:
+        - asset: fonts/NotoColorEmoji.ttf

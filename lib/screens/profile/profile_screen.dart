@@ -4,6 +4,8 @@ import 'package:intl/intl.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/apartment_provider.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
+import 'appearance_screen.dart';
 
 /// Экран профиля пользователя
 class ProfileScreen extends StatelessWidget {
@@ -41,8 +43,15 @@ class ProfileScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
+    final cardBg = isDark ? AppTheme.darkCard : Colors.white;
+    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+    final textHintC = isDark ? AppTheme.darkTextHint : AppTheme.textHint;
+    final dividerColor = isDark ? AppTheme.darkBorder.withOpacity(0.4) : null;
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: scaffoldBg,
       appBar: embedded
           ? null
           : AppBar(title: const Text('Профиль')),
@@ -59,11 +68,13 @@ class ProfileScreen extends StatelessWidget {
               if (embedded) ...[
                 Text(
                   'Профиль',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'Gropled',
-                    color: AppTheme.textPrimary,
+                    fontFamily: AppTextStyle.fontFamily,
+                    color: textMain,
+                    height: AppTextStyle.defaultHeight,
+                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -72,11 +83,11 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(28),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -105,7 +116,9 @@ class ProfileScreen extends StatelessWidget {
                             fontSize: 40,
                             fontWeight: FontWeight.w700,
                             color: Colors.white,
-                            fontFamily: 'Gropled',
+                            fontFamily: AppTextStyle.fontFamily,
+                            height: AppTextStyle.defaultHeight,
+                            leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                           ),
                         ),
                       ),
@@ -113,19 +126,21 @@ class ProfileScreen extends StatelessWidget {
                     const SizedBox(height: 18),
                     Text(
                       user.username,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w700,
-                        fontFamily: 'Gropled',
-                        color: AppTheme.textPrimary,
+                        fontFamily: AppTextStyle.fontFamily,
+                        color: textMain,
+                        height: AppTextStyle.defaultHeight,
+                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Text(
                       user.email,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
-                        color: AppTheme.textHint,
+                        color: textHintC,
                       ),
                     ),
                   ],
@@ -137,11 +152,11 @@ class ProfileScreen extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(20),
                 decoration: BoxDecoration(
-                  color: Colors.white,
+                  color: cardBg,
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.04),
+                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
                       blurRadius: 16,
                       offset: const Offset(0, 4),
                     ),
@@ -150,13 +165,15 @@ class ProfileScreen extends StatelessWidget {
                 child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
+                      Text(
                         'Информация',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,
-                          fontFamily: 'Gropled',
-                          color: AppTheme.textPrimary,
+                          fontFamily: AppTextStyle.fontFamily,
+                          color: textMain,
+                          height: AppTextStyle.defaultHeight,
+                          leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                         ),
                       ),
                       const SizedBox(height: 16),
@@ -191,6 +208,72 @@ class ProfileScreen extends StatelessWidget {
                     ],
                   ),
               ),
+              const SizedBox(height: 20),
+
+              // Настройки
+              Text(
+                'Настройки',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w700,
+                  fontFamily: AppTextStyle.fontFamily,
+                  color: textMain,
+                  height: AppTextStyle.defaultHeight,
+                  leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                decoration: BoxDecoration(
+                  color: cardBg,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
+                      blurRadius: 16,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    _buildSettingsRow(
+                      context,
+                      icon: Icons.notifications_outlined,
+                      label: 'Уведомления',
+                      onTap: () {},
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildSettingsRow(
+                      context,
+                      icon: Icons.lock_outline,
+                      label: 'Безопасность',
+                      onTap: () {},
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildSettingsRow(
+                      context,
+                      icon: Icons.palette_outlined,
+                      label: 'Внешний вид',
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const AppearanceScreen(),
+                          ),
+                        );
+                      },
+                    ),
+                    Divider(height: 1, indent: 56, color: dividerColor),
+                    _buildSettingsRow(
+                      context,
+                      icon: Icons.language_outlined,
+                      label: 'Язык',
+                      onTap: () {},
+                    ),
+                  ],
+                ),
+              ),
               const SizedBox(height: 28),
 
               // Кнопка выхода — стильная
@@ -199,7 +282,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Container(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   decoration: BoxDecoration(
-                    color: Colors.white,
+                    color: cardBg,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
                       color: AppTheme.errorColor.withOpacity(0.3),
@@ -229,7 +312,7 @@ class ProfileScreen extends StatelessWidget {
                 child: Text(
                   'АРТхаус v1.0.0',
                   style: TextStyle(
-                    color: AppTheme.textHint,
+                    color: textHintC,
                     fontSize: 12,
                   ),
                 ),
@@ -242,6 +325,50 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildSettingsRow(
+    BuildContext context, {
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+    final textHint = isDark ? AppTheme.darkTextSecondary : AppTheme.textHint;
+
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(20),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Icon(icon, color: AppTheme.primaryColor, size: 18),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                  color: textMain,
+                ),
+              ),
+            ),
+            Icon(Icons.chevron_right, color: textHint, size: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildInfoRow(
     BuildContext context, {
     required IconData icon,
@@ -250,13 +377,18 @@ class ProfileScreen extends StatelessWidget {
     Color? valueColor,
     bool showDivider = true,
   }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final textSecondary = isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
+    final textHint = isDark ? AppTheme.darkTextHint : AppTheme.textHint;
+    final textPrimary = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+
     return Column(
       children: [
         Padding(
           padding: const EdgeInsets.symmetric(vertical: 12),
           child: Row(
             children: [
-              Icon(icon, size: 20, color: AppTheme.textSecondary),
+              Icon(icon, size: 20, color: textSecondary),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -265,7 +397,7 @@ class ProfileScreen extends StatelessWidget {
                     Text(
                       label,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: AppTheme.textHint,
+                            color: textHint,
                           ),
                     ),
                     const SizedBox(height: 2),
@@ -273,7 +405,7 @@ class ProfileScreen extends StatelessWidget {
                       value,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
-                            color: valueColor,
+                            color: valueColor ?? textPrimary,
                           ),
                     ),
                   ],
@@ -282,7 +414,11 @@ class ProfileScreen extends StatelessWidget {
             ],
           ),
         ),
-        if (showDivider) const Divider(height: 1),
+        if (showDivider)
+          Divider(
+            height: 1,
+            color: isDark ? AppTheme.darkBorder.withOpacity(0.35) : null,
+          ),
       ],
     );
   }

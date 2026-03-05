@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
 import 'room_editor_screen.dart';
 
 /// Экран карты квартиры - визуальное представление помещения
@@ -15,12 +16,12 @@ class _MapScreenState extends State<MapScreen> {
   bool _isEditMode = false;
 
   final List<Map<String, dynamic>> _rooms = [
-    {'name': 'Гостиная', 'icon': Icons.weekend, 'devices': 5, 'tasks': 2},
-    {'name': 'Спальня', 'icon': Icons.bed, 'devices': 3, 'tasks': 0},
-    {'name': 'Кухня', 'icon': Icons.kitchen, 'devices': 8, 'tasks': 1},
-    {'name': 'Ванная', 'icon': Icons.bathtub, 'devices': 4, 'tasks': 3},
-    {'name': 'Кабинет', 'icon': Icons.computer, 'devices': 6, 'tasks': 0},
-    {'name': 'Детская', 'icon': Icons.child_care, 'devices': 2, 'tasks': 1},
+    {'name': 'Гостиная', 'icon': Icons.weekend, 'tasks': 2, 'taskList': ['Пропылесосить', 'Протереть пыль']},
+    {'name': 'Спальня', 'icon': Icons.bed, 'tasks': 0, 'taskList': <String>[]},
+    {'name': 'Кухня', 'icon': Icons.kitchen, 'tasks': 1, 'taskList': ['Помыть посуду']},
+    {'name': 'Ванная', 'icon': Icons.bathtub, 'tasks': 3, 'taskList': ['Помыть унитаз', 'Протереть раковину', 'Вымыть кафель']},
+    {'name': 'Кабинет', 'icon': Icons.computer, 'tasks': 0, 'taskList': <String>[]},
+    {'name': 'Детская', 'icon': Icons.child_care, 'tasks': 1, 'taskList': ['Убрать игрушки']},
   ];
 
   final List<Map<String, dynamic>> _availableRooms = [
@@ -29,6 +30,11 @@ class _MapScreenState extends State<MapScreen> {
     {'name': 'Гардероб', 'icon': Icons.checkroom},
     {'name': 'Столовая', 'icon': Icons.dining},
     {'name': 'Терраса', 'icon': Icons.deck},
+    {'name': 'Коридор', 'icon': Icons.sensor_door},
+    {'name': 'Кладовая', 'icon': Icons.inventory_2},
+    {'name': 'Лоджия', 'icon': Icons.window},
+    {'name': 'Гостевая', 'icon': Icons.hotel},
+    {'name': 'Игровая', 'icon': Icons.sports_esports},
   ];
 
   void _deleteRoom(String name) {
@@ -44,8 +50,8 @@ class _MapScreenState extends State<MapScreen> {
     setState(() {
       _rooms.add({
         ...room,
-        'devices': 0,
         'tasks': 0,
+        'taskList': <String>[],
       });
     });
     Navigator.pop(context);
@@ -74,7 +80,9 @@ class _MapScreenState extends State<MapScreen> {
                 style: TextStyle(
                   fontSize: 20,
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'Gropled',
+                  fontFamily: AppTextStyle.fontFamily,
+                  height: AppTextStyle.defaultHeight,
+                  leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                 ),
               ),
               const SizedBox(height: 20),
@@ -136,8 +144,11 @@ class _MapScreenState extends State<MapScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: isDark
+          ? AppTheme.darkBackground
+          : AppTheme.backgroundColor,
       body: Column(
         children: [
           // Заголовок
@@ -147,11 +158,15 @@ class _MapScreenState extends State<MapScreen> {
               children: [
                 Text(
                   'Карта',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 32,
                     fontWeight: FontWeight.w700,
-                    fontFamily: 'Gropled',
-                    color: AppTheme.textPrimary,
+                    fontFamily: AppTextStyle.fontFamily,
+                    color: Theme.of(context).brightness == Brightness.dark
+                        ? AppTheme.darkTextPrimary
+                        : AppTheme.textPrimary,
+                    height: AppTextStyle.defaultHeight,
+                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                   ),
                 ),
                 const Spacer(),
@@ -195,153 +210,178 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
           ),
-          // Визуализация плана квартиры
+          // Основная область: сетка + боковая панель
           Expanded(
-            flex: 2,
-            child: Container(
-              margin: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: AppTheme.backgroundColor,
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: AppTheme.warmGrey.withOpacity(0.3)),
-              ),
-              child: Center(
-                child: Wrap(
-                  spacing: 12,
-                  runSpacing: 12,
-                  alignment: WrapAlignment.center,
-                  children: [
-                    ..._rooms.map((room) {
-                    final isSelected = _selectedRoom == room['name'];
-                    return GestureDetector(
-                      onTap: () {
-                        setState(() {
-                          _selectedRoom = room['name'];
-                        });
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 200),
-                        width: isSelected ? 120 : 100,
-                        height: isSelected ? 120 : 100,
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? AppTheme.primaryColor.withOpacity(0.1)
-                              : AppTheme.getRoomColor(room['name']),
-                          borderRadius: BorderRadius.circular(16),
-                          border: Border.all(
-                            color: isSelected
-                                ? AppTheme.primaryColor
-                                : Colors.transparent,
-                            width: 2,
-                          ),
-                          boxShadow: isSelected
-                              ? [
-                                  BoxShadow(
-                                    color: AppTheme.primaryColor.withOpacity(0.2),
-                                    blurRadius: 10,
-                                    spreadRadius: 2,
-                                  ),
-                                ]
-                              : null,
-                        ),
-                        child: Stack(
-                          children: [
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  room['icon'] as IconData,
-                                  size: isSelected ? 32 : 28,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Левая часть: прокручиваемая сетка комнат
+                Expanded(
+                  child: Container(
+                    margin: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: isDark ? AppTheme.darkSurface : AppTheme.backgroundColor,
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: isDark ? AppTheme.darkBorder : AppTheme.warmGrey.withOpacity(0.3)),
+                    ),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(16),
+                      child: Wrap(
+                        spacing: 12,
+                        runSpacing: 12,
+                        alignment: WrapAlignment.center,
+                        children: [
+                          ..._rooms.map((room) {
+                            final isSelected = _selectedRoom == room['name'];
+                            return GestureDetector(
+                              onTap: () {
+                                setState(() {
+                                  _selectedRoom = isSelected ? null : room['name'];
+                                });
+                              },
+                              child: AnimatedContainer(
+                                duration: const Duration(milliseconds: 200),
+                                width: isSelected ? 195 : 180,
+                                height: isSelected ? 195 : 180,
+                                decoration: BoxDecoration(
                                   color: isSelected
-                                      ? AppTheme.primaryColor
-                                      : AppTheme.textSecondary,
-                                ),
-                                const SizedBox(height: 4),
-                                Text(
-                                  room['name'],
-                                  style: TextStyle(
-                                    fontSize: isSelected ? 14 : 12,
-                                    fontWeight: isSelected
-                                        ? FontWeight.w600
-                                        : FontWeight.normal,
+                                      ? AppTheme.primaryColor.withOpacity(0.12)
+                                      : (isDark
+                                          ? AppTheme.getRoomColorDark(room['name'])
+                                          : AppTheme.getRoomColor(room['name'])),
+                                  borderRadius: BorderRadius.circular(20),
+                                  border: Border.all(
                                     color: isSelected
                                         ? AppTheme.primaryColor
-                                        : AppTheme.textPrimary,
+                                        : Colors.transparent,
+                                    width: 2,
                                   ),
-                                  textAlign: TextAlign.center,
+                                  boxShadow: isSelected
+                                      ? [
+                                          BoxShadow(
+                                            color: AppTheme.primaryColor.withOpacity(0.2),
+                                            blurRadius: 12,
+                                            spreadRadius: 2,
+                                          ),
+                                        ]
+                                      : [
+                                          BoxShadow(
+                                            color: Colors.black.withOpacity(0.06),
+                                            blurRadius: 8,
+                                            offset: const Offset(0, 3),
+                                          ),
+                                        ],
                                 ),
-                                if (room['tasks'] > 0 && !_isEditMode)
-                                  Container(
-                                    margin: const EdgeInsets.only(top: 4),
-                                    padding: const EdgeInsets.symmetric(
-                                        horizontal: 6, vertical: 2),
-                                    decoration: BoxDecoration(
-                                      color: AppTheme.accentColor,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: Text(
-                                      '${room['tasks']} задач',
-                                      style: const TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
+                                child: Stack(
+                                  children: [
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            room['icon'] as IconData,
+                                            size: isSelected ? 40 : 36,
+                                            color: isSelected
+                                                ? AppTheme.primaryColor
+                                                : (isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary),
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            room['name'],
+                                            style: TextStyle(
+                                              fontSize: isSelected ? 15 : 13,
+                                              fontWeight: isSelected
+                                                  ? FontWeight.w600
+                                                  : FontWeight.normal,
+                                              color: isSelected
+                                                  ? AppTheme.primaryColor
+                                                  : (isDark ? AppTheme.darkTextSecondary : AppTheme.textPrimary),
+                                            ),
+                                            textAlign: TextAlign.center,
+                                          ),
+                                          if (room['tasks'] > 0 && !_isEditMode)
+                                            Container(
+                                              margin: const EdgeInsets.only(top: 6),
+                                              padding: const EdgeInsets.symmetric(
+                                                  horizontal: 8, vertical: 3),
+                                              decoration: BoxDecoration(
+                                                color: AppTheme.accentColor,
+                                                borderRadius: BorderRadius.circular(10),
+                                              ),
+                                              child: Text(
+                                                '${room['tasks']} задач',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 11,
+                                                  fontWeight: FontWeight.w500,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
                                       ),
                                     ),
-                                  ),
-                              ],
-                            ),
-                            // Delete button in edit mode
-                            if (_isEditMode)
-                              Positioned(
-                                top: 4,
-                                right: 4,
-                                child: GestureDetector(
-                                  onTap: () => _deleteRoom(room['name']),
-                                  child: Container(
-                                    width: 24,
-                                    height: 24,
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withOpacity(0.9),
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: const Icon(
-                                      Icons.close,
-                                      size: 14,
-                                      color: Colors.white,
-                                    ),
-                                  ),
+                                    if (_isEditMode)
+                                      Positioned(
+                                        top: 6,
+                                        right: 6,
+                                        child: GestureDetector(
+                                          onTap: () => _deleteRoom(room['name']),
+                                          child: Container(
+                                            width: 26,
+                                            height: 26,
+                                            decoration: BoxDecoration(
+                                              color: Colors.red.withOpacity(0.9),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.close,
+                                              size: 14,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                               ),
-                          ],
-                        ),
+                            );
+                          }),
+                          if (_isEditMode) _buildAddRoomButton(),
+                        ],
                       ),
-                    );
-                  }),
-                    if (_isEditMode) _buildAddRoomButton(),
-                  ],
+                    ),
+                  ),
                 ),
-              ),
+                // Правая панель (анимированная)
+                AnimatedContainer(
+                  duration: const Duration(milliseconds: 300),
+                  width: (_selectedRoom != null && !_isEditMode) ? 260.0 : 0.0,
+                  curve: Curves.easeInOut,
+                  child: (_selectedRoom != null && !_isEditMode)
+                      ? Container(
+                          margin: const EdgeInsets.fromLTRB(0, 16, 16, 16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.06),
+                                blurRadius: 12,
+                                offset: const Offset(-2, 0),
+                              ),
+                            ],
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(20),
+                            child: _buildSidePanel(),
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
             ),
           ),
-          // Детали выбранной комнаты
-          if (_selectedRoom != null && !_isEditMode)
-            Expanded(
-              child: Container(
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(24),
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
-                      blurRadius: 10,
-                      offset: const Offset(0, -2),
-                    ),
-                  ],
-                ),
-                child: _buildRoomDetails(),
-              ),
-            ),
         ],
       ),
     );
@@ -351,11 +391,11 @@ class _MapScreenState extends State<MapScreen> {
     return GestureDetector(
       onTap: _showAddRoomDialog,
       child: Container(
-        width: 100,
-        height: 100,
+        width: 180,
+        height: 180,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: AppTheme.primaryColor,
             width: 2,
@@ -366,23 +406,19 @@ class _MapScreenState extends State<MapScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 36,
-              height: 36,
+              width: 44,
+              height: 44,
               decoration: BoxDecoration(
                 color: AppTheme.primaryColor.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
-              child: const Icon(
-                Icons.add,
-                size: 24,
-                color: AppTheme.primaryColor,
-              ),
+              child: const Icon(Icons.add, size: 28, color: AppTheme.primaryColor),
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
             const Text(
               'Добавить',
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 13,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.primaryColor,
               ),
@@ -393,127 +429,141 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
-  Widget _buildRoomDetails() {
+  Widget _buildSidePanel() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     final room = _rooms.firstWhere((r) => r['name'] == _selectedRoom);
-    
+    final taskList = (room['taskList'] as List?)?.cast<String>() ?? <String>[];
+
     return Padding(
       padding: const EdgeInsets.all(20),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // Заголовок комнаты
           Row(
             children: [
-              Icon(room['icon'] as IconData, color: AppTheme.primaryColor),
-              const SizedBox(width: 8),
-              Text(
-                room['name'],
-                style: Theme.of(context).textTheme.titleLarge,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: isDark
+                      ? AppTheme.getRoomColorDark(room['name'])
+                      : AppTheme.getRoomColor(room['name']),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(room['icon'] as IconData,
+                    color: AppTheme.primaryColor, size: 22),
               ),
-              const Spacer(),
-              // Кнопка «Редактор» → 3D изометрия
+              const SizedBox(width: 10),
+              Expanded(
+                child: Text(
+                  room['name'],
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppTheme.textPrimary,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
               GestureDetector(
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => RoomEditorScreen(
-                      roomName: _selectedRoom!,
-                    ),
-                  ),
-                ),
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                      horizontal: 14, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: AppTheme.primaryColor,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(Icons.view_in_ar_rounded,
-                          size: 16, color: Colors.white),
-                      SizedBox(width: 6),
-                      Text(
-                        '3D редактор',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.white,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
+                onTap: () => setState(() => _selectedRoom = null),
+                child: const Icon(Icons.close, size: 20, color: AppTheme.textHint),
               ),
             ],
           ),
           const SizedBox(height: 16),
+          // Заголовок задач
           Row(
             children: [
-              _buildInfoChip(
-                icon: Icons.devices,
-                label: '${room['devices']} устройств',
-              ),
-              const SizedBox(width: 12),
-              _buildInfoChip(
-                icon: Icons.task_alt,
-                label: '${room['tasks']} задач',
-                highlight: room['tasks'] > 0,
-              ),
-            ],
-          ),
-          const Spacer(),
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.devices),
-                  label: const Text('Устройства'),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: ElevatedButton.icon(
-                  onPressed: () {},
-                  icon: const Icon(Icons.add_task),
-                  label: const Text('Добавить'),
+              const Icon(Icons.task_alt, size: 16, color: AppTheme.primaryColor),
+              const SizedBox(width: 6),
+              Text(
+                taskList.isEmpty
+                    ? 'Нет задач'
+                    : '${room['tasks']} задач',
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.primaryColor,
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoChip({
-    required IconData icon,
-    required String label,
-    bool highlight = false,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: highlight
-            ? AppTheme.accentColor.withOpacity(0.1)
-            : AppTheme.backgroundColor,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(
-            icon,
-            size: 16,
-            color: highlight ? AppTheme.accentColor : AppTheme.textSecondary,
+          const SizedBox(height: 10),
+          // Список задач
+          Expanded(
+            child: taskList.isEmpty
+                ? const Center(
+                    child: Text(
+                      'Всё чисто ✓',
+                      style: TextStyle(color: AppTheme.textHint, fontSize: 13),
+                    ),
+                  )
+                : ListView.separated(
+                    itemCount: taskList.length,
+                    separatorBuilder: (_, __) =>
+                        const Divider(height: 1, color: Color(0xFFEEEEEE)),
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 9),
+                        child: Row(
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(
+                                color: AppTheme.accentColor,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                taskList[index],
+                                style: const TextStyle(
+                                  fontSize: 13,
+                                  color: AppTheme.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
           ),
-          const SizedBox(width: 4),
-          Text(
-            label,
-            style: TextStyle(
-              color: highlight ? AppTheme.accentColor : AppTheme.textSecondary,
-              fontWeight: highlight ? FontWeight.w600 : FontWeight.normal,
+          // Кнопка 3D редактора
+          const SizedBox(height: 12),
+          GestureDetector(
+            onTap: () => Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => RoomEditorScreen(roomName: _selectedRoom!),
+              ),
+            ),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 13),
+              decoration: BoxDecoration(
+                color: AppTheme.primaryColor,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.view_in_ar_rounded, size: 16, color: Colors.white),
+                  SizedBox(width: 8),
+                  Text(
+                    '3D редактор',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ],

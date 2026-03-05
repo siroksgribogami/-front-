@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
 
 // ── Модель контакта ──
 class _Contact {
@@ -224,7 +225,9 @@ class _ChatScreenState extends State<ChatScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: Theme.of(context).brightness == Brightness.dark
+          ? AppTheme.darkBackground
+          : AppTheme.backgroundColor,
       body: Padding(
         padding: const EdgeInsets.fromLTRB(20, 36, 20, 16),
         child: Column(
@@ -232,11 +235,15 @@ class _ChatScreenState extends State<ChatScreen> {
           children: [
             Text(
               'Чат',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                fontFamily: 'Gropled',
-                color: AppTheme.textPrimary,
+                fontFamily: AppTextStyle.fontFamily,
+                color: Theme.of(context).brightness == Brightness.dark
+                    ? AppTheme.darkTextPrimary
+                    : AppTheme.textPrimary,
+                height: AppTextStyle.defaultHeight,
+                leadingDistribution: AppTextStyle.defaultLeadingDistribution,
               ),
             ),
             const SizedBox(height: 16),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
 
 /// Экран поиска - поиск специалистов, товаров и услуг
 class SearchScreen extends StatefulWidget {
@@ -65,8 +66,12 @@ class _SearchScreenState extends State<SearchScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final scaffoldBg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
+    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+
     return Scaffold(
-      backgroundColor: AppTheme.backgroundColor,
+      backgroundColor: scaffoldBg,
       appBar: widget.embedded
           ? null
           : AppBar(title: const Text('Поиск')),
@@ -78,11 +83,13 @@ class _SearchScreenState extends State<SearchScreen> {
               padding: const EdgeInsets.fromLTRB(20, 36, 20, 0),
               child: Text(
                 'Поиск',
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  fontFamily: 'Gropled',
-                  color: AppTheme.textPrimary,
+                  fontFamily: AppTextStyle.fontFamily,
+                  color: textMain,
+                  height: AppTextStyle.defaultHeight,
+                  leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                 ),
               ),
             ),

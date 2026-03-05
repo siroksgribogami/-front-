@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../config/app_theme.dart';
+import '../../core/theme/app_text_style.dart';
 
 /// Экран регистрации - в стиле HTML дизайна
 class RegisterScreen extends StatefulWidget {
@@ -64,9 +65,12 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
+        child: Center(
+          child: SingleChildScrollView(
           padding: const EdgeInsets.all(32),
-          child: Form(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 400),
+            child: Form(
             key: _formKey,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,7 +81,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
-                    fontFamily: 'Gropled',
+                    fontFamily: AppTextStyle.fontFamily,
+                    height: AppTextStyle.defaultHeight,
+                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -86,7 +92,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   style: TextStyle(
                     fontSize: 14,
                     color: Colors.white.withOpacity(0.7),
-                    fontFamily: 'Gropled',
                   ),
                 ),
                 const SizedBox(height: 32),
@@ -259,7 +264,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
             ),
           ),
         ),
+        ),
       ),
+    ),
     );
   }
   
