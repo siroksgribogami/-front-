@@ -112,7 +112,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 controller: _searchController,
                 decoration: InputDecoration(
                   hintText: 'Найти специалиста или магазин...',
-                  hintStyle: TextStyle(color: AppTheme.textHint, fontSize: 14),
+                  hintStyle: const TextStyle(color: AppTheme.textHint, fontSize: 14),
                   prefixIcon: const Icon(Icons.search, color: AppTheme.textHint),
                   suffixIcon: _searchController.text.isNotEmpty
                       ? IconButton(
@@ -260,7 +260,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   const SizedBox(height: 4),
                   Text(
                     item['category'],
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.textSecondary,
                       fontSize: 14,
                     ),
@@ -277,7 +277,7 @@ class _SearchScreenState extends State<SearchScreen> {
                       const SizedBox(width: 4),
                       Text(
                         '(${item['reviews']} отзывов)',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppTheme.textSecondary,
                           fontSize: 12,
                         ),
@@ -293,7 +293,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 children: [
                   Text(
                     item['price'],
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppTheme.primaryColor,
                       fontWeight: FontWeight.w600,
                     ),

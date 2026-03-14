@@ -139,11 +139,11 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderSide: const BorderSide(color: borderColor),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: borderColor),
+          borderSide: const BorderSide(color: borderColor),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -164,13 +164,13 @@ class AppTheme {
         elevation: 2,
         shape: CircleBorder(),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: surfaceColor,
         selectedItemColor: primaryColor,
         unselectedItemColor: warmGrey,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceColor,
@@ -179,13 +179,13 @@ class AppTheme {
           if (states.contains(WidgetState.selected)) {
             return const IconThemeData(color: primaryColor);
           }
-          return IconThemeData(color: warmGrey);
+          return const IconThemeData(color: warmGrey);
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
             return const TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 12);
           }
-          return TextStyle(color: warmGrey, fontSize: 12);
+          return const TextStyle(color: warmGrey, fontSize: 12);
         }),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -414,11 +414,11 @@ class AppTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: darkBorder),
+          borderSide: const BorderSide(color: darkBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: darkBorder),
+          borderSide: const BorderSide(color: darkBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
@@ -439,13 +439,13 @@ class AppTheme {
         elevation: 2,
         shape: CircleBorder(),
       ),
-      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
         backgroundColor: darkCard,
         selectedItemColor: primaryLight,
         unselectedItemColor: darkTextHint,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
-        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: darkCard,

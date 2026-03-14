@@ -19,18 +19,57 @@ class LoginScreen extends StatefulWidget {
   State<LoginScreen> createState() => _LoginScreenState();
 }
 
-class _LoginScreenState extends State<LoginScreen> {
+class _LoginScreenState extends State<LoginScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
   bool _showForm = false;
 
+  late final AnimationController _transitionCtrl;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _transitionCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+    _fadeAnim = CurvedAnimation(parent: _transitionCtrl, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _transitionCtrl, curve: Curves.easeOutCubic));
+    // Начальная анимация появления
+    _transitionCtrl.forward();
+  }
+
   @override
   void dispose() {
+    _transitionCtrl.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
+  }
+
+  /// Переключение между welcome и формой с анимацией
+  void _openForm() {
+    _transitionCtrl.reverse().then((_) {
+      if (!mounted) return;
+      setState(() => _showForm = true);
+      _transitionCtrl.forward();
+    });
+  }
+
+  void _closeForm() {
+    _transitionCtrl.reverse().then((_) {
+      if (!mounted) return;
+      setState(() => _showForm = false);
+      _transitionCtrl.forward();
+    });
   }
 
   Future<void> _handleLogin() async {
@@ -49,8 +88,13 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_showForm) return _buildWelcomeScreen();
-    return _buildLoginForm();
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: SlideTransition(
+        position: _slideAnim,
+        child: _showForm ? _buildLoginForm() : _buildWelcomeScreen(),
+      ),
+    );
   }
   
   /// Начальный экран в стиле дизайна
@@ -60,19 +104,6 @@ class _LoginScreenState extends State<LoginScreen> {
       body: SafeArea(
         child: Stack(
           children: [
-            // Vignette overlay
-            Positioned.fill(
-              child: Container(
-                decoration: const BoxDecoration(
-                  gradient: RadialGradient(
-                    center: Alignment.center,
-                    radius: 0.9,
-                    colors: [Colors.transparent, Color.fromRGBO(0, 0, 0, 0.08)],
-                    stops: [0.55, 1.0],
-                  ),
-                ),
-              ),
-            ),
             Center(
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 40),
@@ -111,13 +142,19 @@ class _LoginScreenState extends State<LoginScreen> {
                         children: [
                           _buildPillButton(
                             label: 'Вход',
-                            onTap: () => setState(() => _showForm = true),
+                            onTap: _openForm,
                           ),
                           const SizedBox(height: 12),
                           _buildPillButton(
                             label: 'Регистрация',
                             outlined: true,
-                            onTap: widget.onRegisterTap,
+                            onTap: widget.onRegisterTap == null
+                                ? null
+                                : () {
+                                    _transitionCtrl.reverse().then((_) {
+                                      widget.onRegisterTap?.call();
+                                    });
+                                  },
                           ),
                         ],
                       ),
@@ -141,7 +178,7 @@ class _LoginScreenState extends State<LoginScreen> {
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: () => setState(() => _showForm = false),
+          onPressed: _closeForm,
         ),
       ),
       body: SafeArea(
@@ -244,7 +281,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         elevation: 0,
                       ),
                       child: auth.isLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(

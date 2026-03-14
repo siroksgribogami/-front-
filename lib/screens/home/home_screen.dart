@@ -18,7 +18,7 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 0;
+  int _currentIndex = 1; // Карта по умолчанию
 
   final List<_NavItem> _navItems = const [
     _NavItem(Icons.check_circle_outline, Icons.check_circle, 'Задачи'),
@@ -123,15 +123,19 @@ class _HomeScreenState extends State<HomeScreen> {
           const SizedBox(height: 12),
 
           // Навигационные элементы
-          ...List.generate(_navItems.length, (index) {
-            final item = _navItems[index];
-            final isSelected = _currentIndex == index;
-            return _buildNavTile(item, isSelected, index);
-          }),
+          Expanded(
+            child: SingleChildScrollView(
+              child: Column(
+                children: List.generate(_navItems.length, (index) {
+                  final item = _navItems[index];
+                  final isSelected = _currentIndex == index;
+                  return _buildNavTile(item, isSelected, index);
+                }),
+              ),
+            ),
+          ),
 
-          const Spacer(),
-
-          // Выход
+          // Пользователь
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
             child: Consumer<AuthProvider>(
@@ -228,8 +232,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     height: AppTextStyle.defaultHeight,
                     leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                     color: isSelected
-                      ? (isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor)
-                      : (isDark
+                        ? (isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor)
+                        : (isDark
                             ? AppTheme.darkTextSecondary
                             : AppTheme.textSecondary),
                   ),

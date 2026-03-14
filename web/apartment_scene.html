@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARTHouse Scene</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: radial-gradient(circle at top, #241a14 0%, #16120f 55%, #0f0b09 100%);
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+  </style>
+  <script src="https://unpkg.com/three@0.149.0/build/three.min.js"></script>
+  <script src="https://unpkg.com/three@0.149.0/examples/js/loaders/GLTFLoader.js"></script>
+</head>
+<body>
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const sceneId = params.get('sceneId') || 'arthouse_scene';
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(window.devicePixelRatio || 1);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    document.body.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    scene.fog = new THREE.Fog(0x16120f, 18, 34);
+    const loader = new THREE.GLTFLoader();
+    const modelCache = new Map();
+    let renderVersion = 0;
+
+    const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 100);
+    const orbit = {
+      target: new THREE.Vector3(0, 0.7, 0),
+      radius: 17.5,
+      theta: -0.58,
+      phi: 1.02,
+      minRadius: 10,
+      maxRadius: 28,
+      minPhi: Math.PI / 4.5,
+      maxPhi: Math.PI / 2.12,
+    };
+
+    function updateCamera() {
+      const sinPhiRadius = Math.sin(orbit.phi) * orbit.radius;
+      camera.position.set(
+        orbit.target.x + sinPhiRadius * Math.sin(orbit.theta),
+        orbit.target.y + Math.cos(orbit.phi) * orbit.radius,
+        orbit.target.z + sinPhiRadius * Math.cos(orbit.theta)
+      );
+      camera.lookAt(orbit.target);
+    }
+
+    updateCamera();
+
+    const ambient = new THREE.AmbientLight(0xffffff, 1.9);
+    scene.add(ambient);
+
+    const keyLight = new THREE.DirectionalLight(0xfff3e6, 2.2);
+    keyLight.position.set(8, 16, 10);
+    keyLight.castShadow = true;
+    keyLight.shadow.mapSize.width = 2048;
+    keyLight.shadow.mapSize.height = 2048;
+    keyLight.shadow.camera.left = -18;
+    keyLight.shadow.camera.right = 18;
+    keyLight.shadow.camera.top = 18;
+    keyLight.shadow.camera.bottom = -18;
+    scene.add(keyLight);
+
+    const fillLight = new THREE.DirectionalLight(0xcfd8ff, 0.45);
+    fillLight.position.set(-10, 8, -8);
+    scene.add(fillLight);
+
+    const apartmentRoot = new THREE.Group();
+    scene.add(apartmentRoot);
+
+    const floorShadow = new THREE.Mesh(
+      new THREE.CylinderGeometry(8.8, 10.2, 0.18, 48),
+      new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.18 })
+    );
+    floorShadow.position.set(0.5, -0.32, 0.5);
+    floorShadow.scale.set(1.1, 1, 0.72);
+    scene.add(floorShadow);
+
+    const raycaster = new THREE.Raycaster();
+    const pointer = new THREE.Vector2();
+    const roomHitMeshes = [];
+    const interaction = {
+      dragging: false,
+      moved: false,
+      startX: 0,
+      startY: 0,
+      thetaStart: 0,
+      phiStart: 0,
+    };
+
+    function resize() {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      renderer.setSize(width, height);
+      camera.aspect = width / height;
+      camera.updateProjectionMatrix();
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    function clearScene() {
+      renderVersion += 1;
+      roomHitMeshes.length = 0;
+      while (apartmentRoot.children.length) {
+        const child = apartmentRoot.children.pop();
+        disposeRecursively(child);
+      }
+    }
+
+    function disposeRecursively(object) {
+      if (!object) return;
+      if (object.userData && object.userData.keepAssets) return;
+      if (object.geometry) object.geometry.dispose();
+      if (object.material) {
+        if (Array.isArray(object.material)) {
+          object.material.forEach((m) => m.dispose());
+        } else {
+          object.material.dispose();
+        }
+      }
+      if (object.children) {
+        object.children.forEach(disposeRecursively);
+      }
+    }
+
+    function loadModel(url) {
+      if (!modelCache.has(url)) {
+        modelCache.set(url, new Promise((resolve, reject) => {
+          loader.load(
+            url,
+            (gltf) => resolve(gltf.scene),
+            undefined,
+            reject
+          );
+        }));
+      }
+      return modelCache.get(url);
+    }
+
+    function fitObjectToSize(object, item) {
+      const bounds = new THREE.Box3().setFromObject(object);
+      const size = new THREE.Vector3();
+      bounds.getSize(size);
+      const center = new THREE.Vector3();
+      bounds.getCenter(center);
+
+      object.position.sub(center);
+
+      const safeX = Math.max(size.x, 0.001);
+      const safeY = Math.max(size.y, 0.001);
+      const safeZ = Math.max(size.z, 0.001);
+      const scale = Math.min(item.width / safeX, item.height / safeY, item.depth / safeZ);
+      object.scale.setScalar(scale);
+
+      const fitted = new THREE.Box3().setFromObject(object);
+      const fittedSize = new THREE.Vector3();
+      fitted.getSize(fittedSize);
+      const fittedCenter = new THREE.Vector3();
+      fitted.getCenter(fittedCenter);
+      object.position.sub(fittedCenter);
+      object.position.y += fittedSize.y / 2;
+    }
+
+    function createFurnitureFallback(item, fx, fz, tintColor) {
+      const fw = Math.min(item.width, 2.4);
+      const fd = Math.min(item.depth, 2.0);
+      const fh = item.height;
+
+      const furniture = new THREE.Mesh(
+        new THREE.BoxGeometry(fw, fh, fd),
+        new THREE.MeshStandardMaterial({
+          color: tintColor,
+          roughness: 0.72,
+          metalness: 0.06,
+        })
+      );
+      furniture.position.set(fx, fh / 2 + 0.07, fz);
+      furniture.rotation.y = item.rotationY || 0;
+      furniture.castShadow = true;
+      furniture.receiveShadow = true;
+      return furniture;
+    }
+
+    async function createFurniture(item, room, group, tintColor, version) {
+      const x = room.left - room.gridWidth / 2 + room.width / 2;
+      const z = room.top - room.gridHeight / 2 + room.height / 2;
+      const fx = x - room.width / 2 + item.normX * room.width;
+      const fz = z - room.height / 2 + item.normZ * room.height;
+
+      if (!item.modelUrl) {
+        group.add(createFurnitureFallback(item, fx, fz, tintColor));
+        return;
+      }
+
+      try {
+        const source = await loadModel(item.modelUrl);
+        if (version !== renderVersion) return;
+
+        const model = source.clone(true);
+        fitObjectToSize(model, item);
+        model.position.set(fx, 0.07, fz);
+        model.rotation.y = item.rotationY || 0;
+        model.userData.keepAssets = true;
+        model.traverse((child) => {
+          if (child.isMesh) {
+            child.castShadow = true;
+            child.receiveShadow = true;
+          }
+          child.userData.keepAssets = true;
+        });
+        group.add(model);
+      } catch (_) {
+        if (version !== renderVersion) return;
+        group.add(createFurnitureFallback(item, fx, fz, tintColor));
+      }
+    }
+
+    function createRoom(room, gridWidth, gridHeight) {
+      const group = new THREE.Group();
+      const x = room.left - gridWidth / 2 + room.width / 2;
+      const z = room.top - gridHeight / 2 + room.height / 2;
+      const wallHeight = 2.7;
+      const wallThickness = 0.12;
+      const baseColor = new THREE.Color(room.color);
+      const floorColor = baseColor.clone();
+      const wallColor = new THREE.Color(0xf1ede6);
+      const sideWallColor = new THREE.Color(0xd7d0c6);
+      const selected = !!room.selected;
+
+      const floor = new THREE.Mesh(
+        new THREE.BoxGeometry(room.width, 0.12, room.height),
+        new THREE.MeshStandardMaterial({
+          color: floorColor,
+          roughness: 0.92,
+          metalness: 0.02,
+          emissive: selected ? new THREE.Color(0x1a120c) : new THREE.Color(0x000000),
+          emissiveIntensity: selected ? 0.55 : 0,
+        })
+      );
+      floor.position.set(x, 0, z);
+      floor.receiveShadow = true;
+      floor.userData.roomIndex = room.index;
+      group.add(floor);
+      roomHitMeshes.push(floor);
+
+      // Room name label (rendered as a canvas texture sprite)
+      if (room.name) {
+        const labelCanvas = document.createElement('canvas');
+        const ctx = labelCanvas.getContext('2d');
+        const fontSize = 40;
+        ctx.font = 'bold ' + fontSize + 'px sans-serif';
+        const textWidth = ctx.measureText(room.name).width;
+        labelCanvas.width = textWidth + 24;
+        labelCanvas.height = fontSize + 16;
+        ctx.clearRect(0, 0, labelCanvas.width, labelCanvas.height);
+        ctx.fillStyle = selected ? 'rgba(108,134,113,0.85)' : 'rgba(42,58,44,0.6)';
+        const cornerRadius = 12;
+        ctx.beginPath();
+        ctx.moveTo(cornerRadius, 0);
+        ctx.lineTo(labelCanvas.width - cornerRadius, 0);
+        ctx.quadraticCurveTo(labelCanvas.width, 0, labelCanvas.width, cornerRadius);
+        ctx.lineTo(labelCanvas.width, labelCanvas.height - cornerRadius);
+        ctx.quadraticCurveTo(labelCanvas.width, labelCanvas.height, labelCanvas.width - cornerRadius, labelCanvas.height);
+        ctx.lineTo(cornerRadius, labelCanvas.height);
+        ctx.quadraticCurveTo(0, labelCanvas.height, 0, labelCanvas.height - cornerRadius);
+        ctx.lineTo(0, cornerRadius);
+        ctx.quadraticCurveTo(0, 0, cornerRadius, 0);
+        ctx.closePath();
+        ctx.fill();
+        ctx.font = 'bold ' + fontSize + 'px sans-serif';
+        ctx.fillStyle = '#ffffff';
+        ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center';
+        ctx.fillText(room.name, labelCanvas.width / 2, labelCanvas.height / 2);
+
+        const labelTexture = new THREE.CanvasTexture(labelCanvas);
+        labelTexture.needsUpdate = true;
+        const spriteMaterial = new THREE.SpriteMaterial({
+          map: labelTexture,
+          transparent: true,
+          depthTest: false,
+        });
+        const sprite = new THREE.Sprite(spriteMaterial);
+        const spriteScale = room.width * 0.35;
+        sprite.scale.set(spriteScale, spriteScale * (labelCanvas.height / labelCanvas.width), 1);
+        sprite.position.set(x, wallHeight + 0.5, z);
+        group.add(sprite);
+      }
+
+      const walls = [
+        { x: x, y: wallHeight / 2, z: z - room.height / 2, w: room.width, h: wallHeight, d: wallThickness },
+        { x: x, y: wallHeight / 2, z: z + room.height / 2, w: room.width, h: wallHeight, d: wallThickness },
+        { x: x - room.width / 2, y: wallHeight / 2, z: z, w: wallThickness, h: wallHeight, d: room.height },
+        { x: x + room.width / 2, y: wallHeight / 2, z: z, w: wallThickness, h: wallHeight, d: room.height },
+      ];
+
+      walls.forEach((wall, index) => {
+        const mesh = new THREE.Mesh(
+          new THREE.BoxGeometry(wall.w, wall.h, wall.d),
+          new THREE.MeshStandardMaterial({
+            color: index < 2 ? wallColor : sideWallColor,
+            roughness: 0.86,
+            metalness: 0.01,
+          })
+        );
+        mesh.position.set(wall.x, wall.y, wall.z);
+        mesh.castShadow = true;
+        mesh.receiveShadow = true;
+        group.add(mesh);
+      });
+
+      room.furniture.forEach((item) => {
+        createFurniture(
+          item,
+          { ...room, gridWidth, gridHeight },
+          group,
+          new THREE.Color(item.color),
+          renderVersion
+        );
+      });
+
+      apartmentRoot.add(group);
+    }
+
+    function renderPayload(payload) {
+      clearScene();
+      if (!payload || !payload.rooms) return;
+      payload.rooms.forEach((room) => createRoom(room, payload.gridWidth, payload.gridHeight));
+    }
+
+    window.addEventListener('message', (event) => {
+      if (typeof event.data !== 'string') return;
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (_) {
+        return;
+      }
+      if (!data || data.sceneId !== sceneId) return;
+      if (data.type === 'renderScene') {
+        renderPayload(data.payload);
+      }
+    });
+
+    renderer.domElement.addEventListener('pointerdown', (event) => {
+      interaction.dragging = true;
+      interaction.moved = false;
+      interaction.startX = event.clientX;
+      interaction.startY = event.clientY;
+      interaction.thetaStart = orbit.theta;
+      interaction.phiStart = orbit.phi;
+    });
+
+    renderer.domElement.addEventListener('pointermove', (event) => {
+      if (!interaction.dragging) return;
+      const dx = event.clientX - interaction.startX;
+      const dy = event.clientY - interaction.startY;
+      if (Math.abs(dx) > 2 || Math.abs(dy) > 2) {
+        interaction.moved = true;
+      }
+      orbit.theta = interaction.thetaStart - dx * 0.008;
+      orbit.phi = THREE.MathUtils.clamp(
+        interaction.phiStart - dy * 0.008,
+        orbit.minPhi,
+        orbit.maxPhi
+      );
+      updateCamera();
+    });
+
+    window.addEventListener('pointerup', (event) => {
+      if (!interaction.dragging) return;
+      interaction.dragging = false;
+      if (interaction.moved) return;
+
+      const rect = renderer.domElement.getBoundingClientRect();
+      pointer.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      pointer.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+      raycaster.setFromCamera(pointer, camera);
+      const hits = raycaster.intersectObjects(roomHitMeshes, false);
+      if (!hits.length) return;
+      const roomIndex = hits[0].object.userData.roomIndex;
+      window.parent.postMessage(JSON.stringify({
+        source: 'arthouse-scene',
+        type: 'roomTap',
+        sceneId,
+        roomIndex,
+      }), '*');
+    });
+
+    renderer.domElement.addEventListener('wheel', (event) => {
+      event.preventDefault();
+      orbit.radius = THREE.MathUtils.clamp(
+        orbit.radius + event.deltaY * 0.01,
+        orbit.minRadius,
+        orbit.maxRadius
+      );
+      updateCamera();
+    }, { passive: false });
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    animate();
+  </script>
+</body>
+</html>

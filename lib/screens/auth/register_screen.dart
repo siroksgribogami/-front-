@@ -19,7 +19,8 @@ class RegisterScreen extends StatefulWidget {
   State<RegisterScreen> createState() => _RegisterScreenState();
 }
 
-class _RegisterScreenState extends State<RegisterScreen> {
+class _RegisterScreenState extends State<RegisterScreen>
+    with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
   final _emailController = TextEditingController();
@@ -28,13 +29,40 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
 
+  late final AnimationController _transitionCtrl;
+  late final Animation<double> _fadeAnim;
+  late final Animation<Offset> _slideAnim;
+
+  @override
+  void initState() {
+    super.initState();
+    _transitionCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 380),
+    );
+    _fadeAnim = CurvedAnimation(parent: _transitionCtrl, curve: Curves.easeOut);
+    _slideAnim = Tween<Offset>(
+      begin: const Offset(0, 0.06),
+      end: Offset.zero,
+    ).animate(CurvedAnimation(parent: _transitionCtrl, curve: Curves.easeOutCubic));
+    _transitionCtrl.forward();
+  }
+
   @override
   void dispose() {
+    _transitionCtrl.dispose();
     _usernameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
+  }
+
+  /// Нажатие «Войти» — сначала анимация ухода, потом callback
+  void _handleBackToLogin() {
+    _transitionCtrl.reverse().then((_) {
+      widget.onLoginTap?.call();
+    });
   }
 
   Future<void> _handleRegister() async {
@@ -54,14 +82,18 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
+    return FadeTransition(
+      opacity: _fadeAnim,
+      child: SlideTransition(
+        position: _slideAnim,
+        child: Scaffold(
       backgroundColor: AppTheme.primaryColor,
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: widget.onLoginTap,
+          onPressed: _handleBackToLogin,
         ),
       ),
       body: SafeArea(
@@ -220,7 +252,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                         elevation: 0,
                       ),
                       child: auth.isLoading
-                          ? SizedBox(
+                          ? const SizedBox(
                               height: 20,
                               width: 20,
                               child: CircularProgressIndicator(
@@ -249,7 +281,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                       style: TextStyle(color: Colors.white.withOpacity(0.7)),
                     ),
                     TextButton(
-                      onPressed: widget.onLoginTap,
+                      onPressed: _handleBackToLogin,
                       child: const Text(
                         'Войти',
                         style: TextStyle(
@@ -266,7 +298,9 @@ class _RegisterScreenState extends State<RegisterScreen> {
         ),
         ),
       ),
-    ),
+      ),
+        ),
+      ),
     );
   }
   

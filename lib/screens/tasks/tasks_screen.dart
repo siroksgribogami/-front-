@@ -12,7 +12,7 @@ class TasksScreen extends StatefulWidget {
 class _TasksScreenState extends State<TasksScreen> {
   int _completedCount = 4;
   int _remainingCount = 3;
-  int _streakDays = 2;
+  final int _streakDays = 2;
 
   final List<_Task> _tasks = [
     const _Task(
@@ -116,9 +116,9 @@ class _TasksScreenState extends State<TasksScreen> {
             ),
           ),
           const SliverToBoxAdapter(child: SizedBox(height: 28)),
-          SliverToBoxAdapter(
+          const SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 'СЕГОДНЯ',
                 style: TextStyle(

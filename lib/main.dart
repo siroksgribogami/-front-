@@ -3,11 +3,15 @@ import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
 import 'config/app_theme.dart';
+import 'core/bar_loader.dart';
 import 'providers/auth_provider.dart';
 import 'providers/apartment_provider.dart';
+import 'providers/map_editor_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth/login_screen.dart';
+import 'screens/auth/post_register_survey_screen.dart';
 import 'screens/auth/register_screen.dart';
+import 'screens/auth/welcome_screen.dart';
 import 'screens/home/home_screen.dart';
 
 void main() async {
@@ -28,6 +32,7 @@ class ARThouseApp extends StatelessWidget {
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ApartmentProvider()),
+        ChangeNotifierProvider(create: (_) => MapEditorProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -83,9 +88,15 @@ class _AppRootState extends State<AppRoot> {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-        // Показываем загрузку при инициализации
-        if (auth.state == AuthState.initial || auth.state == AuthState.loading) {
-          return const Scaffold(
+        Widget screen;
+        String screenKey;
+
+        // Показываем загрузку только до завершения первичной инициализации,
+        // чтобы ошибки входа не сбрасывали пользователя в стартовый auth-экран.
+        if (!auth.isInitialized) {
+          screenKey = 'loading';
+          screen = const Scaffold(
+            key: ValueKey('loading'),
             body: Center(
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -96,7 +107,10 @@ class _AppRootState extends State<AppRoot> {
                     color: AppTheme.primaryColor,
                   ),
                   SizedBox(height: 24),
-                  CircularProgressIndicator(),
+                  BarLoader(
+                    color: AppTheme.primaryColor,
+                    inactiveOpacity: 0.45,
+                  ),
                   SizedBox(height: 16),
                   Text(
                     'Загрузка...',
@@ -109,15 +123,48 @@ class _AppRootState extends State<AppRoot> {
               ),
             ),
           );
+        } else if (auth.justRegistered) {
+          // Короткий экран-приветствие после регистрации.
+          screenKey = 'welcome';
+          screen = WelcomeScreen(
+            key: const ValueKey('welcome'),
+            onContinue: () {
+              context.read<AuthProvider>().completePostRegisterWelcome();
+            },
+          );
+        } else if (auth.needsSurvey) {
+          // Если авторизован, но не прошел опрос - показываем опрос
+          screenKey = 'survey';
+          screen = const PostRegisterSurveyScreen(key: ValueKey('survey'));
+        } else if (auth.isAuthenticated) {
+          // Если авторизован - показываем главный экран
+          screenKey = 'home';
+          screen = const HomeScreen(key: ValueKey('home'));
+        } else {
+          // Иначе - показываем экран авторизации
+          screenKey = 'auth';
+          screen = const AuthFlow(key: ValueKey('auth'));
         }
 
-        // Если авторизован - показываем главный экран
-        if (auth.isAuthenticated) {
-          return const HomeScreen();
-        }
-
-        // Иначе - показываем экран авторизации
-        return const AuthFlow();
+        return AnimatedSwitcher(
+          duration: const Duration(milliseconds: 400),
+          layoutBuilder: (currentChild, previousChildren) {
+            return ColoredBox(
+              color: AppTheme.primaryColor,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  ...previousChildren,
+                  if (currentChild != null) currentChild,
+                ],
+              ),
+            );
+          },
+          transitionBuilder: (child, animation) {
+            return FadeTransition(opacity: animation, child: child);
+          },
+          child: KeyedSubtree(key: ValueKey(screenKey), child: screen),
+        );
       },
     );
   }
@@ -134,30 +181,48 @@ class AuthFlow extends StatefulWidget {
 class _AuthFlowState extends State<AuthFlow> {
   bool _showLogin = true;
 
-  void _toggleForm() {
-    setState(() {
-      _showLogin = !_showLogin;
-    });
-    // Очищаем ошибки при переключении
+  void _goToRegister() {
     context.read<AuthProvider>().clearError();
+    setState(() => _showLogin = false);
+  }
+
+  void _goToLogin() {
+    context.read<AuthProvider>().clearError();
+    setState(() => _showLogin = true);
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_showLogin) {
-      return LoginScreen(
-        onRegisterTap: _toggleForm,
-        onLoginSuccess: () {
-          // Авторизация обрабатывается автоматически через Consumer
-        },
-      );
-    } else {
-      return RegisterScreen(
-        onLoginTap: _toggleForm,
-        onRegisterSuccess: () {
-          // Регистрация обрабатывается автоматически через Consumer
-        },
-      );
-    }
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 280),
+      switchInCurve: Curves.easeIn,
+      switchOutCurve: Curves.easeOut,
+      layoutBuilder: (currentChild, previousChildren) {
+        return ColoredBox(
+          color: AppTheme.primaryColor,
+          child: Stack(
+            fit: StackFit.expand,
+            children: [
+              ...previousChildren,
+              if (currentChild != null) currentChild,
+            ],
+          ),
+        );
+      },
+      transitionBuilder: (child, animation) {
+        return FadeTransition(opacity: animation, child: child);
+      },
+      child: _showLogin
+          ? LoginScreen(
+              key: const ValueKey('login'),
+              onRegisterTap: _goToRegister,
+              onLoginSuccess: () {/* handled by AppRoot Consumer */},
+            )
+          : RegisterScreen(
+              key: const ValueKey('register'),
+              onLoginTap: _goToLogin,
+              onRegisterSuccess: () {/* handled by AppRoot Consumer */},
+            ),
+    );
   }
 }

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="mobile-web-app-capable" content="yes">
+  <title>ARTHouse Unity Bridge</title>
+  <style>
+    html, body {
+      margin: 0;
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1f2520;
+      font-family: "Segoe UI", sans-serif;
+      color: #f4efe4;
+    }
+
+    #unity-container {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(circle at top, #3c4a3d, #1f2520 72%);
+    }
+
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      background: transparent;
+    }
+
+    #bridge-status {
+      position: absolute;
+      left: 16px;
+      right: 16px;
+      bottom: 16px;
+      padding: 12px 14px;
+      border-radius: 14px;
+      background: rgba(16, 20, 17, 0.72);
+      backdrop-filter: blur(10px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.22);
+      font-size: 13px;
+      line-height: 1.45;
+    }
+
+    #bridge-status.error {
+      border: 1px solid rgba(222, 132, 106, 0.55);
+      color: #ffd3c5;
+    }
+  </style>
+</head>
+<body>
+  <div id="unity-container">
+    <canvas id="unity-canvas"></canvas>
+    <div id="bridge-status">Ищем Unity WebGL build...</div>
+  </div>
+
+  <script>
+    (function () {
+      const flutterSource = 'arthouse-flutter-web';
+      const unitySource = 'arthouse-unity-webgl';
+      const gameObjectName = 'ARTHouseMapBridge';
+      // Путь подстраивается под структуру Unity: Build/ARTHOUSEMap/Build/{files}
+      const buildPrefix = 'unity_build/Build/ARTHOUSEMap/Build/ARTHOUSEMap';
+      const loaderUrl = buildPrefix + '.loader.js';
+      const config = {
+        dataUrl: buildPrefix + '.data',
+        frameworkUrl: buildPrefix + '.framework.js',
+        codeUrl: buildPrefix + '.wasm',
+        streamingAssetsUrl: 'unity_build/StreamingAssets',
+        companyName: 'ARTHouse',
+        productName: 'ARTHouseMap',
+        productVersion: '1.0.0'
+      };
+
+      let unityInstance = null;
+      let unityRuntimeReady = false;
+      let readyFallbackTimer = null;
+      let queuedCommands = [];
+      const statusNode = document.getElementById('bridge-status');
+      const canvas = document.getElementById('unity-canvas');
+
+      // Reduce noisy Unity info logs in this iframe while keeping errors visible.
+      (function muteUnityNoise() {
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+
+        function shouldSkip(message) {
+          if (typeof message !== 'string') {
+            return false;
+          }
+
+          return message.includes('[UnityMemory] Configuration Parameters') ||
+            message.includes('[UnityCache]') ||
+            message.includes('navigator.mediaDevices support available') ||
+            message.includes('Loading player data from data.unity3d') ||
+            message.includes('Initialize engine version:') ||
+            message.includes('memorysetup-allocator-') ||
+            message.includes('memorysetup-bucket-allocator-') ||
+            message.includes('memorysetup-main-allocator-') ||
+            message.includes('memorysetup-thread-allocator-') ||
+            message.includes('memorysetup-gfx-main-allocator-') ||
+            message.includes('memorysetup-gfx-thread-allocator-') ||
+            message.includes('memorysetup-cache-allocator-') ||
+            message.includes('memorysetup-typetree-allocator-') ||
+            message.includes('memorysetup-profiler-') ||
+            message.includes('memorysetup-temp-allocator-size-') ||
+            message.includes('memorysetup-job-temp-allocator-') ||
+            message.includes('Renderer: WebKit WebGL') ||
+            message.includes('Vendor:   WebKit') ||
+            message.includes('Version:  OpenGL ES 3.0') ||
+            message.includes('GLES:     3') ||
+            message.includes('EXT_clip_control') ||
+            message.includes('GL_EXT_') ||
+            message.includes('GL_WEBGL_') ||
+            message.includes('OPENGL LOG: Creating OpenGL ES 3.0 graphics device') ||
+            message.includes('Input Manager initialize...') ||
+            message.includes('UnloadTime:');
+        }
+
+        console.log = function (...args) {
+          if (args.length > 0 && shouldSkip(args[0])) {
+            return;
+          }
+          originalLog.apply(console, args);
+        };
+
+        console.warn = function (...args) {
+          if (args.length > 0 && typeof args[0] === 'string' && args[0].includes('WebGL: INVALID_ENUM: getInternalformatParameter')) {
+            return;
+          }
+          originalWarn.apply(console, args);
+        };
+
+        console.error = function (...args) {
+          if (args.length > 0 && typeof args[0] === 'string' && args[0].includes('WebGL: INVALID_ENUM: getInternalformatParameter')) {
+            return;
+          }
+          originalError.apply(console, args);
+        };
+
+        window.addEventListener('error', function (event) {
+          const message = event && typeof event.message === 'string' ? event.message : '';
+          if (message.includes('WebGL: INVALID_ENUM: getInternalformatParameter')) {
+            event.preventDefault();
+          }
+        });
+      })();
+
+      function markRuntimeReady(fromFallback) {
+        if (unityRuntimeReady) {
+          return;
+        }
+
+        unityRuntimeReady = true;
+        if (readyFallbackTimer) {
+          clearTimeout(readyFallbackTimer);
+          readyFallbackTimer = null;
+        }
+
+        if (fromFallback) {
+          setStatus('Unity WebGL загружен. Применяем команды через fallback-режим bridge.', false);
+          notifyFlutter({
+            type: 'unityReady',
+            message: 'Unity runtime готов (fallback без notifyReady).'
+          });
+        }
+
+        flushQueue();
+      }
+
+      function notifyFlutter(message) {
+        window.parent.postMessage(JSON.stringify({ source: unitySource, ...message }), '*');
+      }
+
+      function setStatus(message, isError) {
+        statusNode.textContent = message;
+        statusNode.className = isError ? 'error' : '';
+      }
+
+      function flushQueue() {
+        if (!unityInstance || !unityRuntimeReady) {
+          return;
+        }
+
+        const pending = queuedCommands.slice();
+        queuedCommands = [];
+        pending.forEach(sendCommandToUnity);
+      }
+
+      function sendCommandToUnity(command) {
+        if (!unityInstance || !unityRuntimeReady) {
+          queuedCommands.push(command);
+          return;
+        }
+
+        unityInstance.SendMessage(gameObjectName, command.method, command.argument || '');
+      }
+
+      function handleFlutterMessage(message) {
+        switch (message.type) {
+          case 'initializeEditor':
+            sendCommandToUnity({ method: 'ReceiveInitialMapJson', argument: message.payload || '' });
+            break;
+          case 'focusRoom':
+            sendCommandToUnity({ method: 'FocusRoom', argument: message.roomId || '' });
+            break;
+          case 'showOverview':
+            sendCommandToUnity({ method: 'ShowApartmentOverview', argument: message.payload || 'true' });
+            break;
+          case 'undo':
+            sendCommandToUnity({ method: 'HandleUndoCommand', argument: '' });
+            break;
+          case 'redo':
+            sendCommandToUnity({ method: 'HandleRedoCommand', argument: '' });
+            break;
+          case 'requestSnapshot':
+            sendCommandToUnity({ method: 'RequestSnapshotForFlutter', argument: '' });
+            break;
+        }
+      }
+
+      window.addEventListener('message', function (event) {
+        let data = event.data;
+        if (typeof data !== 'string') {
+          return;
+        }
+
+        try {
+          data = JSON.parse(data);
+        } catch (_) {
+          return;
+        }
+
+        if (!data || data.source !== flutterSource) {
+          return;
+        }
+
+        handleFlutterMessage(data);
+      });
+
+      window.ArthouseFlutterBridge = {
+        notifyReady: function () {
+          markRuntimeReady(false);
+          setStatus('Unity WebGL подключен. Chrome bridge активен.', false);
+          notifyFlutter({
+            type: 'unityReady',
+            message: 'Unity WebGL runtime готов и принимает команды.'
+          });
+        },
+        pushSnapshot: function (roomId, snapshotJson) {
+          notifyFlutter({
+            type: 'snapshot',
+            roomId: roomId || '',
+            snapshotJson: snapshotJson || ''
+          });
+        }
+      };
+
+      function bootstrapUnity() {
+        const loaderScript = document.createElement('script');
+        loaderScript.src = loaderUrl;
+        loaderScript.onload = function () {
+          setStatus('Загружаем Unity WebGL...', false);
+          createUnityInstance(canvas, config, function (progress) {
+            setStatus('Загружаем Unity WebGL... ' + Math.round(progress * 100) + '%', false);
+          }).then(function (instance) {
+            unityInstance = instance;
+            notifyFlutter({
+              type: 'availability',
+              available: true,
+              message: 'Unity WebGL build найден и загружен.'
+            });
+
+            // If Unity bridge JS callback did not arrive, unblock commands anyway.
+            readyFallbackTimer = setTimeout(function () {
+              markRuntimeReady(true);
+            }, 4000);
+          }).catch(function (error) {
+            setStatus('Unity WebGL build найден, но не загрузился. Проверь export и Build файлы.', true);
+            notifyFlutter({
+              type: 'availability',
+              available: false,
+              message: String(error)
+            });
+          });
+        };
+
+        loaderScript.onerror = function () {
+          setStatus('Unity WebGL build не найден. Экспортируй проект в art_front/web/unity_build.', true);
+          notifyFlutter({
+            type: 'availability',
+            available: false,
+            message: 'Ожидается файл unity_build/Build/ARTHOUSEMap.loader.js'
+          });
+        };
+
+        document.body.appendChild(loaderScript);
+      }
+
+      bootstrapUnity();
+    })();
+  </script>
+</body>
+</html>

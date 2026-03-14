@@ -291,8 +291,8 @@ class _ChatScreenState extends State<ChatScreen> {
             child: TextField(
               decoration: InputDecoration(
                 hintText: 'Поиск...',
-                hintStyle: TextStyle(color: AppTheme.textHint, fontSize: 13),
-                prefixIcon: Icon(Icons.search, color: AppTheme.textHint, size: 20),
+                hintStyle: const TextStyle(color: AppTheme.textHint, fontSize: 13),
+                prefixIcon: const Icon(Icons.search, color: AppTheme.textHint, size: 20),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                   borderSide: BorderSide.none,
@@ -411,7 +411,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       Expanded(
                         child: Text(
                           c.lastMessage,
-                          style: TextStyle(
+                          style: const TextStyle(
                             fontSize: 12,
                             color: AppTheme.textHint,
                           ),
@@ -459,9 +459,9 @@ class _ChatScreenState extends State<ChatScreen> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.textHint),
+              const Icon(Icons.chat_bubble_outline, size: 48, color: AppTheme.textHint),
               const SizedBox(height: 14),
-              Text(
+              const Text(
                 'Выберите контакт',
                 style: TextStyle(
                   fontSize: 15,
@@ -613,7 +613,7 @@ class _ChatScreenState extends State<ChatScreen> {
                       style: const TextStyle(fontSize: 14),
                       decoration: InputDecoration(
                         hintText: 'Написать...',
-                        hintStyle: TextStyle(color: AppTheme.textHint, fontSize: 13),
+                        hintStyle: const TextStyle(color: AppTheme.textHint, fontSize: 13),
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(20),
                           borderSide: BorderSide.none,

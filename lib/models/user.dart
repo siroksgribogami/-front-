@@ -20,6 +20,11 @@ class User {
   final UserType userType;
   final bool isActive;
   final bool isVerified;
+  final bool surveyCompleted;
+  final int? roomsCount;
+  final int? floorsCount;
+  final int? wallHeight;
+  final int? totalArea;
   final DateTime createdAt;
 
   User({
@@ -30,6 +35,11 @@ class User {
     this.userType = UserType.b2c,
     required this.isActive,
     this.isVerified = false,
+    this.surveyCompleted = false,
+    this.roomsCount,
+    this.floorsCount,
+    this.wallHeight,
+    this.totalArea,
     required this.createdAt,
   });
 
@@ -39,11 +49,19 @@ class User {
     return User(
       id: json['id'] as int,
       email: json['email'] as String,
-      username: json['username'] as String,
+      // backend returns full_name; username is a frontend-only alias
+      username: (json['full_name'] as String?)  ??
+                (json['username'] as String?)    ??
+                '',
       role: _parseRole(json['role'] as String?),
       userType: _parseUserType(json['user_type'] as String?),
       isActive: json['is_active'] as bool? ?? true,
       isVerified: json['is_verified'] as bool? ?? false,
+      surveyCompleted: json['survey_completed'] as bool? ?? false,
+      roomsCount: json['rooms_count'] as int?,
+      floorsCount: json['floors_count'] as int?,
+      wallHeight: json['wall_height'] as int?,
+      totalArea: json['total_area'] as int?,
       createdAt: DateTime.parse(json['created_at'] as String),
     );
   }
@@ -77,6 +95,11 @@ class User {
       'user_type': userType.name,
       'is_active': isActive,
       'is_verified': isVerified,
+      'survey_completed': surveyCompleted,
+      'rooms_count': roomsCount,
+      'floors_count': floorsCount,
+      'wall_height': wallHeight,
+      'total_area': totalArea,
       'created_at': createdAt.toIso8601String(),
     };
   }
@@ -89,6 +112,11 @@ class User {
     UserType? userType,
     bool? isActive,
     bool? isVerified,
+    bool? surveyCompleted,
+    int? roomsCount,
+    int? floorsCount,
+    int? wallHeight,
+    int? totalArea,
     DateTime? createdAt,
   }) {
     return User(
@@ -99,6 +127,11 @@ class User {
       userType: userType ?? this.userType,
       isActive: isActive ?? this.isActive,
       isVerified: isVerified ?? this.isVerified,
+      surveyCompleted: surveyCompleted ?? this.surveyCompleted,
+      roomsCount: roomsCount ?? this.roomsCount,
+      floorsCount: floorsCount ?? this.floorsCount,
+      wallHeight: wallHeight ?? this.wallHeight,
+      totalArea: totalArea ?? this.totalArea,
       createdAt: createdAt ?? this.createdAt,
     );
   }
@@ -109,18 +142,21 @@ class UserCreate {
   final String email;
   final String username;
   final String password;
+  final UserType userType;
 
   UserCreate({
     required this.email,
     required this.username,
     required this.password,
+    this.userType = UserType.b2c,
   });
 
   Map<String, dynamic> toJson() {
     return {
       'email': email,
-      'username': username,
+      'full_name': username,   // backend field name
       'password': password,
+      'user_type': userType.name,
     };
   }
 }

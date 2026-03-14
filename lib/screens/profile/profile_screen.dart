@@ -288,11 +288,11 @@ class ProfileScreen extends StatelessWidget {
                       color: AppTheme.errorColor.withOpacity(0.3),
                     ),
                   ),
-                  child: Row(
+                  child: const Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(Icons.logout, color: AppTheme.errorColor, size: 20),
-                      const SizedBox(width: 10),
+                      SizedBox(width: 10),
                       Text(
                         'Выйти из аккаунта',
                         style: TextStyle(

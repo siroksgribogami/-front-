@@ -194,7 +194,7 @@ class AppearanceScreen extends StatelessWidget {
                     ),
                     Text(
                       themeProv.fontScaleLabel,
-                      style: TextStyle(
+                      style: const TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
                         color: AppTheme.primaryColor,
@@ -261,7 +261,7 @@ class _ThemeOption extends StatelessWidget {
               ),
             ),
             if (isSelected)
-              Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 22)
+              const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 22)
             else
               Icon(Icons.circle_outlined, color: textHint.withOpacity(0.4), size: 22),
           ],

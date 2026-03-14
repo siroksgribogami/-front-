@@ -21,7 +21,7 @@
   <meta name="description" content="A new Flutter project.">
 
   <!-- iOS meta tags & icons -->
-  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
   <meta name="apple-mobile-web-app-title" content="АРТхаус">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
@@ -31,8 +31,16 @@
 
   <title>АРТхаус</title>
   <link rel="manifest" href="manifest.json">
+
+  <!-- model-viewer web component for 3D GLB rendering -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <script>
+    {{flutter_js}}
+    {{flutter_build_config}}
+
+    _flutter.loader.load();
+  </script>
 </body>
 </html>
