@@ -245,7 +245,7 @@ const List<FurnitureTemplate> kFurnitureCatalog = [
     name: 'Большое растение',
     emoji: '🌿',
     category: FurnitureCategory.decor,
-    baseColor: Color(0xFF6C8671),
+    baseColor: Color(0xFF659171),
     tileWidth: 1,
     tileHeight: 1,
   ),
@@ -289,14 +289,14 @@ const List<SurfaceMaterial> kFloorMaterials = [
   SurfaceMaterial(id: 'tile_white',    name: 'Белая плитка',   color: Color(0xFFF0EDE8)),
   SurfaceMaterial(id: 'tile_grey',     name: 'Серая плитка',   color: Color(0xFFB0ADA8)),
   SurfaceMaterial(id: 'carpet_beige',  name: 'Бежевый ковёр',  color: Color(0xFFD8CCBC)),
-  SurfaceMaterial(id: 'carpet_green',  name: 'Зелёный ковёр',  color: Color(0xFF8AAA8E)),
+  SurfaceMaterial(id: 'carpet_green',  name: 'Зелёный ковёр',  color: Color(0xFF80B490)),
   SurfaceMaterial(id: 'concrete',      name: 'Бетон',          color: Color(0xFFB8B5B0)),
 ];
 
 /// Каталог обоев / цветов стен
 const List<SurfaceMaterial> kWallMaterials = [
   SurfaceMaterial(id: 'wall_cream',    name: 'Кремовые',        color: Color(0xFFF7F3EC)),
-  SurfaceMaterial(id: 'wall_sage',     name: 'Шалфейные',       color: Color(0xFF8AAA8E)),
+  SurfaceMaterial(id: 'wall_sage',     name: 'Шалфейные',       color: Color(0xFF80B490)),
   SurfaceMaterial(id: 'wall_terracotta',name:'Терракотовые',    color: Color(0xFFD4956A)),
   SurfaceMaterial(id: 'wall_white',    name: 'Белые',           color: Color(0xFFFFFFFF)),
   SurfaceMaterial(id: 'wall_graphite', name: 'Графит',          color: Color(0xFF4A4A4A)),

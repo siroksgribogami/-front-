@@ -224,21 +224,21 @@ class _UnityMapHostScreenState extends State<UnityMapHostScreen> {
   String get _statusMessage {
     if (_isWebHost) {
       return _unityAvailable
-          ? 'Unity WebGL подключен. Chrome на ПК работает через iframe bridge и postMessage.'
-          : 'Unity WebGL build пока не найден. Экран уже готов к Chrome/ПК, но нужен экспорт в art_front/web/unity_build.';
+          ? 'Мост Flutter–Unity активен. Unity можно подключить отдельно через ArthouseFlutterBridge.registerUnity().'
+          : 'Мост загружается. В этом билде Unity не встроен — только контракт и postMessage для совместной работы.';
     }
 
     if (_canRenderAndroidHost) {
       return _unityAvailable
           ? 'Unity runtime подключен. Экран работает с реальным встроенным Unity Player.'
-          : 'Unity runtime пока не подключен. JSON-контракт и Android host уже готовы, но до экспорта unityLibrary будет показан placeholder.';
+          : 'Unity runtime пока не подключен. JSON-контракт и Android host готовы, до экспорта unityLibrary — placeholder.';
     }
 
     if (_isWindowsDesktop) {
       if (_desktopSessionInfo?.isAvailable == true) {
-        return 'Unity desktop найден. Flutter запускает отдельное Unity-окно и синхронизируется с ним через JSON bridge.';
+        return 'Unity desktop найден. Flutter запускает отдельное Unity-окно и синхронизируется через JSON bridge.';
       }
-      return 'Unity desktop player пока не найден. Flutter Windows уже готов, но нужен .exe в map/Builds/Windows.';
+      return 'Unity desktop player не найден. Нужен .exe в map/Builds/Windows.';
     }
 
     return 'На этой платформе доступен только snapshot-режим без запуска Unity runtime.';
@@ -247,7 +247,7 @@ class _UnityMapHostScreenState extends State<UnityMapHostScreen> {
   String? get _statusHint {
     if (_isWebHost) {
       return _webBridge.lastStatusMessage ??
-          'Ожидается Unity WebGL export: web/unity_build/Build/ARTHOUSEMap.loader.js';
+          'Мост готов. Подключите Unity через window.ArthouseFlutterBridge.registerUnity(sendMessage).';
     }
     if (_isWindowsDesktop) {
       return _desktopSessionInfo?.executablePath ??
@@ -258,7 +258,7 @@ class _UnityMapHostScreenState extends State<UnityMapHostScreen> {
 
   String get _bridgeChipLabel {
     if (_isWebHost) {
-      return _unityAvailable ? 'WebGL bridge готов' : 'WebGL build не найден';
+      return _unityAvailable ? 'Мост готов' : 'Мост загружается';
     }
     if (_canRenderAndroidHost) {
       return _unityAvailable ? 'Bridge активен' : 'Bridge еще не подключен';
@@ -279,7 +279,7 @@ class _UnityMapHostScreenState extends State<UnityMapHostScreen> {
         backgroundColor: AppTheme.backgroundColor,
         elevation: 0,
         title: const Text(
-          'Unity карта',
+          'Мост Flutter–Unity',
           style: TextStyle(color: AppTheme.textPrimary),
         ),
         iconTheme: const IconThemeData(color: AppTheme.textPrimary),
@@ -333,7 +333,7 @@ class _UnityMapHostScreenState extends State<UnityMapHostScreen> {
                       onPressed: _pushInitialMap,
                       icon: const Icon(Icons.send_rounded),
                       label: Text(_isWebHost
-                          ? 'Отправить в Unity WebGL'
+                          ? 'Отправить по мосту'
                           : _isWindowsDesktop
                               ? 'Отправить в Unity Desktop'
                               : 'Отправить в Unity'),
@@ -601,9 +601,9 @@ class _UnitySurfaceCard extends StatelessWidget {
                     child: Text(
                       isWindowsDesktop
                           ? executablePath != null
-                              ? 'Unity на Windows работает отдельным окном. Этот экран управляет JSON-синхронизацией, а само 3D-редактирование идет в Unity player.'
-                              : 'Для desktop-режима нужен Unity Windows build. Положи .exe в map/Builds/Windows, и Flutter начнет запускать его автоматически.'
-                          : 'Встраиваемая Unity-поверхность активируется на Android. На остальных платформах остается snapshot-режим.',
+                              ? 'Unity на Windows работает отдельным окном. Этот экран управляет JSON-синхронизацией.'
+                              : 'Для desktop нужен Unity .exe в map/Builds/Windows.'
+                          : 'Встраиваемая Unity-поверхность на Android. На остальных платформах — snapshot-режим.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 13,

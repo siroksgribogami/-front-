@@ -1,26 +1,48 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'config/api_config_platform_stub.dart' if (dart.library.io) 'config/api_config_platform_io.dart' as api_platform;
 import 'config/app_theme.dart';
 import 'core/bar_loader.dart';
 import 'providers/auth_provider.dart';
 import 'providers/apartment_provider.dart';
 import 'providers/map_editor_provider.dart';
+import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/post_register_survey_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/home/home_screen.dart';
+import 'screens/home/mobile_home_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Инициализация локализации дат
+
+  if (!kIsWeb) {
+    api_platform.initApiConfigForPlatform();
+    _setSystemUIOverlay();
+  }
+
   await initializeDateFormatting('ru', null);
-  
+
   runApp(const ARThouseApp());
+}
+
+void _setSystemUIOverlay() {
+  SystemChrome.setSystemUIOverlayStyle(
+    const SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: Brightness.dark,
+      systemNavigationBarColor: Color(0xFFF7F3EC),
+      systemNavigationBarIconBrightness: Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
+  SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }
 
 class ARThouseApp extends StatelessWidget {
@@ -33,6 +55,7 @@ class ARThouseApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => AuthProvider()),
         ChangeNotifierProvider(create: (_) => ApartmentProvider()),
         ChangeNotifierProvider(create: (_) => MapEditorProvider()),
+        ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
       ],
       child: Consumer<ThemeProvider>(
@@ -139,7 +162,10 @@ class _AppRootState extends State<AppRoot> {
         } else if (auth.isAuthenticated) {
           // Если авторизован - показываем главный экран
           screenKey = 'home';
-          screen = const HomeScreen(key: ValueKey('home'));
+          // Web → sidebar, Android/мобиль → нижняя навигация
+          screen = kIsWeb
+              ? const HomeScreen(key: ValueKey('home'))
+              : const MobileHomeScreen(key: ValueKey('home'));
         } else {
           // Иначе - показываем экран авторизации
           screenKey = 'auth';

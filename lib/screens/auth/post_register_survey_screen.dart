@@ -18,17 +18,24 @@ class PostRegisterSurveyScreen extends StatefulWidget {
 class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
 
   int _step = 1;
-  static const int _totalSteps = 5;
   bool _isForward = true;
+  /// Использование помещения (только для дома/квартиры): family | personal | business
+  String? _usageMode;
+  /// Модель аккаунта по основной идее: b2c | b2b | p2p | service
+  String? _accountMode;
 
-  // Подписи шагов
-  static const _stepLabels = [
-    'Ваш дом',
-    'Детали',
-    'Что важно',
-    'Что изменить',
-    'Атмосфера',
-  ];
+  int get _totalSteps =>
+      (_premiseType == 'house' || _premiseType == 'apartment') ? 6 : 5;
+
+  String _stepLabel(int step) {
+    final isHome = _premiseType == 'house' || _premiseType == 'apartment';
+    if (isHome) {
+      const labels = ['Ваше пространство', 'Использование', 'Детали', 'Что важно', 'Что изменить', 'Атмосфера'];
+      return step <= 6 ? labels[step - 1] : '';
+    }
+    const labels = ['Ваше пространство', 'Детали', 'Что важно', 'Что изменить', 'Атмосфера'];
+    return step <= 5 ? labels[step - 1] : '';
+  }
 
   // ─── ШАГ 1: Тип + Параметры ───────────────────────────────────────────────
   String? _premiseType;
@@ -43,6 +50,14 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
     {'id': 'office',    'label': 'Офис',             'icon': Icons.business_center_outlined},
     {'id': 'commerce',  'label': 'Склад',            'icon': Icons.warehouse_outlined},
     {'id': 'hotel',     'label': 'Апартаменты',      'icon': Icons.hotel_outlined},
+    {'id': 'service_access', 'label': 'Услуги (доступ)', 'icon': Icons.handshake_outlined},
+  ];
+
+  static const _accountModes = [
+    {'id': 'b2c', 'label': 'B2C', 'sub': 'Дом/квартира', 'icon': Icons.home_outlined},
+    {'id': 'b2b', 'label': 'B2B', 'sub': 'Офисы/склады', 'icon': Icons.business_outlined},
+    {'id': 'p2p', 'label': 'P2P', 'sub': 'Карта на заказ', 'icon': Icons.draw_outlined},
+    {'id': 'service', 'label': 'Услуги', 'sub': 'Клининг/ремонт', 'icon': Icons.cleaning_services_outlined},
   ];
 
   // Конфигурации параметров по типу помещения
@@ -117,6 +132,20 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
       'rooms':        ['Студия', '1 комната', '2 комнаты', '3 комнаты', '4+'],
       'defaultRooms': '1 комната',
     },
+    'service_access': {
+      'areaLabel':    'Формат',
+      'area':         ['Разовый доступ', 'Смена', 'Абонемент'],
+      'defaultArea':  'Разовый доступ',
+      'ceilLabel':    'Направление',
+      'ceil':         ['Клининг', 'Ремонт', 'Дизайн'],
+      'defaultCeil':  'Клининг',
+      'floorsLabel':  'Срок',
+      'floors':       ['1 день', '7 дней', '30 дней'],
+      'defaultFloors':'7 дней',
+      'roomsLabel':   'Уровень',
+      'rooms':        ['Базовый', 'Стандарт', 'Премиум'],
+      'defaultRooms': 'Стандарт',
+    },
   };
 
   String _totalArea     = '50–80 м²';
@@ -186,18 +215,23 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   }
 
   bool get _canProceed {
+    final isHome = _premiseType == 'house' || _premiseType == 'apartment';
     switch (_step) {
-      case 1: return _premiseType != null;
-      case 2: return true;
-      case 3: return _selectedPriorities.isNotEmpty;
-      case 4: return true; // шаг необязателен
-      case 5: return _interiorStyles.isNotEmpty;
+      case 1: return _accountMode != null && _premiseType != null;
+      case 2: return isHome ? _usageMode != null : true;
+      case 3: return true;
+      case 4: return _selectedPriorities.isNotEmpty;
+      case 5: return true;
+      case 6: return _interiorStyles.isNotEmpty;
       default: return true;
     }
   }
 
-  bool get _isSkippable =>
-      _step == 4 && _selectedProblems.isEmpty && _otherCtrl.text.isEmpty;
+  bool get _isSkippable {
+    final isHome = _premiseType == 'house' || _premiseType == 'apartment';
+    final problemsStep = isHome ? 5 : 4;
+    return _step == problemsStep && _selectedProblems.isEmpty && _otherCtrl.text.isEmpty;
+  }
 
   int _toAreaValue(String v) {
     final m = RegExp(r'\d+').firstMatch(v);
@@ -230,6 +264,9 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   Future<void> _finish() async {
     await context.read<AuthProvider>().submitSurvey(
       userType:    _userType,
+      premiseType: _premiseType ?? 'apartment',
+      accountMode: _accountMode ?? 'b2c',
+      usageMode: _usageMode,
       totalArea:   _toAreaValue(_totalArea),
       wallHeight:  _toCeilingValue(_ceilingHeight),
       floorsCount: _toInt(_floorsCount, '4+'),
@@ -344,7 +381,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
           ),
           const SizedBox(height: 10),
           AppText(
-            _stepLabels[_step - 1].toUpperCase(),
+            _stepLabel(_step).toUpperCase(),
             style: AppTextStyle.gropled(
               fontSize: 12,
               letterSpacing: 1.2,
@@ -455,14 +492,18 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
 
   // ─── РОУТЕР ШАГОВ ─────────────────────────────────────────────────────────
 
-  Widget _buildStep() => switch (_step) {
-    1 => _step1(),
-    2 => _step2Details(),
-    3 => _step3(),
-    4 => _step4(),
-    5 => _step5(),
-    _ => const SizedBox(),
-  };
+  Widget _buildStep() {
+    final isHome = _premiseType == 'house' || _premiseType == 'apartment';
+    switch (_step) {
+      case 1: return _step1();
+      case 2: return isHome ? _step2Usage() : _step2Details();
+      case 3: return isHome ? _step2Details() : _step3();
+      case 4: return isHome ? _step3() : _step4();
+      case 5: return isHome ? _step4() : _step5();
+      case 6: return _step5();
+      default: return const SizedBox();
+    }
+  }
 
   // ─── ЗАГОЛОВОК ШАГА ───────────────────────────────────────────────────────
 
@@ -497,6 +538,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _step1() {
+    final visiblePremises = _visiblePremiseOptions();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
@@ -505,10 +547,68 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
           'Расскажите — мы подберём шаблон именно для вас',
         ),
         Wrap(
+          spacing: 10,
+          runSpacing: 10,
+          alignment: WrapAlignment.center,
+          children: _accountModes.map((m) {
+            final sel = _accountMode == m['id'];
+            return GestureDetector(
+              onTap: () => setState(() {
+                _accountMode = m['id'] as String;
+                _premiseType = null;
+                if (_accountMode == 'b2b') _userType = UserType.b2b;
+                if (_accountMode == 'service') _userType = UserType.service;
+                if (_accountMode == 'b2c' || _accountMode == 'p2p') _userType = UserType.b2c;
+              }),
+              child: AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                decoration: BoxDecoration(
+                  color: sel ? AppTheme.backgroundColor : Colors.white.withOpacity(0.07),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: sel ? AppTheme.backgroundColor : AppTheme.backgroundColor.withOpacity(0.25),
+                  ),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(m['icon'] as IconData, size: 18, color: sel ? AppTheme.primaryColor : _iconColor),
+                    const SizedBox(width: 8),
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        AppText(
+                          m['label']! as String,
+                          style: AppTextStyle.gropled(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
+                            color: sel ? AppTheme.primaryColor : AppTheme.backgroundColor,
+                          ),
+                        ),
+                        AppText(
+                          m['sub']! as String,
+                          style: AppTextStyle.gropled(
+                            fontSize: 10,
+                            color: sel
+                                ? AppTheme.primaryColor.withOpacity(0.72)
+                                : AppTheme.backgroundColor.withOpacity(0.72),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }).toList(),
+        ),
+        const SizedBox(height: 16),
+        Wrap(
           spacing: 14,
           runSpacing: 14,
           alignment: WrapAlignment.center,
-          children: _premiseOptions.map((opt) {
+          children: visiblePremises.map((opt) {
             final sel = _premiseType == opt['id'];
             return GestureDetector(
               onTap: () => setState(() {
@@ -516,6 +616,9 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
                 _userType = (opt['id'] == 'office' || opt['id'] == 'commerce')
                     ? UserType.b2b
                     : UserType.b2c;
+                if (_accountMode == 'service') {
+                  _userType = UserType.service;
+                }
                 _applyConfig(_premiseType!);
               }),
               child: AnimatedContainer(
@@ -564,8 +667,83 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
     );
   }
 
+  List<Map<String, Object>> _visiblePremiseOptions() {
+    final all = _premiseOptions.cast<Map<String, Object>>();
+    switch (_accountMode) {
+      case 'b2b':
+        return all.where((o) => o['id'] == 'office' || o['id'] == 'commerce' || o['id'] == 'hotel').toList();
+      case 'service':
+        return all.where((o) => o['id'] == 'service_access').toList();
+      case 'p2p':
+        return all.where((o) => o['id'] != 'service_access').toList();
+      case 'b2c':
+      default:
+        return all.where((o) => o['id'] == 'apartment' || o['id'] == 'house' || o['id'] == 'hotel').toList();
+    }
+  }
+
   // ═══════════════════════════════════════════════════════════════════════════
-  // ШАГ 2 — Ещё пара деталей
+  // ШАГ 2 (только дом/квартира) — Семейное использование
+  // ═══════════════════════════════════════════════════════════════════════════
+
+  Widget _step2Usage() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.center,
+      children: [
+        _stepTitle(
+          'Как вы будете\nиспользовать пространство?',
+          'Семейный режим — общие задачи и назначения между пользователями',
+        ),
+        Wrap(
+          spacing: 14,
+          runSpacing: 14,
+          alignment: WrapAlignment.center,
+          children: [
+            _usageChip('Семейный', 'family', Icons.family_restroom_outlined),
+            _usageChip('Для себя', 'personal', Icons.person_outline),
+            _usageChip('Бизнес', 'business', Icons.business_center_outlined),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _usageChip(String label, String mode, IconData icon) {
+    final sel = _usageMode == mode;
+    return GestureDetector(
+      onTap: () => setState(() => _usageMode = mode),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 220),
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 18),
+        decoration: BoxDecoration(
+          color: sel ? AppTheme.backgroundColor : Colors.white.withOpacity(0.07),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: sel ? AppTheme.backgroundColor : AppTheme.backgroundColor.withOpacity(0.22),
+            width: sel ? 2 : 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 28, color: sel ? AppTheme.primaryColor : _iconColor),
+            const SizedBox(width: 12),
+            AppText(
+              label,
+              style: AppTextStyle.gropled(
+                fontSize: 16,
+                fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                color: sel ? AppTheme.primaryColor : AppTheme.backgroundColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ═══════════════════════════════════════════════════════════════════════════
+  // ШАГ 2/3 — Ещё пара деталей
   // ═══════════════════════════════════════════════════════════════════════════
 
   Widget _step2Details() {
@@ -672,21 +850,29 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
         'Есть что-то,\nчто хочется изменить?',
         'Пропустите если пока всё ок — вернёмся к этому позже',
       ),
-      Wrap(
-        spacing: 12,
-        runSpacing: 12,
-        alignment: WrapAlignment.center,
-        children: _problemZones.map((p) {
-          final label = p['label']!;
-          final emoji = p['emoji']!;
-          final sel   = _selectedProblems.contains(label);
-          return GestureDetector(
-            onTap: () => setState(() => sel
-                ? _selectedProblems.remove(label)
-                : _selectedProblems.add(label)),
-            child: _chip('$emoji  $label', sel),
+      LayoutBuilder(
+        builder: (context, constraints) {
+          final maxChipWidth = (constraints.maxWidth - 12).clamp(120.0, 280.0);
+          return Wrap(
+            spacing: 12,
+            runSpacing: 12,
+            alignment: WrapAlignment.center,
+            children: _problemZones.map((p) {
+              final label = p['label']!;
+              final emoji = p['emoji']!;
+              final sel   = _selectedProblems.contains(label);
+              return GestureDetector(
+                onTap: () => setState(() => sel
+                    ? _selectedProblems.remove(label)
+                    : _selectedProblems.add(label)),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxChipWidth),
+                  child: _chip('$emoji  $label', sel),
+                ),
+              );
+            }).toList(),
           );
-        }).toList(),
+        },
       ),
       const SizedBox(height: 24),
       TextField(
@@ -963,18 +1149,21 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
                     'Android Emoji',
                     'EmojiSymbols',
                   ],
-                  // Отключаем наследование цвета, чтобы эмодзи были цветными
                   inherit: false,
                 ),
               ),
               const SizedBox(width: 8),
             ],
-            AppText(
-              text,
-              style: AppTextStyle.gropled(
-                fontSize: 15,
-                fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                color: sel ? AppTheme.primaryColor : AppTheme.backgroundColor,
+            Flexible(
+              child: AppText(
+                text,
+                style: AppTextStyle.gropled(
+                  fontSize: 15,
+                  fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
+                  color: sel ? AppTheme.primaryColor : AppTheme.backgroundColor,
+                ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

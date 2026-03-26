@@ -4,9 +4,10 @@ import 'package:provider/provider.dart';
 import '../../../config/app_theme.dart';
 import '../../../core/theme/app_text_style.dart';
 import '../../../providers/map_editor_provider.dart';
+import '../../tasks/add_task_screen.dart';
 import 'furniture_catalog.dart';
 
-const _sage = Color(0xFF6C8671);
+const _sage = Color(0xFF659171);
 const _terra = Color(0xFFD4956A);
 const _cream = Color(0xFFF7F3EC);
 const _dark = Color(0xFF2A3A2C);
@@ -371,73 +372,80 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
       ),
       child: Row(
         children: [
-          Text(
-            'МОЙ ДОМ <3',
-            style: AppTextStyle.gropled(
-              fontSize: 18,
-              fontWeight: FontWeight.w700,
-              color: _dark,
-              letterSpacing: -0.5,
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
-            child: SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: List.generate(rooms.length, (index) {
-                  final isActive = index == _activeRoomIndex;
-                  return GestureDetector(
-                    onTap: () => _selectRoom(index),
-                    child: AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      margin: const EdgeInsets.only(right: 6),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: isActive ? _sage : const Color(0xFFEEF1EE),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        rooms[index].name,
-                        style: TextStyle(
-                          fontFamily: AppTextStyle.fontFamily,
-                          fontSize: 12,
-                          fontWeight:
-                              isActive ? FontWeight.w600 : FontWeight.w400,
-                          color: isActive
-                              ? Colors.white
-                              : const Color(0xFF7A8A7C),
-                          height: AppTextStyle.defaultHeight,
-                          leadingDistribution:
-                              AppTextStyle.defaultLeadingDistribution,
-                        ),
-                      ),
+            child: Row(
+              children: [
+                Text(
+                  'МОЙ ДОМ <3',
+                  style: AppTextStyle.gropled(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: _dark,
+                    letterSpacing: -0.5,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: List.generate(rooms.length, (index) {
+                        final isActive = index == _activeRoomIndex;
+                        return GestureDetector(
+                          onTap: () => _selectRoom(index),
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            margin: const EdgeInsets.only(right: 6),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: isActive ? _sage : const Color(0xFFEEF1EE),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              rooms[index].name,
+                              style: TextStyle(
+                                fontFamily: AppTextStyle.fontFamily,
+                                fontSize: 12,
+                                fontWeight:
+                                    isActive ? FontWeight.w600 : FontWeight.w400,
+                                color: isActive
+                                    ? Colors.white
+                                    : const Color(0xFF7A8A7C),
+                                height: AppTextStyle.defaultHeight,
+                                leadingDistribution:
+                                    AppTextStyle.defaultLeadingDistribution,
+                              ),
+                            ),
+                          ),
+                        );
+                      }),
                     ),
-                  );
-                }),
-              ),
+                  ),
+                ),
+                const SizedBox(width: 4),
+                GestureDetector(
+                  onTap: () {
+                    // TODO: Add room
+                  },
+                  child: Container(
+                    width: 28,
+                    height: 28,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEEF1EE),
+                      shape: BoxShape.circle,
+                      border: Border.all(color: _dark.withOpacity(0.1)),
+                    ),
+                    child: const Icon(Icons.add, size: 16, color: Color(0xFF7A8A7C)),
+                  ),
+                ),
+              ],
             ),
           ),
           const SizedBox(width: 6),
-          GestureDetector(
-            onTap: () {
-              // TODO: Add room
-            },
-            child: Container(
-              width: 28,
-              height: 28,
-              decoration: BoxDecoration(
-                color: const Color(0xFFEEF1EE),
-                shape: BoxShape.circle,
-                border: Border.all(color: _dark.withOpacity(0.1)),
-              ),
-              child: const Icon(Icons.add, size: 16, color: Color(0xFF7A8A7C)),
-            ),
-          ),
-          const Spacer(),
           _headerButton('Просмотр', filled: false, onTap: () {}),
-          const SizedBox(width: 8),
+          const SizedBox(width: 6),
           _headerButton('Сохранить', filled: true, onTap: () {}),
         ],
       ),
@@ -1107,13 +1115,23 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
             children: [
               Icon(room.icon, color: _sage, size: 20),
               const SizedBox(width: 8),
-              Text(
-                'Задачи — ${room.name}',
-                style: const TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                  color: _dark,
+              Expanded(
+                child: Text(
+                  'Задачи — ${room.name}',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                    color: _dark,
+                  ),
                 ),
+              ),
+              IconButton(
+                icon: const Icon(Icons.add_circle_outline, color: _sage, size: 24),
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+                  );
+                },
               ),
             ],
           ),

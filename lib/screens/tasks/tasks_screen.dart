@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
 import '../../core/theme/app_text_style.dart';
+import '../../models/task.dart';
+import '../../providers/task_provider.dart';
+import 'add_task_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -10,51 +14,13 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  int _completedCount = 4;
-  int _remainingCount = 3;
   final int _streakDays = 2;
 
-  final List<_Task> _tasks = [
-    const _Task(
-      id: '1',
-      title: 'Убрать кухню',
-      time: '14:00',
-      room: 'Кухня',
-      icon: '🧽',
-      isDone: false,
-    ),
-    const _Task(
-      id: '2',
-      title: 'Полить цветы утром',
-      time: null,
-      room: 'Гостиная',
-      icon: '🌿',
-      isDone: true,
-    ),
-    const _Task(
-      id: '3',
-      title: 'Помыть ванную',
-      time: '16:00',
-      room: 'Ванная',
-      icon: '🛁',
-      isDone: false,
-    ),
-  ];
-
-  void _toggleTask(String id) {
-    setState(() {
-      final idx = _tasks.indexWhere((t) => t.id == id);
-      if (idx != -1) {
-        final updated = _tasks[idx].copyWith(isDone: !_tasks[idx].isDone);
-        _tasks[idx] = updated;
-        if (updated.isDone) {
-          _completedCount++;
-          _remainingCount--;
-        } else {
-          _completedCount--;
-          _remainingCount++;
-        }
-      }
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<TaskProvider>().loadTasks();
     });
   }
 
@@ -64,7 +30,8 @@ class _TasksScreenState extends State<TasksScreen> {
     final scaffoldBg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
     final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
 
-    return Scaffold(
+    return Consumer<TaskProvider>(
+      builder: (context, taskProv, _) => Scaffold(
       backgroundColor: scaffoldBg,
       body: CustomScrollView(
         slivers: [
@@ -84,34 +51,42 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
             ),
           ),
+          // Мобильная раскладка: сверху страйк (крупнее), снизу выполнено и осталось (мельче)
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: SizedBox(
-                height: 95,
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    _buildStatSquare(
-                      value: _completedCount.toString(),
-                      label: 'выполнено',
-                      color: Colors.white,
-                      background: AppTheme.primaryColor,
-                    ),
-                    const SizedBox(width: 10),
-                    _buildStatSquare(
-                      value: _remainingCount.toString(),
-                      label: 'осталось',
-                      color: Colors.white,
-                      background: AppTheme.primaryColor,
-                    ),
-                    const SizedBox(width: 10),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 200),
-                      child: _buildStreakCard(days: _streakDays),
-                    ),
-                  ],
-                ),
+              child: Column(
+                children: [
+                  // Страйк — выше и крупнее
+                  SizedBox(
+                    height: 100,
+                    child: _buildStreakCard(days: _streakDays),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _buildStatSquare(
+                          value: taskProv.completedCount.toString(),
+                          label: 'выполнено',
+                          color: Colors.white,
+                          background: AppTheme.primaryColor,
+                          compact: true,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: _buildStatSquare(
+                          value: taskProv.remainingCount.toString(),
+                          label: 'осталось',
+                          color: Colors.white,
+                          background: AppTheme.primaryColor,
+                          compact: true,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           ),
@@ -136,10 +111,10 @@ class _TasksScreenState extends State<TasksScreen> {
             sliver: SliverList(
               delegate: SliverChildBuilderDelegate(
                 (context, index) {
-                  final task = _tasks[index];
+                  final task = taskProv.tasks[index];
                   return _buildTaskCard(task);
                 },
-                childCount: _tasks.length,
+                childCount: taskProv.tasks.length,
               ),
             ),
           ),
@@ -147,10 +122,18 @@ class _TasksScreenState extends State<TasksScreen> {
         ],
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () {},
+        onPressed: () async {
+          final added = await Navigator.of(context).push<bool>(
+            MaterialPageRoute(builder: (_) => const AddTaskScreen()),
+          );
+          if (added == true && mounted) {
+            await context.read<TaskProvider>().loadTasks();
+          }
+        },
         backgroundColor: AppTheme.accentColor,
         child: const Icon(Icons.add, color: Colors.white),
       ),
+    ),
     );
   }
 
@@ -159,37 +142,48 @@ class _TasksScreenState extends State<TasksScreen> {
     required String label,
     required Color color,
     required Color background,
+    bool compact = false,
   }) {
-    return AspectRatio(
-      aspectRatio: 1.0,
-      child: Container(
-        decoration: BoxDecoration(
-          color: background,
-          borderRadius: BorderRadius.circular(18),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Text(
-              value,
-              style: TextStyle(
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                fontFamily: 'Roboto',
-                color: color,
-              ),
+    final valueFontSize = compact ? 22.0 : 28.0;
+    final labelFontSize = compact ? 9.0 : 10.0;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final side = constraints.maxWidth < constraints.maxHeight
+            ? constraints.maxWidth
+            : constraints.maxHeight;
+        return SizedBox(
+          width: side,
+          height: compact ? 72 : side,
+          child: Container(
+            decoration: BoxDecoration(
+              color: background,
+              borderRadius: BorderRadius.circular(18),
             ),
-            const SizedBox(height: 2),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 10,
-                color: color.withOpacity(0.65),
-              ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  value,
+                  style: TextStyle(
+                    fontSize: valueFontSize,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'Roboto',
+                    color: color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: labelFontSize,
+                    color: color.withOpacity(0.65),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
@@ -208,7 +202,7 @@ class _TasksScreenState extends State<TasksScreen> {
         : (days - prevMilestone) / (nextMilestone - prevMilestone);
 
     return Container(
-      padding: const EdgeInsets.fromLTRB(14, 11, 14, 11),
+      padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
       decoration: BoxDecoration(
         color: AppTheme.accentColor.withOpacity(0.9),
         borderRadius: BorderRadius.circular(18),
@@ -216,27 +210,33 @@ class _TasksScreenState extends State<TasksScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('🔥', style: TextStyle(fontSize: 16)),
-              const SizedBox(width: 4),
+              const Text('🔥', style: TextStyle(fontSize: 14)),
+              const SizedBox(width: 2),
               Text(
                 days.toString(),
                 style: const TextStyle(
-                  fontSize: 26,
+                  fontSize: 22,
                   fontWeight: FontWeight.w700,
                   fontFamily: 'Roboto',
                   color: Colors.white,
                 ),
               ),
-              const Spacer(),
-              Text(
-                'до $nextMilestone дн.',
-                style: TextStyle(
-                  fontSize: 10,
-                  color: Colors.white.withOpacity(0.65),
+              const SizedBox(width: 4),
+              Flexible(
+                child: Text(
+                  'до $nextMilestone дн.',
+                  style: TextStyle(
+                    fontSize: 9,
+                    color: Colors.white.withOpacity(0.65),
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
                 ),
               ),
             ],
@@ -269,11 +269,14 @@ class _TasksScreenState extends State<TasksScreen> {
     );
   }
 
-  Widget _buildTaskCard(_Task task) {
+  Widget _buildTaskCard(TaskItem task) {
     final isDone = task.isDone;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final displayZone = task.description?.contains('Зона:') == true
+        ? task.description!.split(',').first.replaceFirst('Зона:', '').trim()
+        : null;
     return GestureDetector(
-      onTap: () => _toggleTask(task.id),
+      onTap: () => context.read<TaskProvider>().toggleTask(task),
       child: Container(
         margin: const EdgeInsets.only(bottom: 10),
         padding: const EdgeInsets.all(16),
@@ -319,7 +322,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   : null,
             ),
             const SizedBox(width: 14),
-            Text(task.icon, style: const TextStyle(fontSize: 22)),
+            const Text('🧩', style: TextStyle(fontSize: 22)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -339,21 +342,22 @@ class _TasksScreenState extends State<TasksScreen> {
                   const SizedBox(height: 6),
                   Row(
                     children: [
-                      if (task.time != null)
+                      if (task.dueDate != null)
                         _buildChip(
                           icon: Icons.schedule,
-                          label: task.time!,
+                          label:
+                              '${task.dueDate!.hour.toString().padLeft(2, '0')}:${task.dueDate!.minute.toString().padLeft(2, '0')}',
                           color: isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary,
                           background: isDark
                               ? AppTheme.darkBorder.withOpacity(0.7)
                               : AppTheme.secondaryColor.withOpacity(0.45),
                         ),
-                      if (task.time != null && task.room != null)
+                      if (task.dueDate != null && displayZone != null)
                         const SizedBox(width: 8),
-                      if (task.room != null)
+                      if (displayZone != null)
                         _buildChip(
                           icon: Icons.home_outlined,
-                          label: task.room!,
+                          label: displayZone,
                           color: AppTheme.primaryColor,
                           background: AppTheme.primaryColor.withOpacity(0.12),
                         ),
@@ -406,42 +410,6 @@ class _TasksScreenState extends State<TasksScreen> {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _Task {
-  final String id;
-  final String title;
-  final String? time;
-  final String? room;
-  final String icon;
-  final bool isDone;
-
-  const _Task({
-    required this.id,
-    required this.title,
-    this.time,
-    this.room,
-    required this.icon,
-    required this.isDone,
-  });
-
-  _Task copyWith({
-    String? id,
-    String? title,
-    String? time,
-    String? room,
-    String? icon,
-    bool? isDone,
-  }) {
-    return _Task(
-      id: id ?? this.id,
-      title: title ?? this.title,
-      time: time ?? this.time,
-      room: room ?? this.room,
-      icon: icon ?? this.icon,
-      isDone: isDone ?? this.isDone,
     );
   }
 }

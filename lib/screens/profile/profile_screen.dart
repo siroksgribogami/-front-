@@ -95,32 +95,54 @@ class ProfileScreen extends StatelessWidget {
                 ),
                 child: Column(
                   children: [
-                    Container(
-                      width: 90,
-                      height: 90,
-                      decoration: BoxDecoration(
-                        color: AppTheme.primaryColor,
-                        borderRadius: BorderRadius.circular(24),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppTheme.primaryColor.withOpacity(0.3),
-                            blurRadius: 16,
-                            offset: const Offset(0, 6),
+                    GestureDetector(
+                      onTap: () {
+                        // TODO: выбор аватарки (image_picker)
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Загрузка аватарки — скоро')),
+                        );
+                      },
+                      child: Stack(
+                        alignment: Alignment.bottomRight,
+                        children: [
+                          Container(
+                            width: 90,
+                            height: 90,
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              borderRadius: BorderRadius.circular(24),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppTheme.primaryColor.withOpacity(0.3),
+                                  blurRadius: 16,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Center(
+                              child: Text(
+                                user.username[0].toUpperCase(),
+                                style: const TextStyle(
+                                  fontSize: 40,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                  fontFamily: AppTextStyle.fontFamily,
+                                  height: AppTextStyle.defaultHeight,
+                                  leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+                                ),
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: AppTheme.primaryColor,
+                              shape: BoxShape.circle,
+                              border: Border.all(color: cardBg, width: 2),
+                            ),
+                            child: const Icon(Icons.camera_alt, color: Colors.white, size: 18),
                           ),
                         ],
-                      ),
-                      child: Center(
-                        child: Text(
-                          user.username[0].toUpperCase(),
-                          style: const TextStyle(
-                            fontSize: 40,
-                            fontWeight: FontWeight.w700,
-                            color: Colors.white,
-                            fontFamily: AppTextStyle.fontFamily,
-                            height: AppTextStyle.defaultHeight,
-                            leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                          ),
-                        ),
                       ),
                     ),
                     const SizedBox(height: 18),
@@ -199,6 +221,19 @@ class ProfileScreen extends StatelessWidget {
                       ),
                       _buildInfoRow(
                         context,
+                        icon: Icons.badge_outlined,
+                        label: 'Тип аккаунта',
+                        value: _accountModeLabel(auth.accountMode),
+                      ),
+                      if (auth.usageMode != null)
+                        _buildInfoRow(
+                          context,
+                          icon: Icons.people_outline,
+                          label: 'Режим использования',
+                          value: _usageModeLabel(auth.usageMode),
+                        ),
+                      _buildInfoRow(
+                        context,
                         icon: Icons.calendar_today_outlined,
                         label: 'Дата регистрации',
                         value: DateFormat('dd MMMM yyyy', 'ru')
@@ -240,8 +275,12 @@ class ProfileScreen extends StatelessWidget {
                     _buildSettingsRow(
                       context,
                       icon: Icons.notifications_outlined,
-                      label: 'Уведомления',
-                      onTap: () {},
+                      label: 'Настройки уведомлений',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Настройки уведомлений — скоро')),
+                        );
+                      },
                     ),
                     const Divider(height: 1, indent: 56),
                     _buildSettingsRow(
@@ -269,8 +308,37 @@ class ProfileScreen extends StatelessWidget {
                       context,
                       icon: Icons.language_outlined,
                       label: 'Язык',
-                      onTap: () {},
+                      onTap: () {
+                        // TODO: выбор языка
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Выбор языка — скоро')),
+                        );
+                      },
                     ),
+                    Divider(height: 1, indent: 56, color: dividerColor),
+                    _buildSettingsRow(
+                      context,
+                      icon: Icons.family_restroom_outlined,
+                      label: 'Семейная связь',
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Пригласить членов семьи — скоро')),
+                        );
+                      },
+                    ),
+                    if (auth.premiseType == 'commerce' || user.isAdmin) ...[
+                      Divider(height: 1, indent: 56, color: dividerColor),
+                      _buildSettingsRow(
+                        context,
+                        icon: Icons.admin_panel_settings_outlined,
+                        label: 'Админ',
+                        onTap: () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Управление складом / админ — скоро')),
+                          );
+                        },
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -323,6 +391,32 @@ class ProfileScreen extends StatelessWidget {
         },
       ),
     );
+  }
+
+  String _accountModeLabel(String? mode) {
+    switch (mode) {
+      case 'b2b':
+        return 'B2B (офисы/склады)';
+      case 'p2p':
+        return 'P2P (на заказ)';
+      case 'service':
+        return 'Услуги (временный доступ)';
+      case 'b2c':
+      default:
+        return 'B2C (дом/квартира)';
+    }
+  }
+
+  String _usageModeLabel(String? mode) {
+    switch (mode) {
+      case 'family':
+        return 'Семейный';
+      case 'business':
+        return 'Бизнес';
+      case 'personal':
+      default:
+        return 'Для себя';
+    }
   }
 
   Widget _buildSettingsRow(

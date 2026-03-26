@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
@@ -20,31 +21,42 @@ class AuthProvider with ChangeNotifier {
   User? _user;
   String? _error;
   bool _justRegistered = false;
+  /// Опрос показываем только после регистрации (после экрана приветствия), не при обычном входе.
+  bool _pendingPostRegisterSurvey = false;
   bool _isInitialized = false;
+  /// Тип помещения из опроса: apartment, house, office, commerce, hotel (для подписи «Моя квартира» и т.д.)
+  String? _premiseType;
+  /// Режим аккаунта: b2c | b2b | p2p | service
+  String? _accountMode;
+  /// Режим использования: family | personal | business
+  String? _usageMode;
 
   AuthState get state => _state;
   User? get user => _user;
   String? get error => _error;
+  String? get premiseType => _premiseType;
+  String? get accountMode => _accountMode;
+  String? get usageMode => _usageMode;
   bool get isAuthenticated => _state == AuthState.authenticated;
   bool get isLoading => _state == AuthState.loading;
-  bool get needsSurvey => isAuthenticated && !(_user?.surveyCompleted ?? false);
+  bool get needsSurvey => isAuthenticated && _pendingPostRegisterSurvey;
   bool get justRegistered => _justRegistered;
   bool get isInitialized => _isInitialized;
 
-  /// Инициализация - проверка токена при старте
+  /// Инициализация - проверка токена при старте. При входе опрос не показываем.
   Future<void> initialize() async {
     _setState(AuthState.loading);
-    
+    _pendingPostRegisterSurvey = false;
+
     try {
       final isAuth = await _authService.isAuthenticated();
       if (isAuth) {
         try {
           _user = await _authService.getCurrentUser()
-              .timeout(const Duration(seconds: 5));
+              .timeout(const Duration(seconds: 8));
           _justRegistered = false;
           _setState(AuthState.authenticated);
         } catch (_) {
-          // Бэкенд недоступен или токен невалидный — показываем логин
           await _authService.logout();
           _justRegistered = false;
           _setState(AuthState.unauthenticated);
@@ -58,8 +70,18 @@ class AuthProvider with ChangeNotifier {
       _setState(AuthState.unauthenticated);
     } finally {
       _isInitialized = true;
+      _loadPremiseType();
       notifyListeners();
     }
+  }
+
+  Future<void> _loadPremiseType() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      _premiseType = prefs.getString('arthouse_premise_type');
+      _accountMode = prefs.getString('arthouse_account_mode');
+      _usageMode = prefs.getString('arthouse_usage_mode');
+    } catch (_) {}
   }
 
   /// Регистрация
@@ -103,15 +125,17 @@ class AuthProvider with ChangeNotifier {
     _setState(AuthState.loading);
     _error = null;
 
-    // Mock login для dev-учётки (когда бэкенд не запущен)
-    if (email.toLowerCase() == 'dev@arthouse.ru' && password == 'dev123*') {
-      _user = User(
-        id: 1,
-        email: 'dev@arthouse.ru',
-        username: 'DevAdmin',
-        role: UserRole.admin,
-        isActive: true,
-        createdAt: DateTime.now(),
+    // Demo login для тестировщика (когда бэкенд недоступен или нужен быстрый вход по ролям)
+    final demo = _resolveDemoAccount(email, password);
+    if (demo != null) {
+      _user = demo.user;
+      _premiseType = demo.premiseType;
+      _accountMode = demo.accountMode;
+      _usageMode = demo.usageMode;
+      await _saveAccountContext(
+        premiseType: _premiseType,
+        accountMode: _accountMode,
+        usageMode: _usageMode,
       );
       _justRegistered = false;
       _setState(AuthState.authenticated);
@@ -184,12 +208,27 @@ class AuthProvider with ChangeNotifier {
   /// Сохранить результаты опроса помещения
   Future<bool> submitSurvey({
     required UserType userType,
+    required String premiseType,
+    required String accountMode,
+    String? usageMode,
     required int totalArea,
     required int wallHeight,
     required int floorsCount,
     required int roomsCount,
   }) async {
     try {
+      _premiseType = premiseType;
+      _accountMode = accountMode;
+      _usageMode = usageMode;
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString('arthouse_premise_type', premiseType);
+      await prefs.setString('arthouse_account_mode', accountMode);
+      if (usageMode != null) {
+        await prefs.setString('arthouse_usage_mode', usageMode);
+      } else {
+        await prefs.remove('arthouse_usage_mode');
+      }
+
       _user = await _authService.updateProfile({
         'user_type': userType.name,
         'total_area': totalArea,
@@ -198,8 +237,8 @@ class AuthProvider with ChangeNotifier {
         'rooms_count': roomsCount,
         'survey_completed': true,
       });
-      // Clear justRegistered flag after finishing survey
       _justRegistered = false;
+      _pendingPostRegisterSurvey = false;
       notifyListeners();
       return true;
     } on ApiException catch (e) {
@@ -217,10 +256,11 @@ class AuthProvider with ChangeNotifier {
     notifyListeners();
   }
 
-  /// Отметить, что приветственный экран после регистрации уже показан.
+  /// После экрана приветствия после регистрации — показываем опрос (только в этом потоке).
   void completePostRegisterWelcome() {
     if (!_justRegistered) return;
     _justRegistered = false;
+    _pendingPostRegisterSurvey = true;
     notifyListeners();
   }
 
@@ -234,4 +274,126 @@ class AuthProvider with ChangeNotifier {
     _state = AuthState.error;
     notifyListeners();
   }
+
+  Future<void> _saveAccountContext({
+    String? premiseType,
+    String? accountMode,
+    String? usageMode,
+  }) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      if (premiseType != null) {
+        await prefs.setString('arthouse_premise_type', premiseType);
+      }
+      if (accountMode != null) {
+        await prefs.setString('arthouse_account_mode', accountMode);
+      }
+      if (usageMode != null) {
+        await prefs.setString('arthouse_usage_mode', usageMode);
+      } else {
+        await prefs.remove('arthouse_usage_mode');
+      }
+    } catch (_) {}
+  }
+
+  _DemoAccount? _resolveDemoAccount(String email, String password) {
+    final e = email.toLowerCase().trim();
+    if (password != 'dev123*') return null;
+
+    if (e == 'tester.b2c@arthouse.ru') {
+      return _DemoAccount(
+        user: User(
+          id: 101,
+          email: e,
+          username: 'Tester B2C',
+          userType: UserType.b2c,
+          isActive: true,
+          createdAt: DateTime.now(),
+        ),
+        premiseType: 'apartment',
+        accountMode: 'b2c',
+        usageMode: 'family',
+      );
+    }
+
+    if (e == 'tester.b2b@arthouse.ru') {
+      return _DemoAccount(
+        user: User(
+          id: 102,
+          email: e,
+          username: 'Tester B2B',
+          userType: UserType.b2b,
+          isActive: true,
+          createdAt: DateTime.now(),
+        ),
+        premiseType: 'office',
+        accountMode: 'b2b',
+        usageMode: 'business',
+      );
+    }
+
+    if (e == 'tester.p2p@arthouse.ru') {
+      return _DemoAccount(
+        user: User(
+          id: 103,
+          email: e,
+          username: 'Tester P2P',
+          userType: UserType.b2c,
+          isActive: true,
+          createdAt: DateTime.now(),
+        ),
+        premiseType: 'apartment',
+        accountMode: 'p2p',
+        usageMode: 'personal',
+      );
+    }
+
+    if (e == 'tester.service@arthouse.ru') {
+      return _DemoAccount(
+        user: User(
+          id: 104,
+          email: e,
+          username: 'Tester Service',
+          userType: UserType.service,
+          isActive: true,
+          createdAt: DateTime.now(),
+        ),
+        premiseType: 'service_access',
+        accountMode: 'service',
+        usageMode: 'business',
+      );
+    }
+
+    if (e == 'dev@arthouse.ru') {
+      return _DemoAccount(
+        user: User(
+          id: 1,
+          email: e,
+          username: 'DevAdmin',
+          role: UserRole.admin,
+          userType: UserType.b2b,
+          isActive: true,
+          createdAt: DateTime.now(),
+        ),
+        premiseType: 'commerce',
+        accountMode: 'b2b',
+        usageMode: 'business',
+      );
+    }
+    return null;
+  }
+}
+
+class _DemoAccount {
+  final User user;
+  final String accountMode;
+  final String premiseType;
+  final String? usageMode;
+
+  const _DemoAccount({
+    required this.user,
+    required this.accountMode,
+    required this.premiseType,
+    this.usageMode,
+  });
 }

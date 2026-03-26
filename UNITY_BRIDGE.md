@@ -2,15 +2,15 @@
 
 ## Назначение
 
-Этот документ фиксирует текущий рабочий мост между Flutter и Unity в проекте `art_front`.
+Мост между Flutter и Unity в проекте `art_front`. **Во фронте нет встроенной реализации карты на Unity** — только контракт и канал связи, чтобы Flutter и Unity могли работать вместе (Unity подключается отдельно).
 
-Мост сделан поверх одного JSON-контракта и поддерживает три режима запуска Unity:
+Режимы:
 
-- Chrome / ПК через Unity WebGL и `iframe + postMessage`
-- Android embedded host через `MethodChannel`
-- Windows desktop player через файловый bridge
+- **Web (Chrome/ПК):** iframe с `unity_bridge_host.html` — **не загружает Unity WebGL**. Страница поднимает только мост (postMessage). Unity можно подключить отдельно через `window.ArthouseFlutterBridge.registerUnity(sendMessage)`.
+- **Android:** embedded host через `MethodChannel` (при наличии unityLibrary).
+- **Windows desktop:** отдельный Unity player (.exe) и файловый bridge.
 
-Во Flutter мост теперь доступен из основного экрана карты: `ApartmentEditorScreen` умеет собрать текущее состояние квартиры, отправить его в `UnityMapHostScreen` и принять обратно snapshot от Unity.
+`ApartmentEditorScreen` собирает состояние квартиры, открывает `UnityMapHostScreen` и по мосту отправляет/принимает snapshot.
 
 ## Основные файлы Flutter
 
@@ -103,28 +103,23 @@ Unity отправляет snapshot обратно через Android callback c
 
 - `com.arthouse.art_front.UnityBridgeCallbacks`
 
-### Chrome / ПК
+### Chrome / ПК (только мост)
 
-Flutter web поднимает iframe с `web/unity_bridge_host.html`.
+Flutter web открывает iframe с `web/unity_bridge_host.html`. Эта страница **не загружает Unity WebGL** (нет loader.js, нет createUnityInstance). Работает только мост:
 
-Дальше команды идут так:
+- Flutter → `postMessage` в iframe
+- host обрабатывает команды и при наличии зарегистрированного Unity вызывает его (см. ниже)
+- ответы/snapshot → `window.parent.postMessage` во Flutter
 
-- Flutter -> `postMessage`
-- host page -> `unityInstance.SendMessage(...)`
-- Unity WebGL -> `.jslib` callback
-- `.jslib` -> `window.parent.postMessage(...)`
+Чтобы подключить Unity к мосту (например, свой WebGL build в другой вкладке или на том же origin):
 
-Ожидаемый export лежит в:
+```js
+window.ArthouseFlutterBridge.registerUnity(function(gameObject, method, argument) {
+  // вызвать Unity: например unityInstance.SendMessage(gameObject, method, argument);
+});
+```
 
-- `art_front/web/unity_build/Build/ARTHOUSEMap.loader.js`
-- `art_front/web/unity_build/Build/ARTHOUSEMap.framework.js`
-- `art_front/web/unity_build/Build/ARTHOUSEMap.data`
-- `art_front/web/unity_build/Build/ARTHOUSEMap.wasm`
-- `art_front/web/unity_build/StreamingAssets/Models/*`
-
-Для Unity добавлен builder:
-
-- `ARTHouse/Build/Export WebGL For Flutter Web`
+Также доступны: `notifyReady()` (когда Unity готов), `pushSnapshot(roomId, snapshotJson)` (отправка snapshot во Flutter).
 
 ### Windows desktop
 
@@ -181,7 +176,7 @@ Flutter запускает Unity `.exe` с аргументом:
 
 ### Chrome / ПК
 
-Нужен WebGL export Unity в `art_front/web/unity_build` через новый builder `ARTHouse/Build/Export WebGL For Flutter Web`.
+Во фронте только мост; WebGL-билд Unity во Flutter не встраивается. Чтобы использовать Unity на вебе, подключите его через `ArthouseFlutterBridge.registerUnity(sendMessage)` (например, со своей страницы с Unity WebGL).
 
 ### Windows
 

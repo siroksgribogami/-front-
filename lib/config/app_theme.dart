@@ -4,16 +4,16 @@ import 'text_theme.dart';
 /// Тема приложения АРТхаус - уютный дом и комфорт
 /// Цветовая схема 60-30-10 (Кремовый + терракот):
 /// - 60% (#F7F3EC) - Кремовый фон, тёплый и домашний
-/// - 30% (#6C8671) - Шалфейно-зеленый, природа и уют
+/// - 30% (#659171) - Шалфейно-зеленый, природа и уют
 /// - 10% (#D4956A) - Терракотовый акцент, земляное тепло
 class AppTheme {
   // === ОСНОВНАЯ ЦВЕТОВАЯ СХЕМА 60-30-10 ===
   
   // 30% - Шалфейно-зеленый (Primary)
-  static const Color primaryColor = Color(0xFF6C8671);
-  static const Color primaryDark = Color(0xFF5A7360);
-  static const Color primaryLight = Color(0xFF8AAA8E);
-  static const Color primaryPale = Color(0xFFC4D4C8);
+  static const Color primaryColor = Color(0xFF659171);
+  static const Color primaryDark = Color(0xFF547A62);
+  static const Color primaryLight = Color(0xFF80B490);
+  static const Color primaryPale = Color(0xFFC6D9CE);
   
   // 60% - Кремовый фон (Background)
   static const Color backgroundColor = Color(0xFFF7F3EC);
@@ -28,7 +28,7 @@ class AppTheme {
   // Вспомогательные цвета
   static const Color secondaryColor = Color(0xFFEDE8E0);
   static const Color errorColor = Color(0xFFD32F2F);
-  static const Color successColor = Color(0xFF6C8671);
+  static const Color successColor = Color(0xFF659171);
   static const Color warningColor = Color(0xFFE8B931);
   static const Color streakColor = Color(0xFFFF6B35); // Для streak как в Duolingo
   
@@ -39,8 +39,8 @@ class AppTheme {
   
   // Цвета текста
   static const Color textPrimary = Color(0xFF2A3A2C);
-  static const Color textSecondary = Color(0xFF5A7860);
-  static const Color textHint = Color(0xFF8AAA8E);
+  static const Color textSecondary = Color(0xFF506A58);
+  static const Color textHint = Color(0xFF80B490);
   static const Color textOnPrimary = Colors.white;
   
   /// Светлая тема АРТхаус
@@ -305,7 +305,7 @@ class AppTheme {
 
   // ============================================================
   // ТЁМНАЯ ТЕМА — «Уголь + шалфей»
-  // 60% #1C1E1C · 30% #6C8671 · 10% #D4956A
+  // 60% #1C1E1C · 30% #659171 · 10% #D4956A
   // ============================================================
 
   // Тёмная палитра — «Уголь» (нейтральный, без зелени) + шалфей как акцент

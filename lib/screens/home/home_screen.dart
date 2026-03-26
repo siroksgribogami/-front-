@@ -18,12 +18,13 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 1; // Карта по умолчанию
+  int _currentIndex = 2; // Карта по умолчанию (в середине)
 
+  // Порядок: Специалисты, Задачи, Карта, Чат, Профиль (поиск слева, карта в центре)
   final List<_NavItem> _navItems = const [
+    _NavItem(Icons.search_rounded, Icons.search_rounded, 'Специалисты'),
     _NavItem(Icons.check_circle_outline, Icons.check_circle, 'Задачи'),
     _NavItem(Icons.grid_view_outlined, Icons.grid_view, 'Карта'),
-    _NavItem(Icons.search_rounded, Icons.search_rounded, 'Поиск'),
     _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'Чат'),
     _NavItem(Icons.person_outline, Icons.person, 'Профиль'),
   ];
@@ -31,17 +32,17 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _getScreen(int index) {
     switch (index) {
       case 0:
-        return const TasksScreen();
-      case 1:
-        return const MapScreen();
-      case 2:
         return const SearchScreen(embedded: true);
+      case 1:
+        return const TasksScreen();
+      case 2:
+        return const MapScreen();
       case 3:
         return const ChatScreen();
       case 4:
         return const ProfileScreen(embedded: true);
       default:
-        return const TasksScreen();
+        return const SearchScreen(embedded: true);
     }
   }
 
@@ -107,16 +108,25 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
           ),
           const SizedBox(height: 6),
-          Text(
-            'твой дом в порядке',
-            style: TextStyle(
-              fontSize: 9,
-              letterSpacing: 2,
-              color: textHintC,
-              fontFamily: AppTextStyle.fontFamily,
-              height: AppTextStyle.defaultHeight,
-              leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-            ),
+          Consumer<AuthProvider>(
+            builder: (context, auth, _) {
+              final premise = auth.premiseType;
+              final subtitle = _premiseSubtitle(
+                premise,
+                accountMode: auth.accountMode,
+              );
+              return Text(
+                subtitle,
+                style: TextStyle(
+                  fontSize: 9,
+                  letterSpacing: 2,
+                  color: textHintC,
+                  fontFamily: AppTextStyle.fontFamily,
+                  height: AppTextStyle.defaultHeight,
+                  leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+                ),
+              );
+            },
           ),
           const SizedBox(height: 32),
           Divider(color: borderC, height: 1),
@@ -253,4 +263,18 @@ class _NavItem {
   final String label;
 
   const _NavItem(this.icon, this.selectedIcon, this.label);
+}
+
+String _premiseSubtitle(String? premiseType, {String? accountMode}) {
+  if (accountMode == 'service') return 'доступ к картам клиентов';
+  if (accountMode == 'p2p') return 'карта на заказ и вручную';
+  switch (premiseType) {
+    case 'apartment': return 'твоя квартира в порядке';
+    case 'house': return 'твой дом в порядке';
+    case 'office': return 'твой офис в порядке';
+    case 'commerce': return 'твой склад в порядке';
+    case 'hotel': return 'твои апартаменты в порядке';
+    case 'service_access': return 'временный доступ к объектам';
+    default: return 'твой дом в порядке';
+  }
 }

@@ -1,152 +1,148 @@
-# ARThouse Frontend
+# ARTHOUSE Frontend
 
-Flutter приложение для управления квартирами.
+Flutter-клиент для ARTHOUSE: авторизация, onboarding, карта, задачи, чат, профиль и поиск специалистов.
+
+## Что есть в проекте
+
+- адаптивный UI (mobile/web)
+- auth flow (register/login/welcome/survey)
+- профиль и настройки внешнего вида
+- экран задач и создание задачи
+- карта/редактор помещения
+- чат и поиск специалистов
+
+## Технологии
+
+- Flutter 3.x
+- Dart 3.x
+- Provider (state management)
+- HTTP API (FastAPI backend)
+
+---
 
 ## Требования
 
-- Flutter SDK >= 3.0.0
-- Dart SDK >= 3.0.0
+- Flutter SDK `>= 3.0.0`
+- Dart SDK `>= 3.0.0`
+- Запущенный backend из `art_back` (см. `art_back/README.md`)
 
-## Установка
+---
 
-1. Установите зависимости:
+## Установка и запуск
+
+### 1) Установить зависимости
+
 ```bash
 flutter pub get
 ```
 
-2. Запустите бэкенд сервер (см. `art_back/README.md`)
+### 2) Запустить backend
 
-3. При необходимости, отредактируйте URL API в `lib/config/api_config.dart`:
-```dart
-static const String baseUrl = 'http://127.0.0.1:8000';
-```
-
-## Запуск
-
-### Web
 ```bash
-flutter run -d chrome
+cd ../art_back
+python run.py
 ```
 
-### Android
+### 3) Запустить frontend
+
+Из папки `art_front`:
+
 ```bash
-flutter run -d android
+flutter run
 ```
 
-### iOS
+---
+
+## Настройка API URL
+
+По умолчанию:
+
+- Web/Desktop: `http://127.0.0.1:8000`
+- Android emulator: `http://10.0.2.2:8000`
+
+Для реального Android-устройства используйте `dart-define`:
+
 ```bash
-flutter run -d ios
+flutter run -d <device_id> --dart-define=API_BASE_URL=http://192.168.1.100:8000
 ```
 
-### Windows
-```bash
-flutter run -d windows
-```
+Где `192.168.1.100` — IP вашего ПК в той же Wi-Fi сети.
+
+---
+
+## Доступные платформы
+
+- Web: `flutter run -d chrome`
+- Android: `flutter run -d android`
+- iOS: `flutter run -d ios`
+- Windows: `flutter run -d windows`
+
+---
 
 ## Структура проекта
 
-```
-lib/
-├── config/              # Конфигурация (API, тема)
-│   ├── api_config.dart
-│   └── app_theme.dart
-├── models/              # Модели данных
-│   ├── user.dart
-│   └── apartment.dart
-├── services/            # API сервисы
-│   ├── api_service.dart
-│   ├── auth_service.dart
-│   └── apartment_service.dart
-├── providers/           # State management (Provider)
-│   ├── auth_provider.dart
-│   └── apartment_provider.dart
-├── screens/             # UI экраны
-│   ├── auth/
-│   │   ├── login_screen.dart
-│   │   └── register_screen.dart
-│   ├── apartments/
-│   │   ├── apartments_list_screen.dart
-│   │   ├── apartment_form_screen.dart
-│   │   └── apartment_detail_screen.dart
-│   ├── home/
-│   │   └── home_screen.dart
-│   └── profile/
-│       └── profile_screen.dart
-└── main.dart            # Точка входа
+```text
+art_front/
+├── lib/
+│   ├── config/           # API + тема
+│   ├── core/             # общие виджеты/утилиты
+│   ├── models/           # модели данных
+│   ├── providers/        # состояние приложения
+│   ├── services/         # API сервисы
+│   ├── screens/          # экраны
+│   └── main.dart
+├── android/
+├── ios/
+├── web/
+├── pubspec.yaml
+└── README.md
 ```
 
-## Функциональность
+---
 
-### Аутентификация
-- Регистрация нового пользователя
-- Вход в систему
-- Автоматическое сохранение токена
-- Выход из аккаунта
+## API, которые использует клиент
 
-### Квартиры
-- Просмотр списка квартир
-- Создание новой квартиры
-- Редактирование квартиры
-- Удаление квартиры
-- Просмотр детальной информации
+- `POST /api/v1/auth/register`
+- `POST /api/v1/auth/login`
+- `GET /api/v1/users/me`
+- `PUT /api/v1/users/me`
+- `GET /api/v1/apartments/my`
+- `POST /api/v1/apartments/my`
+- `GET /api/v1/apartments/my/{id}`
+- `PUT /api/v1/apartments/my/{id}`
+- `DELETE /api/v1/apartments/my/{id}`
 
-### Профиль
-- Просмотр информации о пользователе
-- Выход из аккаунта
+Примечание: задачи на фронте уже подготовлены к API, но на бэкенде роут `tasks` должен быть включен и поддержан моделью.
 
-## API Endpoints
+---
 
-Приложение работает с бэкендом по следующим эндпоинтам:
+## Частые проблемы
 
-- `POST /api/v1/auth/register` - Регистрация
-- `POST /api/v1/auth/login` - Вход
-- `GET /api/v1/users/me` - Текущий пользователь
-- `GET /api/v1/apartments/my` - Список квартир
-- `POST /api/v1/apartments/my` - Создание квартиры
-- `GET /api/v1/apartments/my/{id}` - Получение квартиры
-- `PUT /api/v1/apartments/my/{id}` - Обновление квартиры
-- `DELETE /api/v1/apartments/my/{id}` - Удаление квартиры
+### `SocketException` / сервер недоступен
 
-## Suggestions for a good README
+- backend не запущен
+- неверный `API_BASE_URL`
+- телефон и ПК не в одной сети
+- firewall блокирует порт `8000`
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+### Android-устройство не подключается к API
 
-## Name
-Choose a self-explaining name for your project.
+- используйте IP ПК, не `127.0.0.1` и не `10.0.2.2`
+- запускайте с:
+  - `--dart-define=API_BASE_URL=http://<IP_ПК>:8000`
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+### Ошибка сборки Flutter
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+```bash
+flutter clean
+flutter pub get
+flutter run
+```
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+---
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+## Рекомендации по развитию
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
-
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
-
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
-
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
-
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
-
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
-
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
-
-## License
-For open source projects, say how it is licensed.
-
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+- включить и стабилизировать backend `tasks` API
+- связать задачи карты (`room_id`) с backend
+- добавить e2e smoke-flow: register -> login -> create apartment -> create task

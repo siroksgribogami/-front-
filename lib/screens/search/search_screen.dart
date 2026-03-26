@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../core/theme/app_text_style.dart';
+import '../chat/chat_screen.dart';
 
-/// Экран поиска - поиск специалистов, товаров и услуг
+/// Экран поиска — специалисты, услуги, поиск по городу.
 class SearchScreen extends StatefulWidget {
   final bool embedded;
   const SearchScreen({super.key, this.embedded = false});
@@ -13,6 +14,7 @@ class SearchScreen extends StatefulWidget {
 
 class _SearchScreenState extends State<SearchScreen> {
   final TextEditingController _searchController = TextEditingController();
+  final TextEditingController _cityController = TextEditingController();
   String _selectedCategory = 'all';
 
   final List<Map<String, dynamic>> _categories = [
@@ -61,13 +63,130 @@ class _SearchScreenState extends State<SearchScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _cityController.dispose();
     super.dispose();
+  }
+
+  void _openChat() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const ChatScreen()),
+    );
+  }
+
+  void _showSpecialistProfile(BuildContext context, Map<String, dynamic> item) {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => DraggableScrollableSheet(
+        initialChildSize: 0.6,
+        minChildSize: 0.4,
+        maxChildSize: 0.9,
+        builder: (_, scrollController) => Container(
+          decoration: BoxDecoration(
+            color: Theme.of(context).brightness == Brightness.dark
+                ? AppTheme.darkCard
+                : Colors.white,
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          ),
+          child: ListView(
+            controller: scrollController,
+            padding: const EdgeInsets.all(24),
+            children: [
+              Center(
+                child: Container(
+                  width: 40,
+                  height: 4,
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: AppTheme.textHint,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              ),
+              Text(
+                item['name'] as String,
+                style: const TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                item['category'] as String,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Чем занимается',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Text(
+                item['type'] == 'specialist'
+                    ? 'Профессиональные услуги по своей специализации. Опыт и отзывы ниже.'
+                    : 'Услуги и товары в данной категории.',
+                style: const TextStyle(fontSize: 15, height: 1.4),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Отзывы',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                  color: AppTheme.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Row(
+                children: [
+                  const Icon(Icons.star, color: Colors.amber, size: 20),
+                  const SizedBox(width: 6),
+                  Text(
+                    '${item['rating']} (${item['reviews']} отзывов)',
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _openChat();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14),
+                    ),
+                  ),
+                  child: const Text('Связаться'),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
+    final cardBg = isDark ? AppTheme.darkCard : Colors.white;
     final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
 
     return Scaffold(
@@ -82,7 +201,7 @@ class _SearchScreenState extends State<SearchScreen> {
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 36, 20, 0),
               child: Text(
-                'Поиск',
+                'Специалисты',
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
@@ -93,7 +212,28 @@ class _SearchScreenState extends State<SearchScreen> {
                 ),
               ),
             ),
-          // Поле поиска
+          // Город
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+            child: TextField(
+              controller: _cityController,
+              decoration: InputDecoration(
+                hintText: 'Город',
+                hintStyle: const TextStyle(color: AppTheme.textHint, fontSize: 14),
+                prefixIcon: const Icon(Icons.location_on_outlined, color: AppTheme.textHint, size: 22),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(14),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: cardBg,
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                isDense: true,
+              ),
+              style: TextStyle(fontSize: 15, color: textMain),
+            ),
+          ),
+          // Поле поиска (специалисты, услуги)
           Padding(
             padding: const EdgeInsets.all(16),
             child: Container(
@@ -111,7 +251,7 @@ class _SearchScreenState extends State<SearchScreen> {
               child: TextField(
                 controller: _searchController,
                 decoration: InputDecoration(
-                  hintText: 'Найти специалиста или магазин...',
+                  hintText: 'Специалист, услуга, магазин...',
                   hintStyle: const TextStyle(color: AppTheme.textHint, fontSize: 14),
                   prefixIcon: const Icon(Icons.search, color: AppTheme.textHint),
                   suffixIcon: _searchController.text.isNotEmpty
@@ -186,7 +326,7 @@ class _SearchScreenState extends State<SearchScreen> {
                     .where((item) =>
                         _selectedCategory == 'all' ||
                         _matchesCategory(item, _selectedCategory))
-                    .map((item) => _buildItemCard(item)),
+                    .map((item) => _buildItemCard(context, item)),
               ],
             ),
           ),
@@ -208,7 +348,7 @@ class _SearchScreenState extends State<SearchScreen> {
     }
   }
 
-  Widget _buildItemCard(Map<String, dynamic> item) {
+  Widget _buildItemCard(BuildContext context, Map<String, dynamic> item) {
     IconData typeIcon;
     Color typeColor;
 
@@ -232,7 +372,10 @@ class _SearchScreenState extends State<SearchScreen> {
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
+      child: InkWell(
+        onTap: () => _showSpecialistProfile(context, item),
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
         padding: const EdgeInsets.all(16),
         child: Row(
           children: [
@@ -300,7 +443,7 @@ class _SearchScreenState extends State<SearchScreen> {
                   ),
                   const SizedBox(height: 8),
                   ElevatedButton(
-                    onPressed: () {},
+                    onPressed: _openChat,
                     style: ElevatedButton.styleFrom(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 8),
@@ -312,6 +455,7 @@ class _SearchScreenState extends State<SearchScreen> {
               ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -82,7 +82,7 @@ class AppTextStyle {
       );
 
   static TextStyle button({
-    Color color = const Color(0xFF6C8671),
+    Color color = const Color(0xFF659171),
     double fontSize = 17,
     FontWeight fontWeight = FontWeight.w600,
   }) => gropled(

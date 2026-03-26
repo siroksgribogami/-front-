@@ -8,7 +8,7 @@ import '../../../providers/map_editor_provider.dart';
 import 'furniture_catalog.dart';
 
 // ─── Цвета из промта ───
-const _sage = Color(0xFF6C8671);
+const _sage = Color(0xFF659171);
 const _terra = Color(0xFFD4956A);
 const _cream = Color(0xFFF7F3EC);
 const _dark = Color(0xFF2A3A2C);

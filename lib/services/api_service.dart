@@ -84,7 +84,7 @@ class ApiService {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Нет подключения к интернету',
+        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
       );
     }
   }
@@ -111,7 +111,7 @@ class ApiService {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Нет подключения к интернету',
+        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
       );
     }
   }
@@ -138,7 +138,7 @@ class ApiService {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Нет подключения к интернету',
+        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
       );
     }
   }
@@ -160,7 +160,7 @@ class ApiService {
     } on SocketException {
       throw ApiException(
         statusCode: 0,
-        message: 'Нет подключения к интернету',
+        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
       );
     }
   }

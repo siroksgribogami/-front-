@@ -21,38 +21,73 @@ class ApartmentService {
 
   /// Получить квартиру по ID
   Future<Apartment> getApartment(int id) async {
-    final response = await _api.get(
-      '${ApiConfig.apartmentsMy}/$id',
-      requireAuth: true,
-    );
-    return Apartment.fromJson(response);
+    try {
+      final response = await _api.get(
+        '${ApiConfig.apartmentsMy}/$id',
+        requireAuth: true,
+      );
+      return Apartment.fromJson(response);
+    } catch (_) {
+      // Совместимость с backend-веткой, где роут: /apartments/{id}
+      final response = await _api.get(
+        '/apartments/$id',
+        requireAuth: true,
+      );
+      return Apartment.fromJson(response);
+    }
   }
 
   /// Создать новую квартиру
   Future<Apartment> createApartment(ApartmentCreate data) async {
-    final response = await _api.post(
-      ApiConfig.apartmentsMy,
-      body: data.toJson(),
-      requireAuth: true,
-    );
-    return Apartment.fromJson(response);
+    try {
+      final response = await _api.post(
+        ApiConfig.apartmentsMy,
+        body: data.toJson(),
+        requireAuth: true,
+      );
+      return Apartment.fromJson(response);
+    } catch (_) {
+      // Совместимость с backend-веткой, где роут: POST /apartments/
+      final response = await _api.post(
+        '/apartments/',
+        body: data.toJson(),
+        requireAuth: true,
+      );
+      return Apartment.fromJson(response);
+    }
   }
 
   /// Обновить квартиру
   Future<Apartment> updateApartment(int id, ApartmentUpdate data) async {
-    final response = await _api.put(
-      '${ApiConfig.apartmentsMy}/$id',
-      body: data.toJson(),
-      requireAuth: true,
-    );
-    return Apartment.fromJson(response);
+    try {
+      final response = await _api.put(
+        '${ApiConfig.apartmentsMy}/$id',
+        body: data.toJson(),
+        requireAuth: true,
+      );
+      return Apartment.fromJson(response);
+    } catch (_) {
+      final response = await _api.put(
+        '/apartments/$id',
+        body: data.toJson(),
+        requireAuth: true,
+      );
+      return Apartment.fromJson(response);
+    }
   }
 
   /// Удалить квартиру
   Future<void> deleteApartment(int id) async {
-    await _api.delete(
-      '${ApiConfig.apartmentsMy}/$id',
-      requireAuth: true,
-    );
+    try {
+      await _api.delete(
+        '${ApiConfig.apartmentsMy}/$id',
+        requireAuth: true,
+      );
+    } catch (_) {
+      await _api.delete(
+        '/apartments/$id',
+        requireAuth: true,
+      );
+    }
   }
 }
