@@ -113,7 +113,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                           ),
                         ),
                         child: const Icon(
-                          Icons.home_outlined,
+                          Icons.architecture_rounded,
                           size: 38,
                           color: AppTheme.backgroundColor,
                         ),
@@ -139,7 +139,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                       // Подзаголовок
                       AppText(
-                        'Пара вопросов — и мы настроим\nвсё под вас.',
+                        'Пара вопросов — подстроим сценарий\nремонта и роль: заказчик или исполнитель.',
                         style: AppTextStyle.gropled(
                           fontSize: 18,
                           color: AppTheme.backgroundColor.withOpacity(0.65),

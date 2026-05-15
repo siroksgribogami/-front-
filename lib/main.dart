@@ -6,14 +6,14 @@ import 'package:intl/date_symbol_data_local.dart';
 
 import 'config/api_config_platform_stub.dart' if (dart.library.io) 'config/api_config_platform_io.dart' as api_platform;
 import 'config/app_theme.dart';
+import 'config/webview_web_register.dart';
 import 'core/bar_loader.dart';
 import 'providers/auth_provider.dart';
-import 'providers/apartment_provider.dart';
-import 'providers/map_editor_provider.dart';
-import 'providers/task_provider.dart';
 import 'providers/theme_provider.dart';
+import 'providers/role_provider.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/post_register_survey_screen.dart';
+import 'screens/auth/email_verification_screen.dart';
 import 'screens/auth/register_screen.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/home/home_screen.dart';
@@ -22,44 +22,58 @@ import 'screens/home/mobile_home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  registerWebViewPlatformForWeb();
+
+  api_platform.initApiConfigForPlatform();
   if (!kIsWeb) {
-    api_platform.initApiConfigForPlatform();
     _setSystemUIOverlay();
   }
 
   await initializeDateFormatting('ru', null);
 
-  runApp(const ARThouseApp());
+  runApp(const ArtkhausApp());
 }
 
 void _setSystemUIOverlay() {
-  SystemChrome.setSystemUIOverlayStyle(
-    const SystemUiOverlayStyle(
-      statusBarColor: Colors.transparent,
-      statusBarIconBrightness: Brightness.dark,
-      systemNavigationBarColor: Color(0xFFF7F3EC),
-      systemNavigationBarIconBrightness: Brightness.dark,
-      systemNavigationBarDividerColor: Colors.transparent,
-    ),
-  );
+  _applySystemUIOverlay(Brightness.light);
   SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge);
 }
 
-class ARThouseApp extends StatelessWidget {
-  const ARThouseApp({super.key});
+void _applySystemUIOverlay(Brightness brightness) {
+  final isDark = brightness == Brightness.dark;
+  SystemChrome.setSystemUIOverlayStyle(
+    SystemUiOverlayStyle(
+      statusBarColor: Colors.transparent,
+      statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
+      systemNavigationBarColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF7F3EC),
+      systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
+      systemNavigationBarDividerColor: Colors.transparent,
+    ),
+  );
+}
+
+class ArtkhausApp extends StatelessWidget {
+  const ArtkhausApp({super.key});
 
   @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
-        ChangeNotifierProvider(create: (_) => ApartmentProvider()),
-        ChangeNotifierProvider(create: (_) => MapEditorProvider()),
-        ChangeNotifierProvider(create: (_) => TaskProvider()),
         ChangeNotifierProvider(create: (_) => ThemeProvider()),
+        ChangeNotifierProvider(create: (_) => RoleProvider()),
       ],
       child: Consumer<ThemeProvider>(
         builder: (context, themeProv, _) {
+          final platformBrightness = MediaQuery.platformBrightnessOf(context);
+          final effectiveBrightness = switch (themeProv.themeMode) {
+            ThemeMode.light => Brightness.light,
+            ThemeMode.dark => Brightness.dark,
+            ThemeMode.system => platformBrightness,
+          };
+          _applySystemUIOverlay(effectiveBrightness);
+
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(
               textScaler: TextScaler.linear(themeProv.fontScale),
@@ -104,6 +118,7 @@ class _AppRootState extends State<AppRoot> {
     // Инициализация при старте
     WidgetsBinding.instance.addPostFrameCallback((_) {
       context.read<AuthProvider>().initialize();
+      context.read<RoleProvider>().load();
     });
   }
 
@@ -125,7 +140,7 @@ class _AppRootState extends State<AppRoot> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Icon(
-                    Icons.home_work_rounded,
+                    Icons.architecture_rounded,
                     size: 80,
                     color: AppTheme.primaryColor,
                   ),
@@ -145,6 +160,14 @@ class _AppRootState extends State<AppRoot> {
                 ],
               ),
             ),
+          );
+        } else if (auth.needsEmailVerification) {
+          screenKey = 'verify_email';
+          screen = EmailVerificationScreen(
+            key: const ValueKey('verify_email'),
+            onContinue: () {
+              context.read<AuthProvider>().completeEmailVerificationStep();
+            },
           );
         } else if (auth.justRegistered) {
           // Короткий экран-приветствие после регистрации.
@@ -173,10 +196,11 @@ class _AppRootState extends State<AppRoot> {
         }
 
         return AnimatedSwitcher(
-          duration: const Duration(milliseconds: 400),
+          duration: const Duration(milliseconds: 220),
           layoutBuilder: (currentChild, previousChildren) {
+            final bg = Theme.of(context).scaffoldBackgroundColor;
             return ColoredBox(
-              color: AppTheme.primaryColor,
+              color: bg,
               child: Stack(
                 fit: StackFit.expand,
                 children: [
@@ -224,6 +248,7 @@ class _AuthFlowState extends State<AuthFlow> {
       switchInCurve: Curves.easeIn,
       switchOutCurve: Curves.easeOut,
       layoutBuilder: (currentChild, previousChildren) {
+        // Тот же зелёный, что у Login/Register — иначе при cross-fade на секунду виден фон темы (тёмный в dark mode).
         return ColoredBox(
           color: AppTheme.primaryColor,
           child: Stack(

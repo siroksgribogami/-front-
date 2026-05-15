@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/role_provider.dart';
 import '../../config/app_theme.dart';
 import '../../core/theme/app_text_style.dart';
 
@@ -82,6 +83,7 @@ class _LoginScreenState extends State<LoginScreen>
     );
 
     if (success && mounted) {
+      await context.read<RoleProvider>().load();
       widget.onLoginSuccess?.call();
     }
   }
@@ -114,30 +116,18 @@ class _LoginScreenState extends State<LoginScreen>
                     const Text(
                       'АРТхаус',
                       style: TextStyle(
-                        fontSize: 64,
+                        fontSize: 63,
                         fontWeight: FontWeight.w700,
                         color: Colors.white,
-                        letterSpacing: -2.5,
+                        letterSpacing: -2.4,
                         fontFamily: AppTextStyle.fontFamily,
                         height: AppTextStyle.defaultHeight,
                         leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                       ),
                     ),
                     const SizedBox(height: 12),
-                    Text(
-                      'твой дом в порядке',
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.white.withOpacity(0.55),
-                        letterSpacing: 3,
-                        fontFamily: AppTextStyle.fontFamily,
-                        height: AppTextStyle.defaultHeight,
-                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                      ),
-                    ),
-                    const SizedBox(height: 48),
                     ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 340),
+                      constraints: const BoxConstraints(maxWidth: 300),
                       child: Column(
                         children: [
                           _buildPillButton(
@@ -279,6 +269,13 @@ class _LoginScreenState extends State<LoginScreen>
                           borderRadius: BorderRadius.circular(100),
                         ),
                         elevation: 0,
+                        textStyle: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w600,
+                          fontFamily: AppTextStyle.fontFamily,
+                          height: AppTextStyle.defaultHeight,
+                          leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+                        ),
                       ),
                       child: auth.isLoading
                           ? const SizedBox(
@@ -294,6 +291,9 @@ class _LoginScreenState extends State<LoginScreen>
                               style: TextStyle(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
+                                fontFamily: AppTextStyle.fontFamily,
+                                height: AppTextStyle.defaultHeight,
+                                leadingDistribution: AppTextStyle.defaultLeadingDistribution,
                               ),
                             ),
                     );
@@ -357,7 +357,7 @@ class _LoginScreenState extends State<LoginScreen>
     bool outlined = false,
   }) {
     final baseStyle = TextStyle(
-      fontSize: 18,
+      fontSize: 16,
       fontWeight: FontWeight.w700,
       color: outlined ? Colors.white : AppTheme.primaryColor,
       fontFamily: AppTextStyle.fontFamily,
@@ -390,7 +390,7 @@ class _LoginScreenState extends State<LoginScreen>
         onTap: onTap,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 24),
+          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
           decoration: decoration,
           alignment: Alignment.center,
           child: Text(label, style: baseStyle),

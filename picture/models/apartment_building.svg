@@ -1,0 +1,14 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="256" height="256" rx="32" fill="#F7FBFF"/>
+  <rect x="56" y="44" width="144" height="168" rx="12" fill="#E7F0FA" stroke="#1E3A5F" stroke-width="10"/>
+  <rect x="108" y="166" width="40" height="46" rx="5" fill="#C7DAEF" stroke="#1E3A5F" stroke-width="8"/>
+  <rect x="76" y="64" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="116" y="64" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="156" y="64" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="76" y="100" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="116" y="100" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="156" y="100" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="76" y="136" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="116" y="136" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+  <rect x="156" y="136" width="24" height="24" rx="4" fill="#9EC5EA" stroke="#1E3A5F" stroke-width="5"/>
+</svg>

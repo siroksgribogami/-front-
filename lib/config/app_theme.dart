@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'text_theme.dart';
 
-/// Тема приложения АРТхаус - уютный дом и комфорт
+/// Тема ARTkhaus — маркетплейс ремонта, спокойные натуральные тона
 /// Цветовая схема 60-30-10 (Кремовый + терракот):
 /// - 60% (#F7F3EC) - Кремовый фон, тёплый и домашний
 /// - 30% (#659171) - Шалфейно-зеленый, природа и уют
@@ -42,8 +42,18 @@ class AppTheme {
   static const Color textSecondary = Color(0xFF506A58);
   static const Color textHint = Color(0xFF80B490);
   static const Color textOnPrimary = Colors.white;
+
+  /// Подписи на всех стандартных кнопках (Gropled, как у бренда).
+  static const TextStyle buttonLabelStyle = TextStyle(
+    fontFamily: AppTextStyle.fontFamily,
+    fontSize: 15,
+    fontWeight: FontWeight.w600,
+    letterSpacing: 0.2,
+    height: AppTextStyle.defaultHeight,
+    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+  );
   
-  /// Светлая тема АРТхаус
+  /// Светлая тема ARTkhaus
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -97,11 +107,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(100),
           ),
           elevation: 0,
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
-          ),
+          textStyle: buttonLabelStyle,
         ),
       ),
       // Кнопка акцента (CTA) - терракотовый
@@ -113,6 +119,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100),
           ),
+          textStyle: buttonLabelStyle,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -123,14 +130,13 @@ class AppTheme {
             borderRadius: BorderRadius.circular(100),
           ),
           side: const BorderSide(color: primaryColor, width: 1.5),
+          textStyle: buttonLabelStyle,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryColor,
-          textStyle: const TextStyle(
-            fontWeight: FontWeight.w600,
-          ),
+          textStyle: buttonLabelStyle,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -158,19 +164,20 @@ class AppTheme {
         prefixIconColor: textSecondary,
         suffixIconColor: textSecondary,
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accentColor,
         foregroundColor: Colors.white,
         elevation: 2,
-        shape: CircleBorder(),
+        shape: const CircleBorder(),
+        extendedTextStyle: buttonLabelStyle.copyWith(color: Colors.white),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surfaceColor,
         selectedItemColor: primaryColor,
         unselectedItemColor: warmGrey,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
+        selectedLabelStyle: buttonLabelStyle.copyWith(fontSize: 12, letterSpacing: 0),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: surfaceColor,
@@ -183,9 +190,9 @@ class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(color: primaryColor, fontWeight: FontWeight.w600, fontSize: 12);
+            return buttonLabelStyle.copyWith(color: primaryColor, fontSize: 12, letterSpacing: 0);
           }
-          return const TextStyle(color: warmGrey, fontSize: 12);
+          return buttonLabelStyle.copyWith(color: warmGrey, fontWeight: FontWeight.w500, fontSize: 12, letterSpacing: 0);
         }),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -198,7 +205,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: backgroundColor,
         selectedColor: primaryColor.withOpacity(0.2),
-        labelStyle: const TextStyle(color: textPrimary),
+        labelStyle: buttonLabelStyle.copyWith(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),
@@ -320,7 +327,7 @@ class AppTheme {
   static const Color darkTextHint       = Color(0xFF787674);
   static const Color darkSecondary      = Color(0xFF222222);
 
-  /// Тёмная тема АРТхаус
+  /// Тёмная тема ARTkhaus
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -375,11 +382,7 @@ class AppTheme {
             borderRadius: BorderRadius.circular(100),
           ),
           elevation: 0,
-          textStyle: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            letterSpacing: 0.2,
-          ),
+          textStyle: buttonLabelStyle,
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -390,6 +393,7 @@ class AppTheme {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(100),
           ),
+          textStyle: buttonLabelStyle,
         ),
       ),
       outlinedButtonTheme: OutlinedButtonThemeData(
@@ -400,12 +404,13 @@ class AppTheme {
             borderRadius: BorderRadius.circular(100),
           ),
           side: BorderSide(color: darkTextPrimary.withOpacity(0.3), width: 1.5),
+          textStyle: buttonLabelStyle,
         ),
       ),
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primaryLight,
-          textStyle: const TextStyle(fontWeight: FontWeight.w600),
+          textStyle: buttonLabelStyle,
         ),
       ),
       inputDecorationTheme: InputDecorationTheme(
@@ -433,19 +438,20 @@ class AppTheme {
         prefixIconColor: darkTextSecondary,
         suffixIconColor: darkTextSecondary,
       ),
-      floatingActionButtonTheme: const FloatingActionButtonThemeData(
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: darkAccent,
         foregroundColor: Colors.white,
         elevation: 2,
-        shape: CircleBorder(),
+        shape: const CircleBorder(),
+        extendedTextStyle: buttonLabelStyle.copyWith(color: Colors.white),
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: darkCard,
         selectedItemColor: primaryLight,
         unselectedItemColor: darkTextHint,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
-        selectedLabelStyle: TextStyle(fontWeight: FontWeight.w600),
+        selectedLabelStyle: buttonLabelStyle.copyWith(fontSize: 12, letterSpacing: 0),
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: darkCard,
@@ -458,9 +464,9 @@ class AppTheme {
         }),
         labelTextStyle: WidgetStateProperty.resolveWith((states) {
           if (states.contains(WidgetState.selected)) {
-            return const TextStyle(color: primaryLight, fontWeight: FontWeight.w600, fontSize: 12);
+            return buttonLabelStyle.copyWith(color: primaryLight, fontSize: 12, letterSpacing: 0);
           }
-          return const TextStyle(color: darkTextHint, fontSize: 12);
+          return buttonLabelStyle.copyWith(color: darkTextHint, fontWeight: FontWeight.w500, fontSize: 12, letterSpacing: 0);
         }),
       ),
       snackBarTheme: SnackBarThemeData(
@@ -473,7 +479,7 @@ class AppTheme {
       chipTheme: ChipThemeData(
         backgroundColor: darkSurface,
         selectedColor: primaryColor.withOpacity(0.3),
-        labelStyle: const TextStyle(color: darkTextPrimary),
+        labelStyle: buttonLabelStyle.copyWith(color: darkTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(8),
         ),

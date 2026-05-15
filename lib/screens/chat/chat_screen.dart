@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
 import '../../core/theme/app_text_style.dart';
+import '../../services/chat_local_store.dart';
 
 // ── Модель контакта ──
 class _Contact {
@@ -41,7 +42,6 @@ class _ChatScreenState extends State<ChatScreen> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  // ── Липовые контакты для демо ──
   final List<_Contact> _contacts = const [
     _Contact(
       id: 'bot',
@@ -109,12 +109,36 @@ class _ChatScreenState extends State<ChatScreen> {
   // ── Истории чатов по contact id ──
   final Map<String, List<Map<String, dynamic>>> _chats = {};
 
+  bool _chatsReady = false;
+
   bool get _isMobile => !kIsWeb;
 
   @override
   void initState() {
     super.initState();
-    // Предзаполняем чаты
+    _loadStoredChats();
+  }
+
+  Future<void> _loadStoredChats() async {
+    final loaded = await ChatLocalStore.instance.loadAll();
+    if (!mounted) return;
+    setState(() {
+      if (loaded.isNotEmpty) {
+        _chats
+          ..clear()
+          ..addAll(loaded);
+      } else {
+        _seedDefaultChats();
+      }
+      _chatsReady = true;
+    });
+  }
+
+  Future<void> _persistChats() async {
+    await ChatLocalStore.instance.saveAll(_chats);
+  }
+
+  void _seedDefaultChats() {
     _chats['bot'] = [
       {'isMe': false, 'text': 'Привет! Я AI-ассистент АРТхаус 🏠\n\nЯ помогу вам управлять домом, найти специалистов и ответить на вопросы о ремонте.', 'time': '10:00'},
       {'isMe': false, 'text': 'Чем я могу вам помочь сегодня?', 'time': '10:00'},
@@ -168,6 +192,7 @@ class _ChatScreenState extends State<ChatScreen> {
         'time': _formatTime(DateTime.now()),
       });
     });
+    _persistChats();
 
     _messageController.clear();
     _scrollToBottom();
@@ -179,10 +204,11 @@ class _ChatScreenState extends State<ChatScreen> {
       setState(() {
         _chats[cid]!.add({
           'isMe': false,
-          'text': contact.isBot ? _getBotResponse(text) : _getFakeReply(contact.name),
+          'text': contact.isBot ? _getBotResponse(text) : _offlinePartnerReply(contact.name),
           'time': _formatTime(DateTime.now()),
         });
       });
+      _persistChats();
       _scrollToBottom();
     });
   }
@@ -213,7 +239,7 @@ class _ChatScreenState extends State<ChatScreen> {
     return 'Понял вас! Попробуйте спросить о:\n• Поиске специалистов\n• Задачах по дому\n• Рекомендациях по уходу';
   }
 
-  String _getFakeReply(String name) {
+  String _offlinePartnerReply(String name) {
     final replies = [
       'Хорошо, сделаю!',
       'Отлично, спасибо!',
@@ -227,6 +253,11 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (!_chatsReady) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     // Мобиль: полноэкранный список -> полноэкранный чат
     if (_isMobile) {
       return _buildMobileLayout();

@@ -28,7 +28,8 @@ class TaskProvider with ChangeNotifier {
     notifyListeners();
 
     try {
-      _tasks = await _taskService.getTasks();
+      final rawTasks = await _taskService.getTasks();
+      _tasks = rawTasks.map((json) => TaskItem.fromJson(json)).toList();
       _offlineMode = false;
     } on ApiException catch (e) {
       // Backend tasks могут быть временно недоступны — работаем локально.
@@ -79,12 +80,15 @@ class TaskProvider with ChangeNotifier {
         return false;
       }
 
-      final task = await _taskService.createTask(
-        apartmentId: apartments.first.id,
-        title: title,
-        description: description,
-        dueDate: dueDate,
-      );
+      final taskData = {
+        'apartment_id': apartments.first.id,
+        'title': title,
+        'description': description,
+        'due_date': dueDate?.toIso8601String(),
+      };
+
+      final taskJson = await _taskService.createTask(taskData);
+      final task = TaskItem.fromJson(taskJson);
       _tasks = [task, ..._tasks];
       _error = null;
       notifyListeners();
@@ -123,10 +127,11 @@ class TaskProvider with ChangeNotifier {
 
     final nextStatus = task.isDone ? 'pending' : 'completed';
     try {
-      final updated = await _taskService.updateTaskStatus(
-        taskId: task.id,
-        status: nextStatus,
+      final updatedJson = await _taskService.updateTaskStatus(
+        task.id,
+        nextStatus,
       );
+      final updated = TaskItem.fromJson(updatedJson);
       final idx = _tasks.indexWhere((t) => t.id == task.id);
       if (idx != -1) {
         _tasks[idx] = updated;

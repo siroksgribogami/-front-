@@ -54,6 +54,20 @@ class AuthService {
     await _api.deleteToken();
   }
 
+  /// Повторная отправка письма с ссылкой подтверждения email.
+  ///
+  /// **Бэкенд (нужно реализовать):** `POST /api/v1/auth/resend-verification` с заголовком
+  /// `Authorization: Bearer <access_token>`. Ответ `204 No Content` или JSON со статусом.
+  /// На сервере: SMTP или почтовый API, одноразовый токен/запись в БД, срок действия ссылки,
+  /// защита от спама (rate limit).
+  Future<void> resendVerificationEmail() async {
+    await _api.post(
+      ApiConfig.authResendVerification,
+      body: <String, dynamic>{},
+      requireAuth: true,
+    );
+  }
+
   /// Проверить авторизацию
   Future<bool> isAuthenticated() async {
     return _api.isAuthenticated();

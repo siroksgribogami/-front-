@@ -46,23 +46,38 @@ class User {
   bool get isAdmin => role == UserRole.admin;
 
   factory User.fromJson(Map<String, dynamic> json) {
+    final idVal = json['id'];
+    final id = idVal is int
+        ? idVal
+        : idVal is num
+            ? idVal.toInt()
+            : int.tryParse('$idVal') ?? 0;
+
+    final createdRaw = json['created_at'];
+    DateTime createdAt;
+    if (createdRaw is String) {
+      createdAt = DateTime.tryParse(createdRaw) ?? DateTime.now();
+    } else {
+      createdAt = DateTime.now();
+    }
+
     return User(
-      id: json['id'] as int,
-      email: json['email'] as String,
-      // backend returns full_name; username is a frontend-only alias
-      username: (json['full_name'] as String?)  ??
-                (json['username'] as String?)    ??
-                '',
+      id: id,
+      email: json['email'] as String? ?? '',
+      // art_back UserResponse: username; старые ветки: full_name
+      username: (json['username'] as String?) ??
+          (json['full_name'] as String?) ??
+          '',
       role: _parseRole(json['role'] as String?),
       userType: _parseUserType(json['user_type'] as String?),
       isActive: json['is_active'] as bool? ?? true,
       isVerified: json['is_verified'] as bool? ?? false,
       surveyCompleted: json['survey_completed'] as bool? ?? false,
-      roomsCount: json['rooms_count'] as int?,
-      floorsCount: json['floors_count'] as int?,
-      wallHeight: json['wall_height'] as int?,
-      totalArea: json['total_area'] as int?,
-      createdAt: DateTime.parse(json['created_at'] as String),
+      roomsCount: (json['rooms_count'] as num?)?.toInt(),
+      floorsCount: (json['floors_count'] as num?)?.toInt(),
+      wallHeight: (json['wall_height'] as num?)?.toInt(),
+      totalArea: (json['total_area'] as num?)?.toInt(),
+      createdAt: createdAt,
     );
   }
 
@@ -143,21 +158,29 @@ class UserCreate {
   final String username;
   final String password;
   final UserType userType;
+  final String? phone;
+  final String? role;
 
   UserCreate({
     required this.email,
     required this.username,
     required this.password,
     this.userType = UserType.b2c,
+    this.phone,
+    this.role,
   });
 
+  /// Тело для `art_back` `/api/v1/auth/register`.
+  /// Добавляем `phone` и `role` опционально для серверной схемы.
   Map<String, dynamic> toJson() {
-    return {
+    final m = <String, dynamic>{
       'email': email,
-      'full_name': username,   // backend field name
+      'username': username,
       'password': password,
-      'user_type': userType.name,
     };
+    if (phone != null) m['phone'] = phone;
+    if (role != null) m['role'] = role;
+    return m;
   }
 }
 

@@ -1,0 +1,102 @@
+# =============================================================================
+# Опрос после регистрации — версия 2 (заказчик / мастер)
+# =============================================================================
+# Реализация: lib/screens/auth/post_register_survey_screen.dart
+# Сохранение: AuthProvider.submitSurvey → /surveys + updateProfile
+# =============================================================================
+
+version: 2
+
+total_steps: 4
+
+# Шаг 1 — роль
+step_1:
+  title: |
+    Как вы планируете
+    использовать ARThouse?
+  subtitle: От этого выбора зависят все следующие шаги
+  options:
+    - role_id: customer
+      emoji: "🏠"
+      title: Я ищу мастера
+      description: Хочу найти специалиста для ремонта, дизайна или других работ
+    - role_id: master
+      emoji: "🔨"
+      title: Я мастер
+      description: Хочу находить заказы и клиентов
+
+# Заказчик (customer)
+branch_customer:
+  step_2:
+    title: Что вам нужно сделать?
+    subtitle: Выберите категорию
+    categories_single:
+      - { id: repair,       label: Ремонт,            emoji: "🔧" }
+      - { id: design,       label: Дизайн интерьера, emoji: "🎨" }
+      - { id: cleaning,     label: Клининг,          emoji: "🧹" }
+      - { id: furniture,    label: Сборка мебели,    emoji: "🪛" }
+      - { id: electrical,   label: Электрика,        emoji: "⚡" }
+      - { id: plumbing,     label: Сантехника,       emoji: "🚿" }
+      - { id: other,        label: Другое,           emoji: "✏️" }
+
+  step_3:
+    title: Опишите ваше пространство
+    subtitle: Тип помещения и примерная площадь
+    premise_types:
+      - { id: apartment, label: Квартира }
+      - { id: house,     label: Дом }
+      - { id: office,    label: Офис }
+    area_ranges:
+      - { id: area_xs, label: "до 40 м²" }
+      - { id: area_s,  label: "40–70 м²" }
+      - { id: area_m,  label: "70–100 м²" }
+      - { id: area_l,  label: "100+ м²" }
+
+  step_4:
+    title: Когда планируете начать?
+    subtitle: Можно изменить позже в профиле
+    timelines:
+      - { id: urgent,         label: Срочно }
+      - { id: within_month,   label: В течение месяца }
+      - { id: browsing,       label: Просто смотрю пока }
+
+# Мастер (master)
+branch_master:
+  step_2:
+    title: Ваша специализация
+    subtitle: Можно выбрать несколько направлений
+    # те же id категорий, что у заказчика (мультивыбор)
+
+  step_3:
+    title: Опыт работы
+    subtitle: Честный ответ поможет подобрать подходящие заказы
+    experience:
+      - { id: lt1,  label: Меньше года }
+      - { id: y1_3, label: 1–3 года }
+      - { id: y3_5, label: 3–5 лет }
+      - { id: gt5,  label: Больше 5 лет }
+
+  step_4:
+    title: В каком городе работаете?
+    subtitle: Укажите город или регион — так клиенты смогут вас находить
+    input_placeholder: "Например: Москва"
+    validation_min_length: 2
+
+# Маппинг в API (дополнительно к числовым полям опроса)
+api_notes:
+  user_type:
+    customer: b2c
+    master: service
+  property_type:
+    customer: apartment | house | office (как выбрал пользователь)
+    master: master
+  additional_info:
+    onboarding_version: 2
+    role: customer | master
+    customer_fields: [work_category, start_timeline]
+    master_fields: [specializations, experience, city]
+  prefs:
+    - arthouse_premise_type
+    - arthouse_account_mode   # customer | master
+    - arthouse_start_timeline # для заказчика
+    - arthouse_city           # для мастера

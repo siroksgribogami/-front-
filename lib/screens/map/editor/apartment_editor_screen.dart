@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../config/app_theme.dart';
+import '../../../config/unity_webgl_config.dart';
 import '../../../core/theme/app_text_style.dart';
 import '../../../providers/map_editor_provider.dart';
 import '../../tasks/add_task_screen.dart';
+import '../unity/hosted_unity_webgl_screen.dart';
 import 'furniture_catalog.dart';
 
 const _sage = Color(0xFF659171);
@@ -251,6 +253,31 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
     return _placedFurnitureByRoom[_activeRoomIndex] ?? const [];
   }
 
+  void _openHostedUnityWebGl() {
+    final raw = UnityWebGlConfig.buildUrl.trim();
+    if (raw.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Не задан URL Unity WebGL (UNITY_WEBGL_BUILD_URL).'),
+        ),
+      );
+      return;
+    }
+
+    final uri = Uri.tryParse(raw);
+    if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Некорректный URL WebGL билда.')),
+      );
+      return;
+    }
+
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => HostedUnityWebGlScreen(uri: uri),
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -297,7 +324,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                                   ),
                                 ),
                                 child: Text(
-                                  'Unity отключен. Активен только bridge-контракт.',
+                                  'Нажмите «Просмотр» — 3D-карта откроется здесь, во встроенном окне.',
                                   style: TextStyle(
                                     fontFamily: AppTextStyle.fontFamily,
                                     fontSize: 12,
@@ -337,7 +364,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                           bottom: 8,
                           child: Center(
                             child: Text(
-                              '3D-рендер Unity временно отключен (мост сохранен).',
+                              'WebGL Unity открывается внутри приложения (кнопка «Просмотр»).',
                               style: TextStyle(
                                 fontFamily: AppTextStyle.fontFamily,
                                 fontSize: 11,
@@ -444,7 +471,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
             ),
           ),
           const SizedBox(width: 6),
-          _headerButton('Просмотр', filled: false, onTap: () {}),
+          _headerButton('Просмотр', filled: false, onTap: _openHostedUnityWebGl),
           const SizedBox(width: 6),
           _headerButton('Сохранить', filled: true, onTap: () {}),
         ],

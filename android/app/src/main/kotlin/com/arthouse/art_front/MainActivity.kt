@@ -1,5 +1,8 @@
 package com.arthouse.art_front
 
+import android.content.pm.ApplicationInfo
+import android.os.Bundle
+import android.webkit.WebView
 import com.arthouse.art_front.UnityBridgeCallbacks
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.android.FlutterActivity
@@ -8,6 +11,13 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity: FlutterActivity() {
 	private val bridgeStore = UnityMapBridgeStore()
+
+	override fun onCreate(savedInstanceState: Bundle?) {
+		super.onCreate(savedInstanceState)
+		if ((applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE) != 0) {
+			WebView.setWebContentsDebuggingEnabled(true)
+		}
+	}
 
 	override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
 		super.configureFlutterEngine(flutterEngine)

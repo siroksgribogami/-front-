@@ -180,9 +180,9 @@ class AppearanceScreen extends StatelessWidget {
                             ),
                             child: Slider(
                               value: themeProv.fontScale,
-                              min: 0.8,
-                              max: 1.4,
-                              divisions: 6,
+                              min: 0.7,
+                              max: 1.2,
+                              divisions: 10,
                               onChanged: (v) => themeProv.setFontScale(v),
                             ),
                           ),
@@ -317,7 +317,7 @@ class _ThemePreview extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'твой дом в порядке',
+                  'идея → ТЗ → 3D → ремонт',
                   style: TextStyle(
                     fontSize: 9,
                     color: Colors.white.withOpacity(0.5),

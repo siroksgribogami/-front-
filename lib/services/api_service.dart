@@ -165,6 +165,33 @@ class ApiService {
     }
   }
 
+  /// Выполнить PATCH запрос
+  Future<dynamic> patch(
+    String endpoint, {
+    Map<String, dynamic>? body,
+    bool requireAuth = false,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.apiBaseUrl}$endpoint');
+      final headers = await _getHeaders(requireAuth: requireAuth);
+
+      final response = await _client
+          .patch(
+            uri,
+            headers: headers,
+            body: body != null ? jsonEncode(body) : null,
+          )
+          .timeout(ApiConfig.requestTimeout);
+
+      return _handleResponse(response);
+    } on SocketException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
+      );
+    }
+  }
+
   /// Обработать ответ сервера
   dynamic _handleResponse(http.Response response) {
     if (response.statusCode >= 200 && response.statusCode < 300) {
@@ -179,11 +206,22 @@ class ApiService {
 
     try {
       final data = jsonDecode(utf8.decode(response.bodyBytes));
+      details = data;
       if (data is Map) {
-        message = data['detail'] ?? message;
-        details = data;
+        final d = data['detail'];
+        if (d is String) {
+          message = d;
+        } else if (d is List) {
+          // FastAPI validation 422: [{"loc":[],"msg":"…","type":"…"}, …]
+          message = d.map((e) {
+            if (e is Map && e['msg'] != null) return e['msg'].toString();
+            return e.toString();
+          }).join('; ');
+        }
       }
-    } catch (_) {}
+    } catch (_) {
+      message = response.body.isNotEmpty ? response.body : message;
+    }
 
     throw ApiException(
       statusCode: response.statusCode,

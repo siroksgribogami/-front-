@@ -1,57 +1,94 @@
 import '../config/api_config.dart';
-import '../models/task.dart';
 import 'api_service.dart';
 
+/// Сервис задач (`/tasks`).
 class TaskService {
   final ApiService _api = ApiService();
 
-  Future<List<TaskItem>> getTasks({int? apartmentId, String? status}) async {
-    final query = <String, String>{};
-    if (apartmentId != null) query['apartment_id'] = '$apartmentId';
-    if (status != null && status.isNotEmpty) query['status'] = status;
+  Future<List<Map<String, dynamic>>> getTasks({
+    int? apartmentId,
+    bool assignedToMe = false,
+    int skip = 0,
+    int limit = 100,
+  }) async {
+    final query = <String, String>{
+      'assigned_to_me': '$assignedToMe',
+      'skip': '$skip',
+      'limit': '$limit',
+    };
+    if (apartmentId != null) {
+      query['apartment_id'] = '$apartmentId';
+    }
 
     final response = await _api.get(
       ApiConfig.tasks,
+      queryParams: query,
       requireAuth: true,
-      queryParams: query.isEmpty ? null : query,
     );
-    if (response is! List) return [];
-    return response
-        .whereType<Map>()
-        .map((json) => TaskItem.fromJson(Map<String, dynamic>.from(json)))
-        .toList();
+    return _asMapList(response);
   }
 
-  Future<TaskItem> createTask({
-    required int apartmentId,
-    required String title,
-    String? description,
-    int priority = 1,
-    DateTime? dueDate,
-  }) async {
-    final response = await _api.post(
-      '${ApiConfig.tasks}/$apartmentId',
+  Future<List<Map<String, dynamic>>> getMyTasks() async {
+    final response = await _api.get(
+      '${ApiConfig.tasks}/my',
       requireAuth: true,
-      body: {
-        'title': title,
-        'description': description,
-        'priority': priority,
-        'due_date': dueDate?.toIso8601String(),
-      },
     );
-    return TaskItem.fromJson(Map<String, dynamic>.from(response as Map));
+    return _asMapList(response);
   }
 
-  Future<TaskItem> updateTaskStatus({
-    required int taskId,
-    required String status,
-  }) async {
-    final response = await _api.put(
+  Future<Map<String, dynamic>> getTaskById(int taskId) async {
+    final response = await _api.get(
       '${ApiConfig.tasks}/$taskId',
       requireAuth: true,
-      body: {'status': status},
     );
-    return TaskItem.fromJson(Map<String, dynamic>.from(response as Map));
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Future<Map<String, dynamic>> createTask(Map<String, dynamic> data) async {
+    final response = await _api.post(
+      ApiConfig.tasks,
+      body: data,
+      requireAuth: true,
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Future<Map<String, dynamic>> updateTask(
+    int taskId,
+    Map<String, dynamic> data,
+  ) async {
+    final response = await _api.put(
+      '${ApiConfig.tasks}/$taskId',
+      body: data,
+      requireAuth: true,
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Future<Map<String, dynamic>> updateTaskStatus(
+    int taskId,
+    String status,
+  ) async {
+    final response = await _api.patch(
+      '${ApiConfig.tasks}/$taskId/status',
+      body: {'status': status},
+      requireAuth: true,
+    );
+    return Map<String, dynamic>.from(response as Map);
+  }
+
+  Future<void> deleteTask(int taskId) async {
+    await _api.delete(
+      '${ApiConfig.tasks}/$taskId',
+      requireAuth: true,
+    );
+  }
+
+  List<Map<String, dynamic>> _asMapList(dynamic response) {
+    final data = response as List<dynamic>? ?? const [];
+    return data
+        .whereType<Map>()
+        .map((item) => Map<String, dynamic>.from(item))
+        .toList();
   }
 }
-

@@ -1,15 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/app_theme.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+
 import '../../core/theme/app_text_style.dart';
+import '../../core/theme/marketplace_colors.dart';
+import '../../models/app_marketplace_role.dart';
 import '../../providers/auth_provider.dart';
-import '../tasks/tasks_screen.dart';
-import '../map/map_screen.dart';
-import '../search/search_screen.dart';
-import '../chat/chat_screen.dart';
+import '../../providers/role_provider.dart';
+import '../marketplace/messages_hub_screen.dart';
+import '../marketplace/customer_find_masters_screen.dart';
+import '../marketplace/customer_projects_screen.dart';
+import '../marketplace/master_my_bids_screen.dart';
+import '../marketplace/master_orders_feed_screen.dart';
+import '../marketplace/marketplace_catalog_screen.dart';
+import '../marketplace/master_supplies_catalog_screen.dart';
 import '../profile/profile_screen.dart';
 
-/// Главный экран АРТхаус с боковой навигацией (sidebar)
+/// Веб-оболочка: боковое меню зависит от активной роли маркетплейса (заказчик / мастер).
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
 
@@ -18,75 +25,142 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentIndex = 2; // Карта по умолчанию (в середине)
+  int _currentIndex = 0;
+  AppMarketplaceRole? _lastActiveRole;
+  /// Два фиксированных режима: только иконки или иконки + подписи (без «растягивания»).
+  bool _sidebarExpanded = true;
 
-  // Порядок: Специалисты, Задачи, Карта, Чат, Профиль (поиск слева, карта в центре)
-  final List<_NavItem> _navItems = const [
-    _NavItem(Icons.search_rounded, Icons.search_rounded, 'Специалисты'),
-    _NavItem(Icons.check_circle_outline, Icons.check_circle, 'Задачи'),
-    _NavItem(Icons.grid_view_outlined, Icons.grid_view, 'Карта'),
-    _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'Чат'),
-    _NavItem(Icons.person_outline, Icons.person, 'Профиль'),
-  ];
+  static const double _collapsedSidebarWidth = 76;
+  static const double _expandedSidebarWidth = 214;
 
-  Widget _getScreen(int index) {
+  void _syncRoleTab(AppMarketplaceRole active) {
+    if (_lastActiveRole == null) {
+      _lastActiveRole = active;
+      return;
+    }
+    if (_lastActiveRole != active) {
+      _lastActiveRole = active;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) setState(() => _currentIndex = 0);
+      });
+    }
+  }
+
+  List<_NavItem> _itemsForRole(AppMarketplaceRole role) {
+    if (role == AppMarketplaceRole.customer) {
+      return const [
+        _NavItem(Icons.folder_open_outlined, Icons.folder_open, 'Проекты'),
+        _NavItem(Icons.handshake_outlined, Icons.handshake, 'Мастера'),
+        _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'Чаты'),
+        _NavItem(Icons.storefront_outlined, Icons.storefront, 'Каталог'),
+        _NavItem(Icons.person_outline, Icons.person, 'Профиль'),
+      ];
+    }
+    return const [
+      _NavItem(Icons.dynamic_feed_outlined, Icons.dynamic_feed, 'Заказы'),
+      _NavItem(Icons.send_outlined, Icons.send, 'Отклики'),
+      _NavItem(Icons.chat_bubble_outline, Icons.chat_bubble, 'Чаты'),
+      _NavItem(Icons.shopping_basket_outlined, Icons.shopping_basket, 'Каталог'),
+      _NavItem(Icons.person_outline, Icons.person, 'Профиль'),
+    ];
+  }
+
+  /// Корневой экран (без обёртки навигатора) для конкретной вкладки.
+  Widget _rootScreenFor(int index, AppMarketplaceRole role) {
+    final isCustomer = role == AppMarketplaceRole.customer;
+    if (isCustomer) {
+      switch (index) {
+        case 0:
+          return CustomerProjectsScreen(
+            onPublishedNavigateToMasters: () => setState(() => _currentIndex = 1),
+          );
+        case 1:
+          return const CustomerFindMastersScreen();
+        case 2:
+          return const MessagesHubScreen();
+        case 3:
+          return const MarketplaceCatalogScreen();
+        case 4:
+        default:
+          return const ProfileScreen(embedded: true);
+      }
+    }
     switch (index) {
       case 0:
-        return const SearchScreen(embedded: true);
+        return const MasterOrdersFeedScreen();
       case 1:
-        return const TasksScreen();
+        return const MasterMyBidsScreen();
       case 2:
-        return const MapScreen();
+        return const MessagesHubScreen();
       case 3:
-        return const ChatScreen();
+        return const MasterSuppliesCatalogScreen();
       case 4:
-        return const ProfileScreen(embedded: true);
       default:
-        return const SearchScreen(embedded: true);
+        return const ProfileScreen(embedded: true);
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final scaffoldBg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
+    final roles = context.watch<RoleProvider>();
+    _syncRoleTab(roles.activeRole);
+    final navItems = _itemsForRole(roles.activeRole);
+    final bg = MarketplaceColors.backgroundFor(context);
+
+    final sidebarWidth =
+        _sidebarExpanded ? _expandedSidebarWidth : _collapsedSidebarWidth;
+
+    /// IndexedStack + Navigator на каждую вкладку. Это даёт два эффекта:
+    ///   1) push/pop происходят внутри правой контентной зоны, сайдбар остаётся виден;
+    ///   2) состояние каждой вкладки (стек роутов, скролл) сохраняется при переключении.
+    final tabStack = IndexedStack(
+      index: _currentIndex,
+      children: List.generate(navItems.length, (i) {
+        return _TabNavigator(
+          // ValueKey пересоздаётся при смене роли — старые навигаторы заменяются на новые.
+          key: ValueKey('${roles.activeRole.name}_$i'),
+          builder: (_) => _rootScreenFor(i, roles.activeRole),
+        );
+      }),
+    );
 
     return Scaffold(
-      backgroundColor: scaffoldBg,
+      backgroundColor: bg,
       body: SafeArea(
         child: Row(
           children: [
-            // ── Сайдбар ──
-            _buildSidebar(),
-            // ── Контент ──
-            Expanded(child: _getScreen(_currentIndex)),
+            _buildSidebar(
+              navItems,
+              sidebarWidth: sidebarWidth,
+              showLabels: _sidebarExpanded,
+            ),
+            Expanded(child: tabStack),
           ],
         ),
       ),
     );
   }
 
-  /// Боковая навигация в стиле АРТхаус
-  Widget _buildSidebar() {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final sidebarBg = isDark ? AppTheme.darkCard : Colors.white;
-    final borderC = isDark ? AppTheme.darkBorder : AppTheme.secondaryColor;
-    final textHintC = isDark ? AppTheme.darkTextHint : AppTheme.textHint;
-    final textMainC = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
+  /// Сайдбар: пункты строятся из [_itemsForRole].
+  Widget _buildSidebar(
+    List<_NavItem> navItems, {
+    required double sidebarWidth,
+    required bool showLabels,
+  }) {
+    final sidebarBg = MarketplaceColors.cardFor(context);
+    const borderC = Color(0x33FFFFFF);
+    final textMainC = MarketplaceColors.textPrimaryFor(context);
 
     return Container(
-      width: 220,
+      width: sidebarWidth,
       decoration: BoxDecoration(
         color: sidebarBg,
-        border: Border(
-          right: BorderSide(
-            color: borderC,
-            width: 1,
-          ),
+        border: const Border(
+          right: BorderSide(color: borderC, width: 1),
         ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.15 : 0.03),
+            color: Colors.black.withOpacity(0.2),
             blurRadius: 12,
             offset: const Offset(4, 0),
           ),
@@ -94,100 +168,138 @@ class _HomeScreenState extends State<HomeScreen> {
       ),
       child: Column(
         children: [
-          // Логотип
-          const SizedBox(height: 28),
-          Text(
-            'АРТхаус',
-            style: TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w700,
-              fontFamily: AppTextStyle.fontFamily,
-              color: isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor,
-              letterSpacing: -1,
-              height: AppTextStyle.defaultHeight,
-            ),
-          ),
-          const SizedBox(height: 6),
-          Consumer<AuthProvider>(
-            builder: (context, auth, _) {
-              final premise = auth.premiseType;
-              final subtitle = _premiseSubtitle(
-                premise,
-                accountMode: auth.accountMode,
-              );
-              return Text(
-                subtitle,
-                style: TextStyle(
-                  fontSize: 9,
-                  letterSpacing: 2,
-                  color: textHintC,
-                  fontFamily: AppTextStyle.fontFamily,
-                  height: AppTextStyle.defaultHeight,
-                  leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                ),
-              );
-            },
-          ),
-          const SizedBox(height: 32),
-          Divider(color: borderC, height: 1),
           const SizedBox(height: 12),
-
-          // Навигационные элементы
+          if (showLabels)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10),
+              child: Row(
+                children: [
+                  // Логотип приложения (без фона). Файл находится в picture/.
+                  SvgPicture.asset(
+                    'picture/лого без фона чисто белое.svg',
+                    width: 40,
+                    height: 40,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'АРТхаус',
+                      style: TextStyle(
+                        fontSize: 26,
+                        fontWeight: FontWeight.w700,
+                        fontFamily: AppTextStyle.fontFamily,
+                        color: textMainC,
+                        letterSpacing: -0.8,
+                        height: AppTextStyle.defaultHeight,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: 'Свернуть меню',
+                    visualDensity: VisualDensity.compact,
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                    onPressed: () => setState(() => _sidebarExpanded = false),
+                    icon: Icon(Icons.keyboard_arrow_left_rounded, color: textMainC),
+                  ),
+                ],
+              ),
+            )
+          else
+            Column(
+              children: [
+                IconButton(
+                  tooltip: 'Развернуть меню',
+                  visualDensity: VisualDensity.compact,
+                  padding: EdgeInsets.zero,
+                  constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
+                  onPressed: () => setState(() => _sidebarExpanded = true),
+                  icon: Icon(Icons.keyboard_arrow_right_rounded, color: textMainC),
+                ),
+                const SizedBox(height: 4),
+                // Маленький логотип в свернутом виде
+                SvgPicture.asset(
+                  'picture/лого без фона чисто белое.svg',
+                  width: 22,
+                  height: 22,
+                ),
+              ],
+            ),
+          const SizedBox(height: 12),
+          const Divider(color: borderC, height: 1),
+          const SizedBox(height: 12),
           Expanded(
             child: SingleChildScrollView(
               child: Column(
-                children: List.generate(_navItems.length, (index) {
-                  final item = _navItems[index];
+                children: List.generate(navItems.length, (index) {
+                  final item = navItems[index];
                   final isSelected = _currentIndex == index;
-                  return _buildNavTile(item, isSelected, index);
+                  return _buildNavTile(
+                    item,
+                    isSelected,
+                    index,
+                    showLabels: showLabels,
+                  );
                 }),
               ),
             ),
           ),
-
-          // Пользователь
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            padding: EdgeInsets.symmetric(
+              horizontal: showLabels ? 14 : 8,
+              vertical: 8,
+            ),
             child: Consumer<AuthProvider>(
               builder: (context, auth, _) {
                 final username = auth.user?.username ?? '';
                 return Column(
                   children: [
-                    Divider(color: borderC, height: 1),
+                    const Divider(color: borderC, height: 1),
                     const SizedBox(height: 14),
-                    Row(
-                      children: [
-                        Container(
-                          width: 34,
-                          height: 34,
-                          decoration: BoxDecoration(
-                            color: AppTheme.primaryColor,
-                            borderRadius: BorderRadius.circular(10),
+                    InkWell(
+                      borderRadius: BorderRadius.circular(10),
+                      onTap: () => setState(
+                            () => _currentIndex = navItems.length - 1,
                           ),
-                          child: Center(
-                            child: Text(
-                              username.isNotEmpty ? username[0].toUpperCase() : '?',
-                              style: const TextStyle(
-                                color: Colors.white,
+                      child: Row(
+                        mainAxisAlignment: showLabels
+                            ? MainAxisAlignment.start
+                            : MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              color: MarketplaceColors.bluePrimary,
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Center(
+                              child: Text(
+                                username.isNotEmpty ? username[0].toUpperCase() : '?',
+                                style: const TextStyle(
+                                  color: Colors.white,
                                 fontWeight: FontWeight.w700,
                                 fontSize: 14,
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            username,
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: textMainC,
+                          if (showLabels) ...[
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                username,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: textMainC,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                      ],
+                          ],
+                        ],
+                      ),
                     ),
                     const SizedBox(height: 14),
                   ],
@@ -200,55 +312,63 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildNavTile(_NavItem item, bool isSelected, int index) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
+  Widget _buildNavTile(
+    _NavItem item,
+    bool isSelected,
+    int index, {
+    required bool showLabels,
+  }) {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 2),
+      padding: EdgeInsets.symmetric(horizontal: showLabels ? 12 : 8, vertical: 2),
       child: Material(
         color: Colors.transparent,
         child: InkWell(
           onTap: () => setState(() => _currentIndex = index),
           borderRadius: BorderRadius.circular(12),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: showLabels ? 12 : 8,
+              vertical: 10,
+            ),
             decoration: BoxDecoration(
               color: isSelected
-                  ? (isDark
-                      ? Colors.white.withOpacity(0.08)
-                      : AppTheme.primaryColor.withOpacity(0.1))
+                  ? MarketplaceColors.bluePrimary.withOpacity(0.14)
                   : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Row(
-              children: [
-                Icon(
-                  isSelected ? item.selectedIcon : item.icon,
-                  color: isSelected
-                      ? (isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor)
-                      : (isDark
-                          ? AppTheme.darkTextSecondary
-                          : AppTheme.textHint),
-                  size: 20,
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  item.label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                    fontFamily: AppTextStyle.fontFamily,
-                    height: AppTextStyle.defaultHeight,
-                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+            child: Tooltip(
+              message: item.label,
+              waitDuration: const Duration(milliseconds: 350),
+              child: Row(
+                mainAxisAlignment: showLabels
+                    ? MainAxisAlignment.start
+                    : MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isSelected ? item.selectedIcon : item.icon,
                     color: isSelected
-                        ? (isDark ? AppTheme.darkTextPrimary : AppTheme.primaryColor)
-                        : (isDark
-                            ? AppTheme.darkTextSecondary
-                            : AppTheme.textSecondary),
+                        ? MarketplaceColors.bluePrimary
+                        : MarketplaceColors.textMutedFor(context),
+                    size: 19,
                   ),
-                ),
-              ],
+                  if (showLabels) ...[
+                    const SizedBox(width: 12),
+                    Text(
+                      item.label,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                        fontFamily: AppTextStyle.fontFamily,
+                        height: AppTextStyle.defaultHeight,
+                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+                        color: isSelected
+                            ? MarketplaceColors.textPrimaryFor(context)
+                            : MarketplaceColors.textMutedFor(context),
+                      ),
+                    ),
+                  ],
+                ],
+              ),
             ),
           ),
         ),
@@ -265,16 +385,20 @@ class _NavItem {
   const _NavItem(this.icon, this.selectedIcon, this.label);
 }
 
-String _premiseSubtitle(String? premiseType, {String? accountMode}) {
-  if (accountMode == 'service') return 'доступ к картам клиентов';
-  if (accountMode == 'p2p') return 'карта на заказ и вручную';
-  switch (premiseType) {
-    case 'apartment': return 'твоя квартира в порядке';
-    case 'house': return 'твой дом в порядке';
-    case 'office': return 'твой офис в порядке';
-    case 'commerce': return 'твой склад в порядке';
-    case 'hotel': return 'твои апартаменты в порядке';
-    case 'service_access': return 'временный доступ к объектам';
-    default: return 'твой дом в порядке';
+/// Локальный навигатор для одной вкладки сайдбара. Любые `Navigator.of(context).push(...)`
+/// внутри корневого экрана попадают в этот навигатор и не перекрывают левый сайдбар.
+class _TabNavigator extends StatelessWidget {
+  final WidgetBuilder builder;
+
+  const _TabNavigator({super.key, required this.builder});
+
+  @override
+  Widget build(BuildContext context) {
+    return Navigator(
+      onGenerateRoute: (settings) => MaterialPageRoute(
+        builder: builder,
+        settings: settings,
+      ),
+    );
   }
 }

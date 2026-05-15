@@ -31,6 +31,11 @@ migrate_working_dir/
 .pub/
 /build/
 
+# Unity WebGL uncompressed outputs (run: py -3 tool/decompress_unity_webgl_build.py)
+web/UnityBuild/Build/UnityBuild.data
+web/UnityBuild/Build/UnityBuild.framework.js
+web/UnityBuild/Build/UnityBuild.wasm
+
 # Symbolication related
 app.*.symbols
 

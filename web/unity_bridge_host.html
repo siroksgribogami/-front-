@@ -44,10 +44,18 @@
       border: 1px solid rgba(222, 132, 106, 0.55);
       color: #ffd3c5;
     }
+
+    #unity-canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      background: transparent;
+    }
   </style>
 </head>
 <body>
   <div id="bridge-container">
+    <canvas id="unity-canvas"></canvas>
     <div id="bridge-status">Мост Flutter–Unity загружается...</div>
   </div>
 
@@ -58,9 +66,14 @@
       const gameObjectName = 'ARTHouseMapBridge';
 
       let unitySendMessage = null;
+      let unityInstance = null;
       let bridgeReady = false;
       let queuedCommands = [];
+      let fallbackMode = false;
+      let activeRoomId = '';
+      let latestMapJson = '';
       const statusNode = document.getElementById('bridge-status');
+      const canvasNode = document.getElementById('unity-canvas');
 
       function notifyFlutter(message) {
         window.parent.postMessage(JSON.stringify({ source: unitySource, ...message }), '*');
@@ -77,6 +90,89 @@
         } else {
           queuedCommands.push(command);
         }
+      }
+
+      function setupFallbackBridgeRuntime() {
+        fallbackMode = true;
+        unitySendMessage = function (_, method, argument) {
+          switch (method) {
+            case 'ReceiveInitialMapJson':
+              latestMapJson = argument || latestMapJson || '{}';
+              break;
+            case 'FocusRoom':
+              activeRoomId = argument || '';
+              break;
+            case 'RequestSnapshotForFlutter':
+              window.ArthouseFlutterBridge.pushSnapshot(activeRoomId, latestMapJson || '{}');
+              break;
+            case 'ShowApartmentOverview':
+            case 'HandleUndoCommand':
+            case 'HandleRedoCommand':
+              // No-op in fallback mode.
+              break;
+          }
+        };
+        window.ArthouseFlutterBridge.notifyReady();
+        setStatus('Fallback bridge активен: команды и snapshot работают без подтверждения Unity.', false);
+      }
+
+      function tryLoadUnityWebGlBuild() {
+        const defaultBuildRoot = 'UnityBuild/Build';
+        // Несжатые .data / .framework.js / .wasm: dev-сервер Flutter не отдаёт
+        // Content-Encoding: br для .br — Unity не загрузит Brotli. После билда Unity:
+        //   py -3 tool/decompress_unity_webgl_build.py
+        // Либо в Unity: Player Settings → Publishing → Compression Format → Disabled.
+        const config = window.ARTHOUSE_UNITY_CONFIG || {
+          loaderUrl: defaultBuildRoot + '/UnityBuild.loader.js',
+          dataUrl: defaultBuildRoot + '/UnityBuild.data',
+          frameworkUrl: defaultBuildRoot + '/UnityBuild.framework.js',
+          codeUrl: defaultBuildRoot + '/UnityBuild.wasm',
+          streamingAssetsUrl: 'UnityBuild/StreamingAssets',
+          companyName: 'DefaultCompany',
+          productName: 'My project',
+          productVersion: '0.1.0'
+        };
+
+        if (!config.loaderUrl || !config.dataUrl || !config.frameworkUrl || !config.codeUrl) {
+          setupFallbackBridgeRuntime();
+          return;
+        }
+
+        const script = document.createElement('script');
+        script.src = config.loaderUrl;
+        script.async = true;
+
+        script.onload = function () {
+          if (typeof createUnityInstance !== 'function') {
+            setupFallbackBridgeRuntime();
+            return;
+          }
+
+          createUnityInstance(canvasNode, {
+            dataUrl: config.dataUrl,
+            frameworkUrl: config.frameworkUrl,
+            codeUrl: config.codeUrl,
+            streamingAssetsUrl: config.streamingAssetsUrl || 'UnityBuild/StreamingAssets',
+            companyName: config.companyName || 'DefaultCompany',
+            productName: config.productName || 'My project',
+            productVersion: config.productVersion || '0.1.0'
+          }).then(function (instance) {
+            unityInstance = instance;
+            fallbackMode = false;
+            window.ArthouseFlutterBridge.registerUnity(function (obj, method, arg) {
+              unityInstance.SendMessage(obj, method, arg || '');
+            });
+            setStatus('Unity WebGL build загружен и подключен к Flutter.', false);
+          }).catch(function (error) {
+            setupFallbackBridgeRuntime();
+          });
+        };
+
+        script.onerror = function () {
+          setupFallbackBridgeRuntime();
+        };
+
+        document.body.appendChild(script);
       }
 
       function flushQueue() {
@@ -131,6 +227,8 @@
           flushQueue();
         },
         pushSnapshot: function (roomId, snapshotJson) {
+          activeRoomId = roomId || activeRoomId || '';
+          latestMapJson = snapshotJson || latestMapJson || '{}';
           notifyFlutter({ type: 'snapshot', roomId: roomId || '', snapshotJson: snapshotJson || '' });
         },
         registerUnity: function (sendMessageFn) {
@@ -146,16 +244,18 @@
         }
       };
 
-      setStatus('Мост Flutter–Unity активен. Unity не встроен в этот билд — подключите отдельно.', false);
+      setStatus('Загрузка Unity WebGL (UnityBuild)...', false);
       notifyFlutter({
         type: 'availability',
         available: true,
-        message: 'Мост готов. Unity можно подключить через ArthouseFlutterBridge.registerUnity(sendMessage).'
+        message: 'Мост готов. Fallback-режим работает автоматически без подтверждения.'
       });
       notifyFlutter({
         type: 'unityReady',
-        message: 'Мост готов. Flutter и Unity могут работать вместе при подключении Unity.'
+        message: 'Мост готов: команды и snapshot доступны сразу.'
       });
+
+      tryLoadUnityWebGlBuild();
     })();
   </script>
 </body>
