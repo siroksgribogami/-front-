@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/theme/app_text_style.dart';
 import '../../core/theme/marketplace_colors.dart';
@@ -174,13 +173,6 @@ class _HomeScreenState extends State<HomeScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
-                  // Логотип приложения (без фона). Файл находится в picture/.
-                  SvgPicture.asset(
-                    'picture/лого без фона чисто белое.svg',
-                    width: 40,
-                    height: 40,
-                  ),
-                  const SizedBox(width: 10),
                   Expanded(
                     child: Text(
                       'АРТхаус',
@@ -215,13 +207,6 @@ class _HomeScreenState extends State<HomeScreen> {
                   constraints: const BoxConstraints(minWidth: 36, minHeight: 36),
                   onPressed: () => setState(() => _sidebarExpanded = true),
                   icon: Icon(Icons.keyboard_arrow_right_rounded, color: textMainC),
-                ),
-                const SizedBox(height: 4),
-                // Маленький логотип в свернутом виде
-                SvgPicture.asset(
-                  'picture/лого без фона чисто белое.svg',
-                  width: 22,
-                  height: 22,
                 ),
               ],
             ),

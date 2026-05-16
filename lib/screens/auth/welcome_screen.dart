@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/app_theme.dart';
-import '../../core/assets/app_assets.dart';
 import '../../core/theme/app_text_style.dart';
 import '../../providers/auth_provider.dart';
 
@@ -102,14 +100,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     children: [
 
                       const Spacer(flex: 2),
-
-                      SvgPicture.asset(
-                        AppAssets.logo2,
-                        width: 88,
-                        height: 88,
-                      ),
-
-                      const SizedBox(height: 36),
 
                       // Приветствие
                       AppText(
