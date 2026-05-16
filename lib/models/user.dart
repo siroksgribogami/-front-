@@ -170,7 +170,7 @@ class UserCreate {
     this.role,
   });
 
-  /// Тело для `art_back` `/api/v1/auth/register`.
+  /// Тело для `ARThouse-backend` `POST /api/v1/register`.
   /// Добавляем `phone` и `role` опционально для серверной схемы.
   Map<String, dynamic> toJson() {
     final m = <String, dynamic>{

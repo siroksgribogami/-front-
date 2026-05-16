@@ -1,6 +1,6 @@
 /// Пути REST API относительно [ApiConfig.apiBaseUrl] (`…/api/v1`).
-/// Соответствуют роутерам в `art_back/app/api/v1/endpoints/` (префиксы в
-/// api.py: auth → `/auth`, users → `/users`, …).
+/// Соответствуют `ARThouse-backend`: роутеры в `app/api/v1/endpoints/` без
+/// дополнительных префиксов (`/register`, `/me`, `/my`, `/dashboard`, …).
 abstract final class BackendRoutes {
   BackendRoutes._();
 
@@ -10,14 +10,14 @@ abstract final class BackendRoutes {
   /// Повторная отправка письма подтверждения email (реализуется на бэкенде).
   static const authResendVerification = '/auth/resend-verification';
 
-  static const usersMe = '/users/me';
+  static const usersMe = '/me';
 
-  static const apartmentsMy = '/apartments/my';
+  static const apartmentsMy = '/my';
 
-  /// Опросы: в бэке см. `surveys` router.
-  static const surveys = '/surveys';
-  static const surveysDashboard = '/surveys/dashboard';
-  static const surveysLatest = '/surveys/latest';
+  /// Опросы: эндпоинты на корне `/api/v1` (`surveys.py`).
+  static const surveys = '/';
+  static const surveysDashboard = '/dashboard';
+  static const surveysLatest = '/latest';
 
   /// Снимки 3D-плана квартиры.
   static const snapshots = '/snapshots';

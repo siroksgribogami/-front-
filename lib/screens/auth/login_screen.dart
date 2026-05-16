@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/role_provider.dart';
 import '../../config/app_theme.dart';
+import '../../core/assets/app_assets.dart';
 import '../../core/theme/app_text_style.dart';
 
 /// Экран входа - в стиле HTML дизайна (шалфейно-зеленый фон)
@@ -113,6 +115,12 @@ class _LoginScreenState extends State<LoginScreen>
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min,
                   children: [
+                    SvgPicture.asset(
+                      AppAssets.logo2,
+                      width: 96,
+                      height: 96,
+                    ),
+                    const SizedBox(height: 20),
                     const Text(
                       'АРТхаус',
                       style: TextStyle(

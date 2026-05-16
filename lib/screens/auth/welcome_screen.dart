@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/app_theme.dart';
+import '../../core/assets/app_assets.dart';
 import '../../core/theme/app_text_style.dart';
 import '../../providers/auth_provider.dart';
 
@@ -101,22 +103,10 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                       const Spacer(flex: 2),
 
-                      // Лого / иконка
-                      Container(
-                        width: 80,
-                        height: 80,
-                        decoration: BoxDecoration(
-                          color: AppTheme.backgroundColor.withOpacity(0.12),
-                          borderRadius: BorderRadius.circular(24),
-                          border: Border.all(
-                            color: AppTheme.backgroundColor.withOpacity(0.22),
-                          ),
-                        ),
-                        child: const Icon(
-                          Icons.architecture_rounded,
-                          size: 38,
-                          color: AppTheme.backgroundColor,
-                        ),
+                      SvgPicture.asset(
+                        AppAssets.logo2,
+                        width: 88,
+                        height: 88,
                       ),
 
                       const SizedBox(height: 36),

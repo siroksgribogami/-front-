@@ -31,7 +31,7 @@ class SurveyService {
 
   Future<Map<String, dynamic>> getSurveyById(int surveyId) async {
     final response = await _api.get(
-      '${ApiConfig.surveys}/$surveyId',
+      '/$surveyId',
       requireAuth: true,
     );
     return Map<String, dynamic>.from(response as Map);
@@ -51,7 +51,7 @@ class SurveyService {
     Map<String, dynamic> data,
   ) async {
     final response = await _api.put(
-      '${ApiConfig.surveys}/$surveyId',
+      '/$surveyId',
       body: data,
       requireAuth: true,
     );
@@ -64,7 +64,7 @@ class SurveyService {
     required int completionPercentage,
   }) async {
     final response = await _api.patch(
-      '${ApiConfig.surveys}/$surveyId/step',
+      '/$surveyId/step',
       body: {
         'step_data': stepData,
         'completion_percentage': completionPercentage,
@@ -76,7 +76,7 @@ class SurveyService {
 
   Future<void> deleteSurvey(int surveyId) async {
     await _api.delete(
-      '${ApiConfig.surveys}/$surveyId',
+      '/$surveyId',
       requireAuth: true,
     );
   }

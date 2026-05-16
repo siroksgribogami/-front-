@@ -156,7 +156,7 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Обновить профиль и вернуть `true`, если сервер сообщил `is_verified` (поле должно быть в ответе `/users/me`).
+  /// Обновить профиль и вернуть `true`, если сервер сообщил `is_verified` (поле должно быть в ответе `/me`).
   Future<bool> refreshVerificationFromServer() async {
     try {
       _user = await _authService.getCurrentUser();
