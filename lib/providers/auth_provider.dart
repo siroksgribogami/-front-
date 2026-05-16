@@ -130,8 +130,14 @@ class AuthProvider with ChangeNotifier {
     } on ApiException catch (e) {
       _setError(RegisterApiErrorLocalizer.localize(e));
       return false;
-    } catch (e) {
-      _setError('Ошибка при регистрации');
+    } catch (e, st) {
+      debugPrint('register error: $e\n$st');
+      final msg = e.toString();
+      if (msg.contains('FormatException') || msg.contains('type ')) {
+        _setError('Ошибка ответа сервера. Проверьте, что бэкенд обновлён и /health показывает database: ok.');
+      } else {
+        _setError('Ошибка при регистрации: $msg');
+      }
       return false;
     }
   }

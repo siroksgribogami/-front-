@@ -68,7 +68,7 @@ class User {
       username: (json['username'] as String?) ??
           (json['full_name'] as String?) ??
           '',
-      role: _parseRole(json['role'] as String?),
+      role: _parseRole(json['role']),
       userType: _parseUserType(json['user_type'] as String?),
       isActive: json['is_active'] as bool? ?? true,
       isVerified: json['is_verified'] as bool? ?? false,
@@ -81,10 +81,13 @@ class User {
     );
   }
 
-  static UserRole _parseRole(String? value) {
-    switch (value) {
+  static UserRole _parseRole(dynamic value) {
+    switch (value?.toString()) {
       case 'admin':
         return UserRole.admin;
+      case 'customer':
+      case 'master':
+        return UserRole.user;
       default:
         return UserRole.user;
     }

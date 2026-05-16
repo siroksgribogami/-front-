@@ -18,7 +18,7 @@ abstract final class RegisterApiErrorLocalizer {
     }
 
     if (e.statusCode >= 500) {
-      return 'Внутренняя ошибка сервера при регистрации. Попробуйте позже.';
+      return 'Ошибка сервера при регистрации. Проверьте PostgreSQL: откройте http://IP:8000/health — должно быть database: ok.';
     }
 
     final fromDetailList = _fromFastApiDetailList(e);

@@ -128,8 +128,9 @@ abstract final class RegisterContactValidation {
     final normalized = digits.length == 11 && digits.startsWith('8')
         ? '7${digits.substring(1)}'
         : digits;
+    // `.local` отклоняется Pydantic EmailStr на бэке; нужен обычный домен.
     return (
-      email: '$normalized@phone.arthouse.local',
+      email: '$normalized@phone.arthouse.app',
       phone: v,
     );
   }
