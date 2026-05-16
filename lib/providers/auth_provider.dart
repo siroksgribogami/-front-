@@ -384,7 +384,6 @@ class AuthProvider with ChangeNotifier {
         final projectPayload = <String, dynamic>{
           'title': projectTitle,
           'work_type': workCategoryId,
-          'status': 'draft',
           'property_type': premiseType,
           'total_area': totalArea.toDouble(),
           'ceiling_height': wallHeight / 100.0,

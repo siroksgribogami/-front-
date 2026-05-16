@@ -53,16 +53,11 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
   }
 
   Future<void> _saveMap() async {
-    // Сохраняем проект с обновлённой картой и синхронизируем с бэком.
-    try {
-      final updated = await ProjectService().updateMapData(
-        _project.id,
-        _project.mapData,
-      );
-      _project = updated;
-    } catch (_) {
-      // Если сервер недоступен, сохраняем хотя бы локальный кэш.
-    }
+    _project = await ProjectService().updateMapData(
+      _project.id,
+      _project.mapData,
+      project: _project,
+    );
 
     await MarketplaceLocalStore.instance.ensureLoaded();
     final currentProjects = List<ProjectSummary>.from(
