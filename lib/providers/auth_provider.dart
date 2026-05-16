@@ -132,11 +132,17 @@ class AuthProvider with ChangeNotifier {
       return false;
     } catch (e, st) {
       debugPrint('register error: $e\n$st');
-      final msg = e.toString();
-      if (msg.contains('FormatException') || msg.contains('type ')) {
-        _setError('Ошибка ответа сервера. Проверьте, что бэкенд обновлён и /health показывает database: ok.');
+      final msg = e.toString().toLowerCase();
+      if (msg.contains('timeout')) {
+        _setError(
+          'Сервер не ответил. Проверьте Wi‑Fi, IP в flutter run и http://IP:8000/health с телефона.',
+        );
+      } else if (msg.contains('formatexception') || msg.contains('type ')) {
+        _setError(
+          'Ошибка ответа сервера. Проверьте /health — database: ok.',
+        );
       } else {
-        _setError('Ошибка при регистрации: $msg');
+        _setError('Не удалось зарегистрироваться. Проверьте бэкенд и сеть.');
       }
       return false;
     }

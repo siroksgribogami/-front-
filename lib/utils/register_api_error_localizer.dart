@@ -17,6 +17,10 @@ abstract final class RegisterApiErrorLocalizer {
       return 'Сервер регистрации не настроен: у бэкенда нет доступа к базе данных PostgreSQL (пароль не задан). Обратитесь к администратору или проверьте .env сервера.';
     }
 
+    if (combined.contains('timeout') || combined.contains('не ответил вовремя')) {
+      return 'Сервер не ответил вовремя. Проверьте Wi‑Fi, что бэкенд запущен на ПК, и IP в flutter run (http://IP:8000/health с телефона).';
+    }
+
     if (e.statusCode >= 500) {
       return 'Ошибка сервера при регистрации. Проверьте PostgreSQL: откройте http://IP:8000/health — должно быть database: ok.';
     }

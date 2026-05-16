@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
@@ -46,6 +47,22 @@ class ApiService {
     return token != null && token.isNotEmpty;
   }
 
+  static const _timeoutMessage =
+      'Сервер не ответил вовремя. Проверьте Wi‑Fi, IP компьютера в flutter run и что бэкенд запущен (http://IP:8000/health с телефона).';
+
+  static const _socketMessage =
+      'Сервер недоступен. Запустите бэкенд на ПК и укажите его IP: flutter run --dart-define=API_BASE_URL=http://IP:8000';
+
+  Never _rethrowNetwork(Object e) {
+    if (e is SocketException) {
+      throw ApiException(statusCode: 0, message: _socketMessage);
+    }
+    if (e is TimeoutException) {
+      throw ApiException(statusCode: 0, message: _timeoutMessage);
+    }
+    throw e;
+  }
+
   /// Получить заголовки для запроса
   Future<Map<String, String>> _getHeaders({bool requireAuth = false}) async {
     final headers = {
@@ -81,11 +98,8 @@ class ApiService {
           .timeout(ApiConfig.requestTimeout);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
-      );
+    } catch (e) {
+      _rethrowNetwork(e);
     }
   }
 
@@ -108,11 +122,8 @@ class ApiService {
           .timeout(ApiConfig.requestTimeout);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
-      );
+    } catch (e) {
+      _rethrowNetwork(e);
     }
   }
 
@@ -135,11 +146,8 @@ class ApiService {
           .timeout(ApiConfig.requestTimeout);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
-      );
+    } catch (e) {
+      _rethrowNetwork(e);
     }
   }
 
@@ -157,11 +165,8 @@ class ApiService {
           .timeout(ApiConfig.requestTimeout);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
-      );
+    } catch (e) {
+      _rethrowNetwork(e);
     }
   }
 
@@ -184,11 +189,8 @@ class ApiService {
           .timeout(ApiConfig.requestTimeout);
 
       return _handleResponse(response);
-    } on SocketException {
-      throw ApiException(
-        statusCode: 0,
-        message: 'Сервер недоступен. Проверьте, что бэкенд запущен. На телефоне нужен IP компьютера в одной Wi‑Fi (см. ANDROID_DEVICE.md).',
-      );
+    } catch (e) {
+      _rethrowNetwork(e);
     }
   }
 

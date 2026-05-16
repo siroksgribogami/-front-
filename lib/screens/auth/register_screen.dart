@@ -7,9 +7,9 @@ import '../../providers/auth_provider.dart';
 import '../../utils/password_validation.dart';
 import '../../utils/register_contact_validation.dart';
 
-enum _RegisterStep { contact, role, credentials }
+/// Порядок по ТЗ: имя → контакт → пароль → роль → запрос на сервер.
+enum _RegisterStep { name, contact, password, role }
 
-/// Регистрация: 1) email/телефон → 2) роль → 3) имя и пароль.
 class RegisterScreen extends StatefulWidget {
   final VoidCallback? onLoginTap;
   final VoidCallback? onRegisterSuccess;
@@ -27,12 +27,12 @@ class RegisterScreen extends StatefulWidget {
 class _RegisterScreenState extends State<RegisterScreen>
     with SingleTickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
+  final _nameController = TextEditingController();
   final _contactController = TextEditingController();
-  final _usernameController = TextEditingController();
   final _passwordController = TextEditingController();
   final _confirmPasswordController = TextEditingController();
 
-  _RegisterStep _step = _RegisterStep.contact;
+  _RegisterStep _step = _RegisterStep.name;
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _submitLock = false;
@@ -51,7 +51,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
     _fadeAnim = CurvedAnimation(parent: _transitionCtrl, curve: Curves.easeOut);
     _slideAnim = Tween<Offset>(
-      begin: const Offset(0, 0.06),
+      begin: const Offset(0, 0.04),
       end: Offset.zero,
     ).animate(
       CurvedAnimation(parent: _transitionCtrl, curve: Curves.easeOutCubic),
@@ -64,8 +64,8 @@ class _RegisterScreenState extends State<RegisterScreen>
   @override
   void dispose() {
     _transitionCtrl.dispose();
+    _nameController.dispose();
     _contactController.dispose();
-    _usernameController.dispose();
     _passwordController.dispose();
     _confirmPasswordController.dispose();
     super.dispose();
@@ -78,32 +78,63 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 
   void _handleBack() {
-    if (_step == _RegisterStep.contact) {
+    if (_step == _RegisterStep.name) {
       _handleBackToLogin();
       return;
     }
     setState(() {
-      _step = _step == _RegisterStep.credentials
-          ? _RegisterStep.role
-          : _RegisterStep.contact;
+      _step = switch (_step) {
+        _RegisterStep.contact => _RegisterStep.name,
+        _RegisterStep.password => _RegisterStep.contact,
+        _RegisterStep.role => _RegisterStep.password,
+        _RegisterStep.name => _RegisterStep.name,
+      };
     });
     context.read<AuthProvider>().clearError();
   }
 
-  void _goNextFromContact() {
-    if (!_formKey.currentState!.validate()) return;
-    setState(() => _step = _RegisterStep.role);
+  void _handleNext() {
+    if (!_validateCurrentStep()) return;
     context.read<AuthProvider>().clearError();
+
+    if (_step == _RegisterStep.role) {
+      _handleRegister();
+      return;
+    }
+
+    setState(() {
+      _step = switch (_step) {
+        _RegisterStep.name => _RegisterStep.contact,
+        _RegisterStep.contact => _RegisterStep.password,
+        _RegisterStep.password => _RegisterStep.role,
+        _RegisterStep.role => _RegisterStep.role,
+      };
+    });
   }
 
-  void _goNextFromRole() {
-    setState(() => _step = _RegisterStep.credentials);
-    context.read<AuthProvider>().clearError();
+  bool _validateCurrentStep() {
+    switch (_step) {
+      case _RegisterStep.name:
+        final name = _nameController.text.trim();
+        if (name.isEmpty) {
+          _formKey.currentState?.validate();
+          return false;
+        }
+        if (name.length < 2) return false;
+        if (name.length > 50) return false;
+        return true;
+      case _RegisterStep.contact:
+        return _formKey.currentState?.validate() ?? false;
+      case _RegisterStep.password:
+        return _formKey.currentState?.validate() ?? false;
+      case _RegisterStep.role:
+        return true;
+    }
   }
 
   Future<void> _handleRegister() async {
     if (_submitLock) return;
-    if (!_formKey.currentState!.validate()) return;
+    if (!_validateCurrentStep()) return;
 
     setState(() => _submitLock = true);
     final authProvider = context.read<AuthProvider>();
@@ -111,7 +142,7 @@ class _RegisterScreenState extends State<RegisterScreen>
 
     final success = await authProvider.register(
       email: parsed.email,
-      username: _usernameController.text.trim(),
+      username: _nameController.text.trim(),
       password: _passwordController.text,
       phone: parsed.phone,
       role: _selectedRole,
@@ -121,7 +152,7 @@ class _RegisterScreenState extends State<RegisterScreen>
       widget.onRegisterSuccess?.call();
     }
     if (mounted) {
-      await Future<void>.delayed(const Duration(milliseconds: 900));
+      await Future<void>.delayed(const Duration(milliseconds: 400));
       if (mounted) setState(() => _submitLock = false);
     }
   }
@@ -134,55 +165,40 @@ class _RegisterScreenState extends State<RegisterScreen>
         position: _slideAnim,
         child: Scaffold(
           backgroundColor: AppTheme.primaryColor,
-          appBar: AppBar(
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            leading: IconButton(
-              icon: const Icon(Icons.arrow_back, color: Colors.white),
-              onPressed: _handleBack,
-            ),
-          ),
+          resizeToAvoidBottomInset: true,
           body: SafeArea(
-            child: LayoutBuilder(
-              builder: (context, constraints) {
-                final compact = constraints.maxHeight < 820;
-                final sidePadding = compact ? 20.0 : 32.0;
-                final topBottomPadding = compact ? 14.0 : 24.0;
-                final sectionGap = compact ? 20.0 : 28.0;
-                final fieldGap = compact ? 12.0 : 16.0;
-
-                return SingleChildScrollView(
-                  padding: EdgeInsets.fromLTRB(
-                    sidePadding,
-                    topBottomPadding,
-                    sidePadding,
-                    topBottomPadding,
-                  ),
+            child: Column(
+              children: [
+                Expanded(
                   child: Center(
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 400),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            ..._buildStepContent(
-                              compact: compact,
-                              sectionGap: sectionGap,
-                              fieldGap: fieldGap,
-                            ),
-                            SizedBox(height: sectionGap),
-                            _buildErrorBanner(),
-                            _buildPrimaryButton(),
-                            SizedBox(height: compact ? 12 : 20),
-                            _buildLoginLink(),
-                          ],
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.symmetric(horizontal: 28),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 400),
+                        child: Form(
+                          key: _formKey,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              ..._buildStepContent(),
+                              const SizedBox(height: 16),
+                              _buildErrorBanner(),
+                            ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                );
-              },
+                ),
+                _buildBottomNav(),
+                if (_step == _RegisterStep.name) ...[
+                  const SizedBox(height: 4),
+                  _buildLoginLink(),
+                  const SizedBox(height: 8),
+                ] else
+                  const SizedBox(height: 12),
+              ],
             ),
           ),
         ),
@@ -190,226 +206,233 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
-  List<Widget> _buildStepContent({
-    required bool compact,
-    required double sectionGap,
-    required double fieldGap,
-  }) {
-    switch (_step) {
-      case _RegisterStep.contact:
-        return [
-          const Text(
-            'Регистрация',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              fontFamily: AppTextStyle.fontFamily,
-              height: AppTextStyle.defaultHeight,
-              leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Укажите email или номер телефона',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
-            ),
-          ),
-          SizedBox(height: sectionGap),
-          _buildTextField(
-            controller: _contactController,
-            label: 'Email или телефон',
-            keyboardType: TextInputType.emailAddress,
-            onChanged: (_) => context.read<AuthProvider>().clearError(),
-            suffixIcon: _buildContactValidationIcon(),
-            validator: (_) =>
-                RegisterContactValidation.validateContact(_contactController.text),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Телефон: +7 9XX XXX-XX-XX или 9XXXXXXXXX\n'
-            'Email: name@example.com',
-            style: TextStyle(
-              fontSize: 12,
-              height: 1.4,
-              color: Colors.white.withOpacity(0.55),
-            ),
-          ),
-        ];
-      case _RegisterStep.role:
-        return [
-          const Text(
-            'Вы пришли как?',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              fontFamily: AppTextStyle.fontFamily,
-              height: AppTextStyle.defaultHeight,
-              leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Выберите роль в сервисе',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
-            ),
-          ),
-          SizedBox(height: sectionGap),
-          _buildRoleSelector(),
-        ];
-      case _RegisterStep.credentials:
-        return [
-          const Text(
-            'Почти готово',
-            style: TextStyle(
-              fontSize: 28,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              fontFamily: AppTextStyle.fontFamily,
-              height: AppTextStyle.defaultHeight,
-              leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-            ),
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'Имя и пароль для входа',
-            style: TextStyle(
-              fontSize: 14,
-              color: Colors.white.withOpacity(0.7),
-            ),
-          ),
-          SizedBox(height: sectionGap),
-          _buildTextField(
-            controller: _usernameController,
-            label: 'Имя',
-            onChanged: (_) => context.read<AuthProvider>().clearError(),
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Введите имя';
-              if (value.length < 2) return 'Имя: минимум 2 символа';
-              if (value.length > 50) return 'Имя: не длиннее 50 символов';
-              return null;
-            },
-          ),
-          SizedBox(height: fieldGap),
-          _buildTextField(
-            controller: _passwordController,
-            label: 'Пароль',
-            obscureText: _obscurePassword,
-            onChanged: (_) => context.read<AuthProvider>().clearError(),
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscurePassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: Colors.white.withOpacity(0.6),
-              ),
-              onPressed: () =>
-                  setState(() => _obscurePassword = !_obscurePassword),
-            ),
-            validator: (value) {
-              final v = value ?? '';
-              if (v.isEmpty) return 'Введите пароль';
-              if (!PasswordValidation.isAcceptable(v)) {
-                return 'Пароль: ${PasswordValidation.unsatisfiedSummary(v)}';
-              }
-              return null;
-            },
-          ),
-          if (_passwordController.text.isNotEmpty) ...[
-            SizedBox(height: compact ? 8 : 10),
-            _PasswordStrengthPanel(password: _passwordController.text),
-          ],
-          SizedBox(height: fieldGap),
-          _buildTextField(
-            controller: _confirmPasswordController,
-            label: 'Подтвердите пароль',
-            obscureText: _obscureConfirmPassword,
-            onChanged: (_) => context.read<AuthProvider>().clearError(),
-            suffixIcon: IconButton(
-              icon: Icon(
-                _obscureConfirmPassword
-                    ? Icons.visibility_outlined
-                    : Icons.visibility_off_outlined,
-                color: Colors.white.withOpacity(0.6),
-              ),
-              onPressed: () => setState(
-                () => _obscureConfirmPassword = !_obscureConfirmPassword,
-              ),
-            ),
-            validator: (value) {
-              if (value == null || value.isEmpty) return 'Подтвердите пароль';
-              if (value != _passwordController.text) {
-                return 'Пароли должны совпадать';
-              }
-              return null;
-            },
-          ),
-        ];
-    }
+  List<Widget> _buildStepContent() {
+    return switch (_step) {
+      _RegisterStep.name => _buildNameStep(),
+      _RegisterStep.contact => _buildContactStep(),
+      _RegisterStep.password => _buildPasswordStep(),
+      _RegisterStep.role => _buildRoleStep(),
+    };
   }
 
-  Widget _buildRoleSelector() {
-    return Row(
-      children: [
-        Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _selectedRole = 'customer'),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              decoration: BoxDecoration(
-                color: _selectedRole == 'customer'
-                    ? Colors.white
-                    : Colors.white.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Я заказчик',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _selectedRole == 'customer'
-                      ? AppTheme.primaryColor
-                      : Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
-            ),
-          ),
+  List<Widget> _buildNameStep() {
+    return [
+      _buildTitle('Как вас зовут?'),
+      const SizedBox(height: 28),
+      _buildTextField(
+        controller: _nameController,
+        label: 'Ваше имя',
+        textAlign: TextAlign.center,
+        onChanged: (_) => context.read<AuthProvider>().clearError(),
+        validator: (value) {
+          if (value == null || value.trim().isEmpty) return 'Введите имя';
+          if (value.trim().length < 2) return 'Минимум 2 символа';
+          if (value.trim().length > 50) return 'Не длиннее 50 символов';
+          return null;
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _buildContactStep() {
+    return [
+      _buildTitle('Email или телефон'),
+      const SizedBox(height: 8),
+      Text(
+        'Укажите способ связи',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.white.withOpacity(0.7),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: GestureDetector(
-            onTap: () => setState(() => _selectedRole = 'master'),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              padding: const EdgeInsets.symmetric(vertical: 18),
-              decoration: BoxDecoration(
-                color: _selectedRole == 'master'
-                    ? Colors.white
-                    : Colors.white.withOpacity(0.06),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Я мастер',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: _selectedRole == 'master'
-                      ? AppTheme.primaryColor
-                      : Colors.white,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
-                ),
-              ),
-            ),
+      ),
+      const SizedBox(height: 28),
+      _buildTextField(
+        controller: _contactController,
+        label: 'Email или телефон',
+        keyboardType: TextInputType.emailAddress,
+        textAlign: TextAlign.center,
+        onChanged: (_) => context.read<AuthProvider>().clearError(),
+        suffixIcon: _buildContactValidationIcon(),
+        validator: (_) =>
+            RegisterContactValidation.validateContact(_contactController.text),
+      ),
+    ];
+  }
+
+  List<Widget> _buildPasswordStep() {
+    return [
+      _buildTitle('Придумайте пароль'),
+      const SizedBox(height: 28),
+      _buildTextField(
+        controller: _passwordController,
+        label: 'Пароль',
+        obscureText: _obscurePassword,
+        textAlign: TextAlign.center,
+        onChanged: (_) => context.read<AuthProvider>().clearError(),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscurePassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            color: Colors.white.withOpacity(0.6),
           ),
+          onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
+        validator: (value) {
+          final v = value ?? '';
+          if (v.isEmpty) return 'Введите пароль';
+          if (!PasswordValidation.isAcceptable(v)) {
+            return PasswordValidation.unsatisfiedSummary(v);
+          }
+          return null;
+        },
+      ),
+      if (_passwordController.text.isNotEmpty) ...[
+        const SizedBox(height: 12),
+        _PasswordStrengthPanel(password: _passwordController.text),
       ],
+      const SizedBox(height: 14),
+      _buildTextField(
+        controller: _confirmPasswordController,
+        label: 'Подтвердите пароль',
+        obscureText: _obscureConfirmPassword,
+        textAlign: TextAlign.center,
+        onChanged: (_) => context.read<AuthProvider>().clearError(),
+        suffixIcon: IconButton(
+          icon: Icon(
+            _obscureConfirmPassword
+                ? Icons.visibility_outlined
+                : Icons.visibility_off_outlined,
+            color: Colors.white.withOpacity(0.6),
+          ),
+          onPressed: () =>
+              setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
+        ),
+        validator: (value) {
+          if (value == null || value.isEmpty) return 'Подтвердите пароль';
+          if (value != _passwordController.text) return 'Пароли не совпадают';
+          return null;
+        },
+      ),
+    ];
+  }
+
+  List<Widget> _buildRoleStep() {
+    return [
+      _buildTitle('Вы пришли сюда как'),
+      const SizedBox(height: 8),
+      Text(
+        'Дальше — разные вопросы для заказчика и мастера',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 14,
+          color: Colors.white.withOpacity(0.7),
+        ),
+      ),
+      const SizedBox(height: 28),
+      _buildRoleCard(
+        role: 'customer',
+        title: 'Заказчик',
+        subtitle: 'Ищу мастера для ремонта',
+      ),
+      const SizedBox(height: 12),
+      _buildRoleCard(
+        role: 'master',
+        title: 'Мастер',
+        subtitle: 'Выполняю работы',
+      ),
+    ];
+  }
+
+  Widget _buildTitle(String text) {
+    return Text(
+      text,
+      textAlign: TextAlign.center,
+      style: const TextStyle(
+        fontSize: 26,
+        fontWeight: FontWeight.w700,
+        color: Colors.white,
+        fontFamily: AppTextStyle.fontFamily,
+        height: AppTextStyle.defaultHeight,
+        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+      ),
+    );
+  }
+
+  Widget _buildRoleCard({
+    required String role,
+    required String title,
+    required String subtitle,
+  }) {
+    final selected = _selectedRole == role;
+    return GestureDetector(
+      onTap: () => setState(() => _selectedRole = role),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: selected ? Colors.white : Colors.white.withOpacity(0.08),
+          borderRadius: BorderRadius.circular(14),
+          border: Border.all(
+            color: selected
+                ? Colors.white
+                : Colors.white.withOpacity(0.25),
+          ),
+        ),
+        child: Column(
+          children: [
+            Text(
+              title,
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                color: selected ? AppTheme.primaryColor : Colors.white,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              subtitle,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 13,
+                color: selected
+                    ? AppTheme.primaryColor.withOpacity(0.8)
+                    : Colors.white.withOpacity(0.65),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomNav() {
+    final isLast = _step == _RegisterStep.role;
+    final nextLabel = isLast ? 'Готово' : 'Далее';
+
+    return Consumer<AuthProvider>(
+      builder: (context, auth, _) {
+        final loading = auth.isLoading || _submitLock;
+        return Padding(
+          padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              _OvalNavButton(
+                label: 'Назад',
+                outlined: true,
+                onPressed: loading ? null : _handleBack,
+              ),
+              _OvalNavButton(
+                label: nextLabel,
+                loading: loading,
+                onPressed: loading ? null : _handleNext,
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -417,68 +440,17 @@ class _RegisterScreenState extends State<RegisterScreen>
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         if (auth.error == null) return const SizedBox.shrink();
-        return Padding(
-          padding: const EdgeInsets.only(bottom: 16),
-          child: Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: SelectableText(
-              auth.error!,
-              style: const TextStyle(color: Colors.white, height: 1.35),
-              textAlign: TextAlign.center,
-            ),
+        return Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.12),
+            borderRadius: BorderRadius.circular(12),
           ),
-        );
-      },
-    );
-  }
-
-  Widget _buildPrimaryButton() {
-    final label = switch (_step) {
-      _RegisterStep.contact || _RegisterStep.role => 'Далее',
-      _RegisterStep.credentials => 'Создать аккаунт',
-    };
-
-    final onPressed = switch (_step) {
-      _RegisterStep.contact => _goNextFromContact,
-      _RegisterStep.role => _goNextFromRole,
-      _RegisterStep.credentials => _handleRegister,
-    };
-
-    return Consumer<AuthProvider>(
-      builder: (context, auth, _) {
-        final loading = auth.isLoading || _submitLock;
-        return ElevatedButton(
-          onPressed: loading ? null : onPressed,
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white,
-            foregroundColor: AppTheme.primaryColor,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(100),
-            ),
-            elevation: 0,
-            textStyle: const TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w600,
-              fontFamily: AppTextStyle.fontFamily,
-              height: AppTextStyle.defaultHeight,
-              leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-            ),
+          child: SelectableText(
+            auth.error!,
+            style: const TextStyle(color: Colors.white, height: 1.35),
+            textAlign: TextAlign.center,
           ),
-          child: loading
-              ? const SizedBox(
-                  height: 20,
-                  width: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTheme.primaryColor,
-                  ),
-                )
-              : Text(label),
         );
       },
     );
@@ -492,23 +464,18 @@ class _RegisterScreenState extends State<RegisterScreen>
           'Уже есть аккаунт?',
           style: TextStyle(
             color: Colors.white.withOpacity(0.7),
-            fontFamily: AppTextStyle.fontFamily,
             fontSize: 14,
-            height: AppTextStyle.defaultHeight,
           ),
         ),
         TextButton(
           onPressed: _handleBackToLogin,
-          style: TextButton.styleFrom(
-            foregroundColor: Colors.white,
-            textStyle: const TextStyle(
+          child: const Text(
+            'Войти',
+            style: TextStyle(
               fontWeight: FontWeight.w600,
-              fontFamily: AppTextStyle.fontFamily,
-              height: AppTextStyle.defaultHeight,
-              leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+              color: Colors.white,
             ),
           ),
-          child: const Text('Войти'),
         ),
       ],
     );
@@ -519,6 +486,7 @@ class _RegisterScreenState extends State<RegisterScreen>
     required String label,
     TextInputType? keyboardType,
     bool obscureText = false,
+    TextAlign textAlign = TextAlign.start,
     Widget? suffixIcon,
     void Function(String)? onChanged,
     String? Function(String?)? validator,
@@ -527,11 +495,13 @@ class _RegisterScreenState extends State<RegisterScreen>
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
+      textAlign: textAlign,
       onChanged: onChanged,
       style: const TextStyle(color: Colors.white),
       decoration: InputDecoration(
         labelText: label,
         labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+        alignLabelWithHint: textAlign == TextAlign.center,
         filled: true,
         fillColor: Colors.white.withOpacity(0.1),
         border: OutlineInputBorder(
@@ -561,7 +531,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   Widget? _buildContactValidationIcon() {
     final value = _contactController.text.trim();
     if (value.isEmpty) return null;
-
     final error = RegisterContactValidation.validateContact(value);
     if (error == null) {
       return const Icon(Icons.check_circle, color: Color(0xFF81C784));
@@ -570,7 +539,57 @@ class _RegisterScreenState extends State<RegisterScreen>
   }
 }
 
-/// Индикатор надёжности и чеклист требований к паролю.
+class _OvalNavButton extends StatelessWidget {
+  final String label;
+  final VoidCallback? onPressed;
+  final bool outlined;
+  final bool loading;
+
+  const _OvalNavButton({
+    required this.label,
+    this.onPressed,
+    this.outlined = false,
+    this.loading = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: outlined ? Colors.transparent : Colors.white,
+      shape: StadiumBorder(
+        side: outlined
+            ? BorderSide(color: Colors.white.withOpacity(0.55))
+            : BorderSide.none,
+      ),
+      child: InkWell(
+        onTap: onPressed,
+        customBorder: const StadiumBorder(),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+          child: loading
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    color: AppTheme.primaryColor,
+                  ),
+                )
+              : Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: outlined ? Colors.white : AppTheme.primaryColor,
+                    fontFamily: AppTextStyle.fontFamily,
+                  ),
+                ),
+        ),
+      ),
+    );
+  }
+}
+
 class _PasswordStrengthPanel extends StatelessWidget {
   final String password;
 
