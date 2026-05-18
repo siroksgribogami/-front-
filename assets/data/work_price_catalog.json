@@ -1,0 +1,169 @@
+{
+  "version": 1,
+  "currency": "RUB",
+  "updated_at": "2025-05-18",
+  "items": [
+    {
+      "id": "demo_wall_plaster_m2",
+      "section_code": "02",
+      "section_title": "Черновые и подготовительные",
+      "title": "Штукатурка стен по маякам",
+      "unit": "m2",
+      "price_per_unit": 520,
+      "keywords": ["штукатур", "стен", "выравнив"]
+    },
+    {
+      "id": "demo_floor_screed_m2",
+      "section_code": "02",
+      "section_title": "Черновые и подготовительные",
+      "title": "Стяжка пола цементно-песчаная до 50 мм",
+      "unit": "m2",
+      "price_per_unit": 890,
+      "keywords": ["стяжк", "пол"]
+    },
+    {
+      "id": "demo_tile_floor_m2",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Укладка керамической плитки на пол",
+      "unit": "m2",
+      "price_per_unit": 1450,
+      "keywords": ["плитк", "пол", "керамик"]
+    },
+    {
+      "id": "demo_tile_wall_m2",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Укладка плитки на стены",
+      "unit": "m2",
+      "price_per_unit": 1580,
+      "keywords": ["плитк", "стен", "фартук"]
+    },
+    {
+      "id": "demo_laminate_m2",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Укладка ламината с подложкой",
+      "unit": "m2",
+      "price_per_unit": 650,
+      "keywords": ["ламинат", "пол"]
+    },
+    {
+      "id": "demo_paint_wall_m2",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Окраска стен в 2 слоя",
+      "unit": "m2",
+      "price_per_unit": 380,
+      "keywords": ["окраск", "покрас", "стен", "краск"]
+    },
+    {
+      "id": "demo_ceiling_stretch_m2",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Монтаж натяжного потолка",
+      "unit": "m2",
+      "price_per_unit": 720,
+      "keywords": ["потолок", "натяжн"]
+    },
+    {
+      "id": "demo_demolition_m2",
+      "section_code": "01",
+      "section_title": "Демонтаж",
+      "title": "Демонтаж напольного покрытия",
+      "unit": "m2",
+      "price_per_unit": 280,
+      "keywords": ["демонтаж", "снят", "пол"]
+    },
+    {
+      "id": "demo_wallpaper_m2",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Оклейка стен обоями",
+      "unit": "m2",
+      "price_per_unit": 420,
+      "keywords": ["обои", "оклейк"]
+    },
+    {
+      "id": "demo_electric_point",
+      "section_code": "04",
+      "section_title": "Электромонтаж",
+      "title": "Установка розетки/выключателя",
+      "unit": "pcs",
+      "price_per_unit": 950,
+      "keywords": ["розетк", "выключ", "электр"]
+    },
+    {
+      "id": "demo_plumbing_point",
+      "section_code": "05",
+      "section_title": "Сантехника",
+      "title": "Точка водоснабжения / канализации",
+      "unit": "pcs",
+      "price_per_unit": 3200,
+      "keywords": ["сантех", "вод", "канал"]
+    },
+    {
+      "id": "demo_door_install",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Установка межкомнатной двери",
+      "unit": "pcs",
+      "price_per_unit": 4500,
+      "keywords": ["двер", "установ"]
+    },
+    {
+      "id": "demo_baseboard_lm",
+      "section_code": "03",
+      "section_title": "Отделочные работы",
+      "title": "Монтаж напольного плинтуса",
+      "unit": "lm",
+      "price_per_unit": 320,
+      "keywords": ["плинтус"]
+    },
+    {
+      "id": "demo_warm_floor_m2",
+      "section_code": "04",
+      "section_title": "Электромонтаж",
+      "title": "Монтаж тёплого пола (электрического)",
+      "unit": "m2",
+      "price_per_unit": 1100,
+      "keywords": ["тёпл", "тепл", "пол"]
+    },
+    {
+      "id": "demo_gkl_wall_m2",
+      "section_code": "02",
+      "section_title": "Черновые и подготовительные",
+      "title": "Обшивка стен ГКЛ на каркас",
+      "unit": "m2",
+      "price_per_unit": 780,
+      "keywords": ["гкл", "гипсокартон", "перегород"]
+    },
+    {
+      "id": "demo_primer_m2",
+      "section_code": "02",
+      "section_title": "Черновые и подготовительные",
+      "title": "Грунтовка поверхности",
+      "unit": "m2",
+      "price_per_unit": 120,
+      "keywords": ["грунт"]
+    },
+    {
+      "id": "demo_cleaning_final",
+      "section_code": "06",
+      "section_title": "Завершение",
+      "title": "Уборка после ремонта",
+      "unit": "m2",
+      "price_per_unit": 95,
+      "keywords": ["уборк", "клининг"]
+    },
+    {
+      "id": "demo_kitchen_furniture_lm",
+      "section_code": "07",
+      "section_title": "Мебель и встроенное",
+      "title": "Сборка кухонного модуля (погонный метр)",
+      "unit": "lm",
+      "price_per_unit": 2800,
+      "keywords": ["кухн", "модул", "сборк"]
+    }
+  ]
+}

@@ -182,10 +182,46 @@
         pending.forEach(sendCommandToUnity);
       }
 
+      function mergeMapPatch(baseJson, patchJson) {
+        var base = {};
+        var patch = {};
+        try { base = JSON.parse(baseJson || '{}'); } catch (_) { base = {}; }
+        try { patch = JSON.parse(patchJson || '{}'); } catch (_) { return baseJson || '{}'; }
+
+        var roomsById = {};
+        (base.rooms || []).forEach(function (room) {
+          if (room && room.roomId) roomsById[room.roomId] = room;
+        });
+
+        (patch.roomsUpsert || []).forEach(function (room) {
+          if (room && room.roomId) {
+            roomsById[room.roomId] = Object.assign({}, roomsById[room.roomId] || {}, room);
+          }
+        });
+
+        base.rooms = Object.keys(roomsById).map(function (id) { return roomsById[id]; });
+
+        var tasksById = {};
+        (base.tasks || []).forEach(function (task) {
+          if (task && task.taskId) tasksById[task.taskId] = task;
+        });
+        (patch.taskIdsRemove || []).forEach(function (id) { delete tasksById[id]; });
+        (patch.tasksUpsert || []).forEach(function (task) {
+          if (task && task.taskId) tasksById[task.taskId] = task;
+        });
+        base.tasks = Object.keys(tasksById).map(function (id) { return tasksById[id]; });
+
+        return JSON.stringify(base);
+      }
+
       function handleFlutterMessage(message) {
         switch (message.type) {
           case 'initializeEditor':
             sendCommandToUnity({ method: 'ReceiveInitialMapJson', argument: message.payload || '' });
+            break;
+          case 'applyMapPatch':
+            latestMapJson = mergeMapPatch(latestMapJson, message.payload || '{}');
+            sendCommandToUnity({ method: 'ReceiveInitialMapJson', argument: latestMapJson });
             break;
           case 'focusRoom':
             sendCommandToUnity({ method: 'FocusRoom', argument: message.roomId || '' });

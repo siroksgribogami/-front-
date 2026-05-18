@@ -55,6 +55,15 @@ class UnityMapWebController {
     );
   }
 
+  /// Частичное обновление: diff `{ roomsUpsert, tasksUpsert, taskIdsRemove }`.
+  Future<void> applyMapPatch(Map<String, dynamic> patch) async {
+    final state = await _getState();
+    await state?.postCommand(
+      'applyMapPatch',
+      payload: jsonEncode(patch),
+    );
+  }
+
   Future<void> focusRoom(String roomId) async {
     final state = await _getState();
     await state?.postCommand('focusRoom', roomId: roomId);

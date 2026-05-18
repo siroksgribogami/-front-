@@ -4,10 +4,11 @@ import 'package:provider/provider.dart';
 import '../../config/app_theme.dart';
 import '../../core/bar_loader.dart';
 import '../../core/theme/app_text_style.dart';
+import '../../data/premise_rooms_catalog.dart';
 import '../../models/onboarding_survey.dart';
 import '../../providers/auth_provider.dart';
 
-/// Опрос после регистрации: заказчик или мастер, затем разветвление шагов.
+/// Опрос после регистрации (3 шага). Роль берётся с экрана регистрации.
 class PostRegisterSurveyScreen extends StatefulWidget {
   const PostRegisterSurveyScreen({super.key});
 
@@ -17,11 +18,12 @@ class PostRegisterSurveyScreen extends StatefulWidget {
 }
 
 class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
-  static const int _totalSteps = 4;
+  static const int _totalSteps = 3;
 
   int _step = 1;
   bool _isForward = true;
 
+  /// Роль уже выбрана на экране регистрации — в опросе не спрашиваем повторно.
   OnboardingRole? _role;
 
   // ——— Заказчик ———
@@ -80,13 +82,25 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   ];
 
   List<String> get _stepSubtitles {
-    if (_role == null) {
-      return ['Кто вы?', 'Шаг 2', 'Шаг 3', 'Шаг 4'];
-    }
     if (_role == OnboardingRole.customer) {
-      return ['Кто вы?', 'Задача', 'Пространство', 'Срок'];
+      return ['Задача', 'Пространство', 'Срок'];
     }
-    return ['Кто вы?', 'Специализация', 'Опыт', 'Город'];
+    return ['Специализация', 'Опыт', 'Город'];
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      final fromReg = context.read<AuthProvider>().registeredOnboardingRole;
+      if (fromReg != null && _role != fromReg) {
+        setState(() {
+          _role = fromReg;
+          _resetBranchState();
+        });
+      }
+    });
   }
 
   @override
@@ -96,30 +110,23 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   }
 
   bool get _canProceed {
+    if (_role == null) return false;
     switch (_step) {
       case 1:
-        return _role != null;
-      case 2:
         if (_role == OnboardingRole.customer) return _workCategoryId != null;
-        if (_role == OnboardingRole.master) return _specIds.isNotEmpty;
-        return false;
-      case 3:
+        return _specIds.isNotEmpty;
+      case 2:
         if (_role == OnboardingRole.customer) {
           final baseOk = _premiseKind != null && _areaId != null;
-          // Если тип = дом, нужно также выбрать количество этажей
           if (_premiseKind == 'house') {
             return baseOk && _houseFloors != null;
           }
           return baseOk;
         }
-        if (_role == OnboardingRole.master) return _experienceId != null;
-        return false;
-      case 4:
+        return _experienceId != null;
+      case 3:
         if (_role == OnboardingRole.customer) return _timelineId != null;
-        if (_role == OnboardingRole.master) {
-          return _cityCtrl.text.trim().length >= 2;
-        }
-        return false;
+        return _cityCtrl.text.trim().length >= 2;
       default:
         return false;
     }
@@ -377,18 +384,28 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   }
 
   Widget _buildStep() {
+    if (_role == null) {
+      return Center(
+        child: AppText(
+          'Не удалось определить роль.\nЗавершите регистрацию заново.',
+          textAlign: TextAlign.center,
+          style: AppTextStyle.gropled(
+            fontSize: 16,
+            color: AppTheme.backgroundColor.withOpacity(0.85),
+          ),
+        ),
+      );
+    }
     switch (_step) {
       case 1:
-        return _stepRole();
-      case 2:
         return _role == OnboardingRole.customer
             ? _stepCustomerWork()
             : _stepMasterSpec();
-      case 3:
+      case 2:
         return _role == OnboardingRole.customer
             ? _stepCustomerSpace()
             : _stepMasterExperience();
-      case 4:
+      case 3:
         return _role == OnboardingRole.customer
             ? _stepCustomerWhen()
             : _stepMasterCity();
@@ -423,42 +440,6 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
         ],
       );
 
-  // ─── Шаг 1 ────────────────────────────────────────────────────────────────
-  Widget _stepRole() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        _stepTitle(
-          'Как вы планируете\nиспользовать ARThouse?',
-          'От этого выбора зависят все следующие шаги',
-        ),
-        const SizedBox(height: 8),
-        _roleCard(
-          selected: _role == OnboardingRole.customer,
-          emoji: '🏠',
-          title: 'Я ищу мастера',
-          subtitle:
-              'Хочу найти специалиста для ремонта, дизайна или других работ',
-          onTap: () => setState(() {
-            _role = OnboardingRole.customer;
-            _resetBranchState();
-          }),
-        ),
-        const SizedBox(height: 14),
-        _roleCard(
-          selected: _role == OnboardingRole.master,
-          emoji: '🔨',
-          title: 'Я мастер',
-          subtitle: 'Хочу находить заказы и клиентов',
-          onTap: () => setState(() {
-            _role = OnboardingRole.master;
-            _resetBranchState();
-          }),
-        ),
-      ],
-    );
-  }
-
   void _resetBranchState() {
     _workCategoryId = null;
     _premiseKind = null;
@@ -468,71 +449,6 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
     _specIds.clear();
     _experienceId = null;
     _cityCtrl.clear();
-  }
-
-  Widget _roleCard({
-    required bool selected,
-    required String emoji,
-    required String title,
-    required String subtitle,
-    required VoidCallback onTap,
-  }) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 220),
-        width: double.infinity,
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          color: selected ? AppTheme.backgroundColor : Colors.white.withOpacity(0.07),
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(
-            color: selected
-                ? AppTheme.backgroundColor
-                : AppTheme.backgroundColor.withOpacity(0.25),
-            width: selected ? 2 : 1,
-          ),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              emoji,
-              style: const TextStyle(fontSize: 36, inherit: false),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  AppText(
-                    title,
-                    style: AppTextStyle.gropled(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
-                      color: selected
-                          ? AppTheme.primaryColor
-                          : AppTheme.backgroundColor,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  AppText(
-                    subtitle,
-                    style: AppTextStyle.gropled(
-                      fontSize: 14,
-                      height: 1.35,
-                      color: selected
-                          ? AppTheme.primaryColor.withOpacity(0.85)
-                          : AppTheme.backgroundColor.withOpacity(0.72),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
   }
 
   // ─── Заказчик: задача ─────────────────────────────────────────────────────
@@ -657,7 +573,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   }
 
   Widget _buildSuggestedRooms(String premiseKind) {
-    final rooms = _suggestedRoomsForPremise(premiseKind);
+    final rooms = PremiseRoomsCatalog.suggestedRoomLabels(premiseKind);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -677,38 +593,6 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
         ),
       ],
     );
-  }
-
-  List<String> _suggestedRoomsForPremise(String? kind) {
-    switch (kind) {
-      case 'apartment':
-        return [
-          'Жилая зона / гостиная',
-          'Кухня',
-          'Спальня',
-          'Санузел',
-          'Прихожая',
-          'Балкон/лоджия',
-        ];
-      case 'house':
-        return [
-          'Гостиная',
-          'Кухня',
-          'Спальни',
-          'Санузел(ы)',
-          'Кладовая',
-          'Терраса',
-        ];
-      case 'office':
-        return [
-          'Офисное пространство',
-          'Перегородки',
-          'Залы/зоны',
-          'Санузел',
-        ];
-      default:
-        return ['Прихожая', 'Кухня', 'Спальня', 'Санузел'];
-    }
   }
 
   // ─── Заказчик: срок ───────────────────────────────────────────────────────

@@ -119,7 +119,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
 
                       // Подзаголовок
                       AppText(
-                        'Пара вопросов — подстроим сценарий\nремонта и роль: заказчик или исполнитель.',
+                        'Пара вопросов — подстроим сценарий\nпод ваш объект и задачи.',
                         style: AppTextStyle.gropled(
                           fontSize: 18,
                           color: AppTheme.backgroundColor.withOpacity(0.65),

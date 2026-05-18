@@ -5,6 +5,7 @@ import '../../core/theme/app_text_style.dart';
 import '../../core/theme/marketplace_colors.dart';
 import '../../models/marketplace_project.dart';
 import '../../services/marketplace_local_store.dart';
+import '../../services/project_service.dart';
 import 'create_project_screen.dart';
 import 'customer_project_responses_screen.dart';
 import 'project_map_editor_screen.dart';
@@ -31,6 +32,14 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
   }
 
   Future<void> _reload() async {
+    try {
+      final fromApi = await ProjectService().getMyProjects();
+      if (fromApi.isNotEmpty) {
+        await MarketplaceLocalStore.instance.saveCustomerProjects(fromApi);
+      }
+    } catch (_) {
+      // офлайн / бэкенд недоступен — остаёмся на локальном кэше
+    }
     await MarketplaceLocalStore.instance.ensureLoaded();
     if (!mounted) return;
     setState(() {

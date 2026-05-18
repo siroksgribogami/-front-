@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/theme/marketplace_colors.dart';
+import '../../data/premise_rooms_catalog.dart';
 import '../../models/ai_responses.dart';
 import '../../services/api_service.dart';
 import '../../services/survey_service.dart';
@@ -18,12 +19,15 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
+  static const double _foremanAvatarSize = 64;
+
   final List<_ChatMessage> _messages = [
     _ChatMessage(
       text:
           'Привет! Я ИИ-прораб ARTkhaus.\n\nСоберу из твоего описания ТЗ, смету и список материалов.\n\nС чего начнём: комната, бюджет или сроки?',
       isUser: false,
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
+      emotion: 'обычный',
     ),
   ];
 
@@ -76,8 +80,15 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
         survey = null;
       }
 
+      final premiseRooms = await PremiseRoomsCatalog.loadPersistedRooms();
+
       final api = ApiService();
-      final body = {'message': text, 'survey': survey};
+      final body = <String, dynamic>{
+        'message': text,
+        if (survey != null) 'survey': survey,
+        if (premiseRooms != null && premiseRooms.isNotEmpty)
+          'premise_rooms': premiseRooms,
+      };
       final resp = await api.post('/ai/foreman/chat', body: body);
 
       // ожидаем ответ вида { text: '...', emotion: 'рад'|'think'|'обычный', avatar_url?: 'http...'}
@@ -218,94 +229,102 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
 
   Widget _buildMessageBubble(_ChatMessage message, BuildContext context) {
     final isUser = message.isUser;
+    if (isUser) {
+      return Align(
+        alignment: Alignment.centerRight,
+        child: _buildBubbleBody(message, context, isUser: true),
+      );
+    }
+
+    return Align(
+      alignment: Alignment.centerLeft,
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _ForemanCharacterAvatar(
+            size: _foremanAvatarSize,
+            emotion: message.emotion,
+            avatarUrl: message.avatarUrl,
+          ),
+          const SizedBox(width: 10),
+          Flexible(
+            child: _buildBubbleBody(message, context, isUser: false),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildBubbleBody(
+    _ChatMessage message,
+    BuildContext context, {
+    required bool isUser,
+  }) {
     final card = MarketplaceColors.cardFor(context);
     final textPrimary = MarketplaceColors.textPrimaryFor(context);
     final textMuted = MarketplaceColors.textMutedFor(context);
 
-    return Align(
-      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
-        margin: EdgeInsets.only(
-          top: 6,
-          bottom: 6,
-          left: isUser ? 50 : 0,
-          right: isUser ? 0 : 50,
+    return Container(
+      margin: EdgeInsets.only(
+        top: 6,
+        bottom: 6,
+        left: isUser ? 50 : 0,
+        right: isUser ? 0 : 8,
+      ),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: isUser ? MarketplaceColors.bluePrimary : card,
+        borderRadius: BorderRadius.only(
+          topLeft: const Radius.circular(18),
+          topRight: const Radius.circular(18),
+          bottomLeft: Radius.circular(isUser ? 18 : 4),
+          bottomRight: Radius.circular(isUser ? 4 : 18),
         ),
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        decoration: BoxDecoration(
-          color: isUser ? MarketplaceColors.bluePrimary : card,
-          borderRadius: BorderRadius.only(
-            topLeft: const Radius.circular(18),
-            topRight: const Radius.circular(18),
-            bottomLeft: Radius.circular(isUser ? 18 : 4),
-            bottomRight: Radius.circular(isUser ? 4 : 18),
-          ),
-          border: isUser
-              ? null
-              : const Border(
-                  left: BorderSide(
-                      color: MarketplaceColors.aiTurquoise, width: 3),
+        border: isUser
+            ? null
+            : const Border(
+                left: BorderSide(
+                  color: MarketplaceColors.aiTurquoise,
+                  width: 3,
                 ),
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-              if (!isUser) ...[
-                Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    // Avatar + emotion
-                    Container(
-                      width: 28,
-                      height: 28,
-                      margin: const EdgeInsets.only(right: 8),
-                      child: CircleAvatar(
-                        backgroundColor:
-                            MarketplaceColors.aiTurquoise.withOpacity(0.15),
-                        child: Padding(
-                          padding: const EdgeInsets.all(4),
-                          child: SvgPicture.asset(
-                            _avatarAssetFor(message.emotion),
-                            fit: BoxFit.contain,
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 2),
-                    const Text(
-                      'ИИ-прораб',
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
-                        color: MarketplaceColors.aiTurquoise,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 6),
-              ],
-            Text(
-              message.text,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.4,
-                color: isUser ? Colors.white : textPrimary,
               ),
-            ),
-            const SizedBox(height: 4),
-            Align(
-              alignment: Alignment.bottomRight,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (!isUser)
+            const Padding(
+              padding: EdgeInsets.only(bottom: 6),
               child: Text(
-                _formatTime(message.timestamp),
+                'ИИ-прораб',
                 style: TextStyle(
-                  fontSize: 10,
-                  color:
-                      isUser ? Colors.white.withOpacity(0.7) : textMuted,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: MarketplaceColors.aiTurquoise,
                 ),
               ),
             ),
-          ],
-        ),
+          Text(
+            message.text,
+            style: TextStyle(
+              fontSize: 14,
+              height: 1.4,
+              color: isUser ? Colors.white : textPrimary,
+            ),
+          ),
+          const SizedBox(height: 4),
+          Align(
+            alignment: Alignment.bottomRight,
+            child: Text(
+              _formatTime(message.timestamp),
+              style: TextStyle(
+                fontSize: 10,
+                color: isUser ? Colors.white.withOpacity(0.7) : textMuted,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -366,5 +385,56 @@ String _avatarAssetFor(String? emotion) {
       return 'picture/веселый.svg';
     default:
       return 'picture/обычный.svg';
+  }
+}
+
+/// Крупный персонаж прораба слева от пузыря (не мелкий кружок внутри сообщения).
+class _ForemanCharacterAvatar extends StatelessWidget {
+  const _ForemanCharacterAvatar({
+    required this.size,
+    this.emotion,
+    this.avatarUrl,
+  });
+
+  final double size;
+  final String? emotion;
+  final String? avatarUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = avatarUrl;
+    return SizedBox(
+      width: size,
+      height: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: MarketplaceColors.aiTurquoise.withOpacity(0.12),
+          borderRadius: BorderRadius.circular(size * 0.28),
+          border: Border.all(
+            color: MarketplaceColors.aiTurquoise.withOpacity(0.35),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(size * 0.24),
+          child: url != null && url.isNotEmpty
+              ? Image.network(
+                  url,
+                  fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _svgFace(),
+                )
+              : Padding(
+                  padding: EdgeInsets.all(size * 0.06),
+                  child: _svgFace(),
+                ),
+        ),
+      ),
+    );
+  }
+
+  Widget _svgFace() {
+    return SvgPicture.asset(
+      _avatarAssetFor(emotion),
+      fit: BoxFit.contain,
+    );
   }
 }

@@ -7,6 +7,8 @@ class UnityMapWebController {
 
   Future<void> initializeEditor(UnityApartmentMapData payload) async {}
 
+  Future<void> applyMapPatch(Map<String, dynamic> patch) async {}
+
   Future<void> focusRoom(String roomId) async {}
 
   Future<void> undo() async {}

@@ -9,6 +9,7 @@ import '../services/api_service.dart';
 import '../services/project_service.dart';
 import '../services/survey_service.dart';
 import '../services/marketplace_local_store.dart';
+import '../data/premise_rooms_catalog.dart';
 import '../utils/register_api_error_localizer.dart';
 import 'role_provider.dart';
 
@@ -52,6 +53,14 @@ class AuthProvider with ChangeNotifier {
   bool get isAuthenticated => _state == AuthState.authenticated;
   bool get isLoading => _state == AuthState.loading;
   bool get needsSurvey => isAuthenticated && _pendingPostRegisterSurvey;
+
+  /// Роль с экрана регистрации (`customer` | `master`) — для опроса без повторного вопроса.
+  OnboardingRole? get registeredOnboardingRole {
+    final mode = _accountMode;
+    if (mode == 'master') return OnboardingRole.master;
+    if (mode == 'customer') return OnboardingRole.customer;
+    return null;
+  }
   bool get justRegistered => _justRegistered;
   bool get needsEmailVerification =>
       isAuthenticated && _pendingEmailVerificationStep;
@@ -122,6 +131,11 @@ class AuthProvider with ChangeNotifier {
       
       await _authService.register(userData);
       _user = await _authService.getCurrentUser();
+      if (role == 'master' || role == 'customer') {
+        _accountMode = role;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('arthouse_account_mode', role!);
+      }
       // Mark that the flow just registered — show survey even if backend state differs
       _justRegistered = true;
       _pendingEmailVerificationStep = true;
@@ -342,7 +356,11 @@ class AuthProvider with ChangeNotifier {
           : 50;
       const wallHeight = 260;
       const floorsCount = 1;
-      final roomsCount = isCustomer ? 3 : 1;
+      final catalogRooms = isCustomer
+          ? PremiseRoomsCatalog.roomsForMap(premiseType)
+          : <Map<String, dynamic>>[];
+      final roomsCount =
+          isCustomer ? catalogRooms.length.clamp(1, 99) : 1;
 
       final additional = <String, dynamic>{
         'onboarding_version': 2,
@@ -394,7 +412,7 @@ class AuthProvider with ChangeNotifier {
           'map_data': <String, dynamic>{
             'before': <String, dynamic>{},
             'after': <String, dynamic>{},
-            'rooms': <Map<String, dynamic>>[],
+            'rooms': catalogRooms,
             'source': 'post_register_survey',
           },
           'teaser': 'Черновик создан после опроса',
@@ -435,6 +453,9 @@ class AuthProvider with ChangeNotifier {
       }
       if (isCustomer) {
         await prefs.remove('arthouse_usage_mode');
+        await PremiseRoomsCatalog.persistRoomsJson(catalogRooms);
+      } else {
+        await prefs.remove(PremiseRoomsCatalog.prefsKey);
       }
 
       final created = createdProject;

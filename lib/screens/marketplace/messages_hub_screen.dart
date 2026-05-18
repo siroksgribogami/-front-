@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_text_style.dart';
@@ -231,8 +232,8 @@ class _PinnedAiTile extends StatelessWidget {
           child: Row(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: MarketplaceColors.aiTurquoise.withOpacity(0.18),
                   borderRadius: BorderRadius.circular(12),
@@ -240,8 +241,11 @@ class _PinnedAiTile extends StatelessWidget {
                     color: MarketplaceColors.aiTurquoise.withOpacity(0.45),
                   ),
                 ),
-                alignment: Alignment.center,
-                child: const Text('🤖', style: TextStyle(fontSize: 22)),
+                padding: const EdgeInsets.all(6),
+                child: SvgPicture.asset(
+                  'picture/обычный.svg',
+                  fit: BoxFit.contain,
+                ),
               ),
               const SizedBox(width: 12),
               Expanded(

@@ -7,27 +7,13 @@
 
 version: 2
 
-total_steps: 4
+total_steps: 3
 
-# Шаг 1 — роль
-step_1:
-  title: |
-    Как вы планируете
-    использовать ARThouse?
-  subtitle: От этого выбора зависят все следующие шаги
-  options:
-    - role_id: customer
-      emoji: "🏠"
-      title: Я ищу мастера
-      description: Хочу найти специалиста для ремонта, дизайна или других работ
-    - role_id: master
-      emoji: "🔨"
-      title: Я мастер
-      description: Хочу находить заказы и клиентов
+# Роль (customer | master) — только на экране регистрации, в prefs: arthouse_account_mode
 
 # Заказчик (customer)
 branch_customer:
-  step_2:
+  step_1:
     title: Что вам нужно сделать?
     subtitle: Выберите категорию
     categories_single:
@@ -39,7 +25,7 @@ branch_customer:
       - { id: plumbing,     label: Сантехника,       emoji: "🚿" }
       - { id: other,        label: Другое,           emoji: "✏️" }
 
-  step_3:
+  step_2:
     title: Опишите ваше пространство
     subtitle: Тип помещения и примерная площадь
     premise_types:
@@ -52,7 +38,7 @@ branch_customer:
       - { id: area_m,  label: "70–100 м²" }
       - { id: area_l,  label: "100+ м²" }
 
-  step_4:
+  step_3:
     title: Когда планируете начать?
     subtitle: Можно изменить позже в профиле
     timelines:
@@ -62,12 +48,12 @@ branch_customer:
 
 # Мастер (master)
 branch_master:
-  step_2:
+  step_1:
     title: Ваша специализация
     subtitle: Можно выбрать несколько направлений
     # те же id категорий, что у заказчика (мультивыбор)
 
-  step_3:
+  step_2:
     title: Опыт работы
     subtitle: Честный ответ поможет подобрать подходящие заказы
     experience:
@@ -76,7 +62,7 @@ branch_master:
       - { id: y3_5, label: 3–5 лет }
       - { id: gt5,  label: Больше 5 лет }
 
-  step_4:
+  step_3:
     title: В каком городе работаете?
     subtitle: Укажите город или регион — так клиенты смогут вас находить
     input_placeholder: "Например: Москва"
@@ -97,6 +83,7 @@ api_notes:
     master_fields: [specializations, experience, city]
   prefs:
     - arthouse_premise_type
-    - arthouse_account_mode   # customer | master
+    - arthouse_account_mode   # customer | master (с регистрации)
+    - arthouse_premise_rooms_json  # каталог комнат → ИИ-прораб / Unity map_data.rooms
     - arthouse_start_timeline # для заказчика
     - arthouse_city           # для мастера
