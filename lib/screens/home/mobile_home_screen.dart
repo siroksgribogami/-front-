@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../core/arthouse_scroll_behavior.dart';
 import '../../core/theme/app_text_style.dart';
 import '../../core/theme/marketplace_colors.dart';
 import '../../models/app_marketplace_role.dart';
@@ -25,8 +26,6 @@ class MobileHomeScreen extends StatefulWidget {
 class _MobileHomeScreenState extends State<MobileHomeScreen> {
   int _currentIndex = 0;
   AppMarketplaceRole? _lastActiveRole;
-
-  static const double _bottomBarReserve = 96;
 
   /// Сбрасываем вкладку на первую при смене активной роли в профиле.
   void _syncRoleTab(AppMarketplaceRole active) {
@@ -105,29 +104,34 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
 
     return Scaffold(
       backgroundColor: MarketplaceColors.backgroundFor(context),
-      body: Padding(
-        padding: EdgeInsets.only(bottom: bottomPadding + _bottomBarReserve),
-        child: SafeArea(
-          child: IndexedStack(
-            index: _currentIndex,
-            children: List.generate(
-              labels.length,
-              (index) => _LazyTab(
-                active: _currentIndex == index,
-                builder: builders[index],
-              ),
+      body: SafeArea(
+        bottom: false,
+        child: IndexedStack(
+          index: _currentIndex,
+          children: List.generate(
+            labels.length,
+            (index) => _LazyTab(
+              active: _currentIndex == index,
+              builder: builders[index],
             ),
           ),
         ),
       ),
-      bottomNavigationBar: Container(
+      bottomNavigationBar: RepaintBoundary(child: Container(
         decoration: BoxDecoration(
-          color: MarketplaceColors.card,
+          color: MarketplaceColors.cardFor(context),
+          border: Border(
+            top: BorderSide(
+              color: MarketplaceColors.textMutedFor(context).withOpacity(0.12),
+            ),
+          ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.35),
-              blurRadius: 16,
-              offset: const Offset(0, -4),
+              color: Colors.black.withOpacity(
+                Theme.of(context).brightness == Brightness.dark ? 0.55 : 0.08,
+              ),
+              blurRadius: 12,
+              offset: const Offset(0, -2),
             ),
           ],
         ),
@@ -150,7 +154,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
             }),
           ),
         ),
-      ),
+      )),
     );
   }
 
@@ -163,7 +167,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
   ) {
     final isSelected = _currentIndex == index;
     const selectedColor = MarketplaceColors.bluePrimary;
-    const unselectedColor = MarketplaceColors.textSecondary;
+    final unselectedColor = MarketplaceColors.textSecondaryFor(context);
+    final selectedLabelColor = MarketplaceColors.textPrimaryFor(context);
 
     return Expanded(
       child: Semantics(
@@ -173,7 +178,11 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
         child: Material(
           color: Colors.transparent,
           child: InkWell(
-            onTap: () => setState(() => _currentIndex = index),
+            onTap: () {
+              if (_currentIndex == index) return;
+              ArthouseHaptics.select();
+              setState(() => _currentIndex = index);
+            },
             borderRadius: BorderRadius.circular(12),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
@@ -183,19 +192,38 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                   mainAxisSize: MainAxisSize.min,
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    AnimatedContainer(
-                      duration: const Duration(milliseconds: 200),
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-                      decoration: BoxDecoration(
-                        color: isSelected
-                            ? MarketplaceColors.bluePrimary.withOpacity(0.14)
-                            : Colors.transparent,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        isSelected ? selectedIcon : icon,
-                        color: isSelected ? selectedColor : unselectedColor,
-                        size: 24,
+                    TweenAnimationBuilder<double>(
+                      tween: Tween(begin: 1.0, end: isSelected ? 1.08 : 1.0),
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutBack,
+                      builder: (context, scale, child) {
+                        return Transform.scale(scale: scale, child: child);
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 180),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isSelected
+                              ? MarketplaceColors.bluePrimary.withOpacity(0.14)
+                              : Colors.transparent,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 180),
+                          transitionBuilder: (child, anim) => FadeTransition(
+                            opacity: anim,
+                            child: ScaleTransition(scale: anim, child: child),
+                          ),
+                          child: Icon(
+                            isSelected ? selectedIcon : icon,
+                            key: ValueKey<bool>(isSelected),
+                            color: isSelected ? selectedColor : unselectedColor,
+                            size: 24,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 4),
@@ -208,7 +236,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                         height: AppTextStyle.defaultHeight,
                         leadingDistribution:
                             AppTextStyle.defaultLeadingDistribution,
-                        color: isSelected ? MarketplaceColors.textPrimary : unselectedColor,
+                        color: isSelected ? selectedLabelColor : unselectedColor,
                       ),
                     ),
                   ],

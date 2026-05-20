@@ -47,15 +47,12 @@ class ApiService {
     return token != null && token.isNotEmpty;
   }
 
-  static const _timeoutMessage =
-      'Сервер не ответил вовремя. Проверьте Wi‑Fi, IP компьютера в flutter run и что бэкенд запущен (http://IP:8000/health с телефона).';
-
-  static const _socketMessage =
-      'Сервер недоступен. Запустите бэкенд на ПК и укажите его IP: flutter run --dart-define=API_BASE_URL=http://IP:8000';
+  static const _timeoutMessage = 'Сервер не ответил вовремя.';
+  static const _unreachableMessage = 'Сервер недоступен.';
 
   Never _rethrowNetwork(Object e) {
-    if (e is SocketException) {
-      throw ApiException(statusCode: 0, message: _socketMessage);
+    if (e is SocketException || e is http.ClientException) {
+      throw ApiException(statusCode: 0, message: _unreachableMessage);
     }
     if (e is TimeoutException) {
       throw ApiException(statusCode: 0, message: _timeoutMessage);

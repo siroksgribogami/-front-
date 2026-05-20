@@ -58,6 +58,17 @@ class AppTheme {
     return ThemeData(
       useMaterial3: true,
       fontFamily: 'Inter',
+      // iOS-стиль перехода между экранами (slide-from-right с тенью).
+      // На Android-устройствах вроде Samsung A54 это даёт «дорогую» анимацию
+      // навигации, причём дешевле по GPU, чем Material shared-axis.
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+      splashFactory: InkSparkle.splashFactory,
       textTheme: TextTheme(
             displayLarge: gropled(fontSize: 80, fontWeight: FontWeight.w700, letterSpacing: -1.5),
             displayMedium: gropled(fontSize: 48, fontWeight: FontWeight.w700, letterSpacing: -1.2),
@@ -333,6 +344,14 @@ class AppTheme {
       useMaterial3: true,
       fontFamily: 'Inter',
       brightness: Brightness.dark,
+      pageTransitionsTheme: const PageTransitionsTheme(
+        builders: <TargetPlatform, PageTransitionsBuilder>{
+          TargetPlatform.android: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.iOS: CupertinoPageTransitionsBuilder(),
+          TargetPlatform.macOS: CupertinoPageTransitionsBuilder(),
+        },
+      ),
+      splashFactory: InkSparkle.splashFactory,
       textTheme: TextTheme(
         displayLarge: gropled(fontSize: 80, fontWeight: FontWeight.w700, letterSpacing: -1.5, color: darkTextPrimary),
         displayMedium: gropled(fontSize: 48, fontWeight: FontWeight.w700, letterSpacing: -1.2, color: darkTextPrimary),

@@ -5,9 +5,11 @@
 # Сохранение: AuthProvider.submitSurvey → /surveys + updateProfile
 # =============================================================================
 
-version: 2
+version: 3
 
-total_steps: 3
+total_steps:
+  customer: 4
+  master: 3
 
 # Роль (customer | master) — только на экране регистрации, в prefs: arthouse_account_mode
 
@@ -16,7 +18,7 @@ branch_customer:
   step_1:
     title: Что вам нужно сделать?
     subtitle: Выберите категорию
-    categories_single:
+    categories_multi:
       - { id: repair,       label: Ремонт,            emoji: "🔧" }
       - { id: design,       label: Дизайн интерьера, emoji: "🎨" }
       - { id: cleaning,     label: Клининг,          emoji: "🧹" }
@@ -27,18 +29,19 @@ branch_customer:
 
   step_2:
     title: Опишите ваше пространство
-    subtitle: Тип помещения и примерная площадь
+    subtitle: Тип объекта и общая площадь (м²)
     premise_types:
       - { id: apartment, label: Квартира }
       - { id: house,     label: Дом }
       - { id: office,    label: Офис }
-    area_ranges:
-      - { id: area_xs, label: "до 40 м²" }
-      - { id: area_s,  label: "40–70 м²" }
-      - { id: area_m,  label: "70–100 м²" }
-      - { id: area_l,  label: "100+ м²" }
+    total_area_input: true
 
   step_3:
+    title: Какие комнаты у вас есть?
+    subtitle: Мультивыбор + площадь каждой комнаты
+    rooms_from_catalog: true
+
+  step_4:
     title: Когда планируете начать?
     subtitle: Можно изменить позже в профиле
     timelines:

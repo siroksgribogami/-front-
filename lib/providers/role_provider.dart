@@ -9,7 +9,8 @@ class RoleProvider extends ChangeNotifier {
   static const _keyMaster = 'arthouse_mp_role_master';
   static const _keyActive = 'arthouse_mp_active_role';
 
-  /// Если задано — роль привязана к аккаунту (демо заказчик / демо мастер), переключатель в профиле скрыт.
+  /// Если задано — роль фиксирована (выбрана при регистрации или демо-входе)
+  /// и не может быть изменена из UI. Переключатель в профиле скрыт.
   static const String demoFixedMarketplaceRoleKey = 'arthouse_demo_fixed_mp_role';
 
   bool _customerEnabled = true;

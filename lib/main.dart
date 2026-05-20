@@ -4,9 +4,11 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/date_symbol_data_local.dart';
 
+import 'config/api_config.dart';
 import 'config/api_config_platform_stub.dart' if (dart.library.io) 'config/api_config_platform_io.dart' as api_platform;
 import 'config/app_theme.dart';
 import 'config/webview_web_register.dart';
+import 'core/arthouse_scroll_behavior.dart';
 import 'core/bar_loader.dart';
 import 'providers/auth_provider.dart';
 import 'providers/theme_provider.dart';
@@ -25,6 +27,10 @@ void main() async {
   registerWebViewPlatformForWeb();
 
   api_platform.initApiConfigForPlatform();
+  if (kDebugMode) {
+    debugPrint('ARThouse API: ${ApiConfig.baseUrl}');
+    debugPrint('ARThouse API v1: ${ApiConfig.apiBaseUrl}');
+  }
   if (!kIsWeb) {
     _setSystemUIOverlay();
   }
@@ -46,9 +52,12 @@ void _applySystemUIOverlay(Brightness brightness) {
       statusBarColor: Colors.transparent,
       statusBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       statusBarBrightness: isDark ? Brightness.dark : Brightness.light,
-      systemNavigationBarColor: isDark ? const Color(0xFF1A1A1A) : const Color(0xFFF7F3EC),
+      // Прозрачная панель навигации: фон рисует Scaffold (edge-to-edge).
+      // Непрозрачный тёмный цвет давал чёрную полоску на зелёных auth-экранах.
+      systemNavigationBarColor: Colors.transparent,
       systemNavigationBarIconBrightness: isDark ? Brightness.light : Brightness.dark,
       systemNavigationBarDividerColor: Colors.transparent,
+      systemNavigationBarContrastEnforced: false,
     ),
   );
 }
@@ -84,6 +93,7 @@ class ArtkhausApp extends StatelessWidget {
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
               themeMode: themeProv.themeMode,
+              scrollBehavior: const ArthouseScrollBehavior(),
               // Глобальный фоллбэк на OpenMoji для всех эмодзи в приложении
               builder: (context, child) {
                 return DefaultTextStyle(

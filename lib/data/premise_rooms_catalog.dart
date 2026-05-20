@@ -40,6 +40,28 @@ class PremiseRoomsCatalog {
     }
   }
 
+  /// Комнаты, выбранные пользователем в опросе (с площадями).
+  static List<Map<String, dynamic>> roomsFromSurveySelections(
+    List<Map<String, dynamic>> selections, {
+    String source = 'post_register_survey',
+  }) {
+    return selections.map((r) {
+      final id = r['id']?.toString() ?? _roomIdFromName(r['label']?.toString() ?? '', 0);
+      final label = r['label']?.toString() ?? id;
+      return <String, dynamic>{
+        'id': id,
+        'roomId': id,
+        'name': label,
+        'displayName': label,
+        if (r['area_sqm'] != null) 'area_sqm': r['area_sqm'],
+        if (r['length_m'] != null) 'length_m': r['length_m'],
+        if (r['width_m'] != null) 'width_m': r['width_m'],
+        'source': source,
+        'confirmed': true,
+      };
+    }).toList();
+  }
+
   /// Структура комнат для `map_data.rooms` и контекста ИИ (нейросеть может уточнить позже).
   static List<Map<String, dynamic>> roomsForMap(
     String premiseKind, {

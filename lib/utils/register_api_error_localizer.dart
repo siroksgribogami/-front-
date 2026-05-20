@@ -18,11 +18,11 @@ abstract final class RegisterApiErrorLocalizer {
     }
 
     if (combined.contains('timeout') || combined.contains('не ответил вовремя')) {
-      return 'Сервер не ответил вовремя. Проверьте Wi‑Fi, что бэкенд запущен на ПК, и IP в flutter run (http://IP:8000/health с телефона).';
+      return 'Сервер не ответил вовремя.';
     }
 
     if (e.statusCode >= 500) {
-      return 'Ошибка сервера при регистрации. Проверьте PostgreSQL: откройте http://IP:8000/health — должно быть database: ok.';
+      return 'Ошибка сервера при регистрации.';
     }
 
     final fromDetailList = _fromFastApiDetailList(e);

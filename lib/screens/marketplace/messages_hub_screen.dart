@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:intl/intl.dart';
 
 import '../../core/theme/app_text_style.dart';
@@ -62,9 +61,23 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
             appBar: AppBar(
               backgroundColor: MarketplaceColors.cardFor(context),
               foregroundColor: MarketplaceColors.textPrimaryFor(context),
-              title: const Text('ИИ-прораб'),
+              titleSpacing: 0,
+              title: Row(
+                children: [
+                  const ForemanAvatar(size: 36),
+                  const SizedBox(width: 10),
+                  Text(
+                    'ИИ-прораб',
+                    style: TextStyle(
+                      fontFamily: AppTextStyle.fontFamily,
+                      fontWeight: FontWeight.w700,
+                      color: MarketplaceColors.textPrimaryFor(context),
+                    ),
+                  ),
+                ],
+              ),
             ),
-            body: const SafeArea(child: AiForemanChatTab()),
+            body: const SafeArea(child: AiForemanChatTab(showHeader: false)),
           ),
         ),
       );
@@ -231,22 +244,7 @@ class _PinnedAiTile extends StatelessWidget {
           padding: const EdgeInsets.all(12),
           child: Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: MarketplaceColors.aiTurquoise.withOpacity(0.18),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                    color: MarketplaceColors.aiTurquoise.withOpacity(0.45),
-                  ),
-                ),
-                padding: const EdgeInsets.all(6),
-                child: SvgPicture.asset(
-                  'picture/обычный.svg',
-                  fit: BoxFit.contain,
-                ),
-              ),
+              const ForemanAvatar(size: 48),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

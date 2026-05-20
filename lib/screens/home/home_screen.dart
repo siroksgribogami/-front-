@@ -236,7 +236,7 @@ class _HomeScreenState extends State<HomeScreen> {
             ),
             child: Consumer<AuthProvider>(
               builder: (context, auth, _) {
-                final username = auth.user?.username ?? '';
+                final username = auth.user?.visibleName ?? '';
                 return Column(
                   children: [
                     const Divider(color: borderC, height: 1),

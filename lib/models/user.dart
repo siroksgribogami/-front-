@@ -1,3 +1,5 @@
+import '../utils/user_contact_display.dart';
+
 /// Роли пользователей
 enum UserRole {
   user,
@@ -16,6 +18,10 @@ class User {
   final int id;
   final String email;
   final String username;
+  /// Отображаемое имя (поле `display_name` на бэкенде).
+  final String? displayName;
+  final String? phone;
+  final String? avatarUrl;
   final UserRole role;
   final UserType userType;
   final bool isActive;
@@ -31,6 +37,9 @@ class User {
     required this.id,
     required this.email,
     required this.username,
+    this.displayName,
+    this.phone,
+    this.avatarUrl,
     this.role = UserRole.user,
     this.userType = UserType.b2c,
     required this.isActive,
@@ -44,6 +53,42 @@ class User {
   });
 
   bool get isAdmin => role == UserRole.admin;
+
+  /// Имя для UI: display_name, иначе username.
+  String get visibleName {
+    final dn = displayName?.trim();
+    if (dn != null && dn.isNotEmpty) return dn;
+    return username.trim();
+  }
+
+  /// Первая буква для аватара-заглушки (без RangeError на пустой строке).
+  String get avatarInitial {
+    final name = visibleName;
+    if (name.isEmpty) return '?';
+    return name.substring(0, 1).toUpperCase();
+  }
+
+  bool get hasSyntheticPhoneEmail =>
+      UserContactDisplay.isSyntheticPhoneEmail(email);
+
+  /// Реальный email для UI (служебный @phone.arthouse.app скрыт).
+  String? get displayEmail => hasSyntheticPhoneEmail ? null : email.trim();
+
+  /// Телефон для UI.
+  String? get displayPhone {
+    final fromField = phone?.trim();
+    if (fromField != null && fromField.isNotEmpty) {
+      return UserContactDisplay.formatPhoneRu(fromField);
+    }
+    return UserContactDisplay.phoneFromSyntheticEmail(email);
+  }
+
+  /// Подпись под именем: телефон или email.
+  String? get contactSubtitle {
+    final p = displayPhone;
+    if (p != null && p.isNotEmpty) return p;
+    return displayEmail;
+  }
 
   factory User.fromJson(Map<String, dynamic> json) {
     final idVal = json['id'];
@@ -68,6 +113,9 @@ class User {
       username: (json['username'] as String?) ??
           (json['full_name'] as String?) ??
           '',
+      displayName: json['display_name'] as String?,
+      phone: json['phone'] as String?,
+      avatarUrl: json['avatar_url'] as String?,
       role: _parseRole(json['role']),
       userType: _parseUserType(json['user_type'] as String?),
       isActive: json['is_active'] as bool? ?? true,
@@ -109,6 +157,9 @@ class User {
       'id': id,
       'email': email,
       'username': username,
+      'display_name': displayName,
+      'phone': phone,
+      'avatar_url': avatarUrl,
       'role': role.name,
       'user_type': userType.name,
       'is_active': isActive,
@@ -126,6 +177,9 @@ class User {
     int? id,
     String? email,
     String? username,
+    String? displayName,
+    String? phone,
+    String? avatarUrl,
     UserRole? role,
     UserType? userType,
     bool? isActive,
@@ -141,6 +195,9 @@ class User {
       id: id ?? this.id,
       email: email ?? this.email,
       username: username ?? this.username,
+      displayName: displayName ?? this.displayName,
+      phone: phone ?? this.phone,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
       role: role ?? this.role,
       userType: userType ?? this.userType,
       isActive: isActive ?? this.isActive,

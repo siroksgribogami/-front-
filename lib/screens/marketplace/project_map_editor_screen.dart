@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../config/unity_webgl_config.dart';
 import '../../core/theme/app_text_style.dart';
@@ -6,9 +9,10 @@ import '../../core/theme/marketplace_colors.dart';
 import '../../data/premise_rooms_catalog.dart';
 import '../../models/marketplace_project.dart';
 import '../../services/ai_map_service.dart';
+import '../../services/ai_vision_service.dart';
+import '../../services/api_service.dart';
 import '../../services/marketplace_local_store.dart';
 import '../../services/project_service.dart';
-import '../map/editor/apartment_editor_screen.dart';
 import '../map/unity/hosted_unity_webgl_screen.dart';
 
 /// Экран для редактирования карты проекта (До/После).
@@ -32,7 +36,10 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
   bool _isEditing = false;
   bool _aiMapLoading = false;
   bool _aiMapApproved = false;
+  bool _aiVisionLoading = false;
+  AiVisionDetectResult? _lastDetection;
   final _aiMapCtrl = TextEditingController();
+  final ImagePicker _imagePicker = ImagePicker();
 
   /// 0 = смотрим До, 1 = смотрим После, 2 = редактируем До, 3 = редактируем После
   int _viewMode = 0;
@@ -83,6 +90,115 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
     return {};
   }
 
+  Future<void> _runAiVision({required ImageSource source}) async {
+    if (_aiVisionLoading) return;
+    XFile? picked;
+    try {
+      picked = await _imagePicker.pickImage(
+        source: source,
+        maxWidth: 1600,
+        imageQuality: 85,
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Не удалось открыть фото: $e')),
+      );
+      return;
+    }
+    if (picked == null) return;
+
+    setState(() => _aiVisionLoading = true);
+    try {
+      final detection = await AiVisionService().detectFromFile(
+        File(picked.path),
+        roomHint: _project.mapData['ai_focus_room_id']?.toString(),
+      );
+      if (!mounted) return;
+      setState(() => _lastDetection = detection);
+
+      final placement = await AiMapService().placeFromDetection(
+        items: detection.items.where((it) => it.isMapped).toList(),
+        currentMap: _currentUnityMapSeed(),
+        premiseRooms: await PremiseRoomsCatalog.loadPersistedRooms(),
+        apartmentId: _project.id.isNotEmpty ? _project.id : 'arthouse_project',
+        apartmentName: _project.title,
+        roomId: _project.mapData['ai_focus_room_id']?.toString(),
+        roomHint: detection.roomHint,
+      );
+
+      if (!mounted) return;
+      setState(() {
+        _project = ProjectSummary(
+          id: _project.id,
+          title: _project.title,
+          status: _project.status,
+          updatedAt: DateTime.now(),
+          responsesCount: _project.responsesCount,
+          mapData: {
+            ..._project.mapData,
+            'after': placement.unityMap,
+            'rooms': placement.unityMap['rooms'],
+            'ai_map_source': placement.source,
+            'last_vision_source': detection.source,
+            'last_detection_items':
+                detection.items.map((e) => e.toJson()).toList(),
+            if (placement.unityMapPatch != null)
+              'last_unity_patch': placement.unityMapPatch,
+            if (placement.focusRoomId != null)
+              'ai_focus_room_id': placement.focusRoomId,
+          },
+        );
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(placement.replyText)),
+      );
+
+      if (placement.unityMapPatch != null) {
+        _openHostedUnityWithCurrentMap(mapPatch: placement.unityMapPatch);
+      }
+    } on ApiException catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ИИ-зрение: ${e.message}')),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('ИИ-зрение: $e')),
+      );
+    } finally {
+      if (mounted) setState(() => _aiVisionLoading = false);
+    }
+  }
+
+  Future<void> _pickAiVisionSource() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (_) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.photo_camera_outlined),
+              title: const Text('Сделать фото'),
+              onTap: () => Navigator.pop(context, ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('Выбрать из галереи'),
+              onTap: () => Navigator.pop(context, ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source != null) {
+      await _runAiVision(source: source);
+    }
+  }
+
   Future<void> _applyAiMap({required bool approved}) async {
     final message = _aiMapCtrl.text.trim();
     if (message.isEmpty || _aiMapLoading) return;
@@ -127,6 +243,10 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result.replyText)),
       );
+
+      if (result.patchApplied && result.unityMapPatch != null) {
+        _openHostedUnityWithCurrentMap(mapPatch: result.unityMapPatch);
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -137,7 +257,7 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
     }
   }
 
-  void _openHostedUnityWithCurrentMap() {
+  void _openHostedUnityWithCurrentMap({Map<String, dynamic>? mapPatch}) {
     final raw = UnityWebGlConfig.buildUrl.trim();
     final uri = Uri.tryParse(raw);
     if (uri == null || !(uri.isScheme('http') || uri.isScheme('https'))) {
@@ -146,10 +266,110 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
       );
       return;
     }
+    final seed = _currentUnityMapSeed();
+    final focusId = _project.mapData['ai_focus_room_id']?.toString();
     Navigator.of(context).push<void>(
       MaterialPageRoute<void>(
-        builder: (_) => HostedUnityWebGlScreen(uri: uri),
+        builder: (_) => HostedUnityWebGlScreen(
+          uri: uri,
+          initialMap: seed.isNotEmpty ? seed : null,
+          mapPatch: mapPatch,
+          focusRoomId: focusId,
+        ),
       ),
+    );
+  }
+
+  List<Map<String, dynamic>> _roomsForMode({required bool isAfter}) {
+    final sourceKey = isAfter ? 'after' : 'before';
+    final source = (_project.mapData[sourceKey] as Map?)?.cast<String, dynamic>();
+    final List<dynamic> raw = (source?['rooms'] as List?) ??
+        (_project.mapData['rooms'] as List?) ??
+        const [];
+    return raw.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+  }
+
+  Widget _buildRoomsEditor({required bool isAfter}) {
+    final rooms = _roomsForMode(isAfter: isAfter);
+    final textPrimary = MarketplaceColors.textPrimaryFor(context);
+    final textSecondary = MarketplaceColors.textSecondaryFor(context);
+    final card = MarketplaceColors.cardFor(context);
+    final accent = isAfter ? Colors.green.shade600 : Colors.orange.shade700;
+
+    if (rooms.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.home_outlined, size: 56, color: textSecondary),
+              const SizedBox(height: 12),
+              Text(
+                'Комнаты ещё не заполнены.\nДобавьте их через ИИ-карту или сохраните проект из опроса.',
+                textAlign: TextAlign.center,
+                style: TextStyle(color: textSecondary, height: 1.4),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    return ListView.separated(
+      padding: const EdgeInsets.all(16),
+      itemCount: rooms.length,
+      separatorBuilder: (_, __) => const SizedBox(height: 10),
+      itemBuilder: (context, index) {
+        final room = rooms[index];
+        final name = (room['displayName'] ?? room['name'] ?? 'Комната').toString();
+        final area = room['area_sqm'] ?? room['area'];
+        return Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: card,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: accent.withOpacity(0.25)),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: accent.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(Icons.meeting_room_outlined, color: accent),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      name,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w700,
+                        color: textPrimary,
+                      ),
+                    ),
+                    if (area != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '$area м²',
+                        style: TextStyle(fontSize: 12, color: textSecondary),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+              Icon(Icons.chevron_right, color: textSecondary),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -187,7 +407,6 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
     final textSecondary = MarketplaceColors.textSecondaryFor(context);
 
     if (_viewMode > 1) {
-      // Редактирование карты - показываем полный редактор
       return PopScope(
         canPop: false,
         onPopInvokedWithResult: (didPop, _) {
@@ -207,7 +426,7 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
             backgroundColor: bg,
             elevation: 0,
           ),
-          body: const ApartmentEditorScreen(),
+          body: _buildRoomsEditor(isAfter: _viewMode == 3),
         ),
       );
     }
@@ -271,6 +490,8 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
               _buildComparisonPreview(),
               const SizedBox(height: 24),
               _buildAiMapCard(),
+              const SizedBox(height: 16),
+              _buildAiVisionCard(),
               const SizedBox(height: 16),
               FilledButton(
                 onPressed: _saveMap,
@@ -478,6 +699,102 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
     );
   }
 
+  Widget _buildAiVisionCard() {
+    final card = MarketplaceColors.cardFor(context);
+    final textPrimary = MarketplaceColors.textPrimaryFor(context);
+    final textSecondary = MarketplaceColors.textSecondaryFor(context);
+    final detection = _lastDetection;
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: MarketplaceColors.aiTurquoise.withOpacity(0.35),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Text(
+            'ИИ-зрение по фото',
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.w700,
+              color: textPrimary,
+            ),
+          ),
+          const SizedBox(height: 6),
+          Text(
+            'Сфотографируйте комнату — ИИ распознаёт мебель и расставит её на 3D-карте.',
+            style: TextStyle(fontSize: 12, color: textSecondary, height: 1.4),
+          ),
+          const SizedBox(height: 12),
+          FilledButton.icon(
+            onPressed: _aiVisionLoading ? null : _pickAiVisionSource,
+            style: FilledButton.styleFrom(
+              backgroundColor: MarketplaceColors.aiTurquoise,
+              minimumSize: const Size.fromHeight(46),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            icon: _aiVisionLoading
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.camera_alt_outlined, color: Colors.white),
+            label: const Text(
+              'Распознать мебель по фото',
+              style: TextStyle(color: Colors.white),
+            ),
+          ),
+          if (detection != null && detection.items.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            Text(
+              'Найдено (${detection.source}):',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: textSecondary,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Wrap(
+              spacing: 6,
+              runSpacing: 6,
+              children: [
+                for (final item in detection.items)
+                  Chip(
+                    label: Text(
+                      '${item.displayName ?? item.label}'
+                      ' · ${(item.confidence * 100).round()}%',
+                      style: const TextStyle(fontSize: 11),
+                    ),
+                    visualDensity: VisualDensity.compact,
+                    backgroundColor: item.isMapped
+                        ? MarketplaceColors.aiTurquoise.withOpacity(0.12)
+                        : Colors.grey.withOpacity(0.18),
+                    side: BorderSide(
+                      color: item.isMapped
+                          ? MarketplaceColors.aiTurquoise.withOpacity(0.4)
+                          : Colors.grey.withOpacity(0.4),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
   Widget _buildAiMapCard() {
     final card = MarketplaceColors.cardFor(context);
     final textPrimary = MarketplaceColors.textPrimaryFor(context);
@@ -505,8 +822,7 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
           ),
           const SizedBox(height: 6),
           Text(
-            'Опишите изменения — ИИ обновит JSON для Unity '
-            '(https://dry-bar-50f6.andreym67764.workers.dev/).',
+            'Опишите изменения — ИИ обновит карту.',
             style: TextStyle(fontSize: 12, color: textSecondary, height: 1.4),
           ),
           const SizedBox(height: 12),
@@ -522,43 +838,70 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
             ),
           ),
           const SizedBox(height: 10),
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: _aiMapLoading ? null : () => _applyAiMap(approved: false),
-                  child: const Text('Уточнить'),
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                flex: 2,
-                child: FilledButton(
-                  onPressed: _aiMapLoading ? null : () => _applyAiMap(approved: true),
-                  style: FilledButton.styleFrom(
-                    backgroundColor: MarketplaceColors.aiTurquoise,
+              FilledButton(
+                onPressed: _aiMapLoading ? null : () => _applyAiMap(approved: true),
+                style: FilledButton.styleFrom(
+                  backgroundColor: MarketplaceColors.aiTurquoise,
+                  minimumSize: const Size.fromHeight(46),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: _aiMapLoading && _aiMapApproved
-                      ? const SizedBox(
-                          width: 22,
-                          height: 22,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            color: Colors.white,
-                          ),
-                        )
-                      : const Text('Согласовать → на карту'),
                 ),
+                child: _aiMapLoading && _aiMapApproved
+                    ? const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text(
+                        'Согласовать',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                      ),
+              ),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed:
+                          _aiMapLoading ? null : () => _applyAiMap(approved: false),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(42),
+                      ),
+                      child: const Text(
+                        'Уточнить',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => _openHostedUnityWithCurrentMap(),
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(42),
+                      ),
+                      child: const Text(
+                        'Открыть 3D',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        softWrap: false,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ],
-          ),
-          const SizedBox(height: 8),
-          Align(
-            alignment: Alignment.centerRight,
-            child: OutlinedButton(
-              onPressed: _openHostedUnityWithCurrentMap,
-              child: const Text('Открыть 3D (Unity)'),
-            ),
           ),
         ],
       ),

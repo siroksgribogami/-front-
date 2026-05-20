@@ -140,9 +140,8 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
 
     return ColoredBox(
       color: bg,
-      child: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(horizontalPad, 12, horizontalPad, 20),
+      child: ListView(
+        padding: EdgeInsets.fromLTRB(horizontalPad, 12, horizontalPad, 20),
           children: [
                 Text(
                   'Мои проекты',
@@ -210,7 +209,6 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
                   ),
                 ),
           ],
-        ),
       ),
     );
   }

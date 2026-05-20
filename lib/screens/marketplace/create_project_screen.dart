@@ -68,7 +68,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
               style: TextStyle(fontFamily: AppTextStyle.fontFamily, fontWeight: FontWeight.w700),
             ),
           ),
-          body: const SafeArea(child: AiForemanChatTab()),
+          body: const SafeArea(child: AiForemanChatTab(showHeader: false)),
         ),
       ),
     );
@@ -143,15 +143,48 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 ),
                 Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: OutlinedButton.icon(
-                    onPressed: _openAiFullScreen,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: MarketplaceColors.aiTurquoise,
-                      side: BorderSide(color: MarketplaceColors.aiTurquoise.withOpacity(0.6)),
-                      padding: const EdgeInsets.symmetric(vertical: 12),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: _openAiFullScreen,
+                      borderRadius: BorderRadius.circular(12),
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 12,
+                        ),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: MarketplaceColors.aiTurquoise.withOpacity(0.55),
+                          ),
+                        ),
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.smart_toy_outlined,
+                              size: 22,
+                              color: MarketplaceColors.aiTurquoise,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Собрать ТЗ в чате с ИИ (альтернатива форме)',
+                                style: TextStyle(
+                                  fontFamily: AppTextStyle.fontFamily,
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w600,
+                                  color: MarketplaceColors.aiTurquoise,
+                                  height: 1.25,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
-                    icon: const Icon(Icons.smart_toy_outlined, size: 20),
-                    label: const Text('Собрать ТЗ в чате с ИИ (альтернатива форме)'),
                   ),
                 ),
                 const SizedBox(height: 8),

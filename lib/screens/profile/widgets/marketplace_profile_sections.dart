@@ -9,7 +9,8 @@ import '../../../providers/auth_provider.dart';
 import '../../../providers/role_provider.dart';
 import '../master_portfolio_screen.dart';
 
-/// Карточка выбора ролей маркетплейса: включение заказчика/мастера и переключение активной роли.
+/// Карточка текущей роли маркетплейса (только отображение).
+/// Роль выбирается один раз на регистрации и больше не меняется.
 class MarketplaceRoleCard extends StatelessWidget {
   const MarketplaceRoleCard({super.key});
 
@@ -41,24 +42,14 @@ class MarketplaceRoleCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                'Роль в ARTхаус',
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w800,
-                  fontFamily: AppTextStyle.fontFamily,
-                  color: textPrimary,
-                ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Роль аккаунта изменить нельзя — она задана при регистрации.',
+                'Ваша роль',
                 style: TextStyle(
                   fontSize: 13,
-                  height: 1.42,
+                  fontWeight: FontWeight.w600,
                   color: textSecondary,
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 8),
               _CurrentRoleBadge(role: roles.activeRole),
             ],
           ),
@@ -102,7 +93,7 @@ class _CurrentRoleBadge extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              isCustomer ? 'Вы — заказчик' : 'Вы — мастер',
+              isCustomer ? 'Вы заказчик' : 'Вы мастер',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
@@ -117,8 +108,19 @@ class _CurrentRoleBadge extends StatelessWidget {
 }
 
 /// Блок личного кабинета заказчика.
-class MarketplaceCustomerSection extends StatelessWidget {
+class MarketplaceCustomerSection extends StatefulWidget {
   const MarketplaceCustomerSection({super.key});
+
+  @override
+  State<MarketplaceCustomerSection> createState() =>
+      _MarketplaceCustomerSectionState();
+}
+
+class _MarketplaceCustomerSectionState
+    extends State<MarketplaceCustomerSection> {
+  // Кэшируем Future один раз — иначе FutureBuilder заново дёргает
+  // SharedPreferences на каждый rebuild (что ощутимо на A54 и подобных).
+  late final Future<String> _cityFuture = _cityFromPrefs();
 
   static Future<String> _cityFromPrefs() async {
     final p = await SharedPreferences.getInstance();
@@ -149,8 +151,9 @@ class MarketplaceCustomerSection extends StatelessWidget {
 
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-        final userName = auth.user?.username ?? 'Профиль';
+        final userName = auth.user?.visibleName ?? 'Профиль';
         final premise = _premiseRu(auth.premiseType);
+        final cityFuture = _cityFuture;
         final card = MarketplaceColors.cardFor(context);
         final textPrimary = MarketplaceColors.textPrimaryFor(context);
         final textSecondary = MarketplaceColors.textSecondaryFor(context);
@@ -186,7 +189,7 @@ class MarketplaceCustomerSection extends StatelessWidget {
               _line(context, Icons.badge_outlined, 'Имя в объявлениях', userName),
               _line(context, Icons.apartment_outlined, 'Тип объекта', premise),
               FutureBuilder<String>(
-                future: _cityFromPrefs(),
+                future: cityFuture,
                 builder: (context, snap) {
                   final city = snap.data;
                   final line = (city != null && city.isNotEmpty)
@@ -308,7 +311,7 @@ class MarketplaceMasterSection extends StatelessWidget {
   Widget build(BuildContext context) {
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
-        final name = auth.user?.username ?? 'Профиль';
+        final name = auth.user?.visibleName ?? 'Профиль';
         final mode = auth.accountMode ?? '';
         final statusLine = mode == 'master'
             ? 'Мастер · данные из опроса регистрации'

@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
 import '../../../config/app_theme.dart';
+import '../../../services/unity/hosted_unity_bridge.dart';
 
 /// Полноэкранный Unity WebGL внутри приложения (без внешнего браузера).
 ///
@@ -13,9 +15,23 @@ import '../../../config/app_theme.dart';
 /// (стабильнее WebGL, чем текстура по умолчанию), отключён жест для воспроизведения медиа,
 /// системная кнопка «Назад» сначала откатывает историю WebView.
 class HostedUnityWebGlScreen extends StatefulWidget {
-  const HostedUnityWebGlScreen({super.key, required this.uri});
+  const HostedUnityWebGlScreen({
+    super.key,
+    required this.uri,
+    this.initialMap,
+    this.mapPatch,
+    this.focusRoomId,
+  });
 
   final Uri uri;
+
+  /// Текущая карта проекта — уходит в Unity через ReceiveInitialMapJson.
+  final Map<String, dynamic>? initialMap;
+
+  /// Diff после ИИ (roomsUpsert, …); мержится перед отправкой в Unity.
+  final Map<String, dynamic>? mapPatch;
+
+  final String? focusRoomId;
 
   @override
   State<HostedUnityWebGlScreen> createState() => _HostedUnityWebGlScreenState();
@@ -70,6 +86,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
               _pageLoading = false;
               _progress = 100;
             });
+            unawaited(_pushMapToUnity());
           },
           onWebResourceError: (WebResourceError error) {
             if (!mounted) {
@@ -93,6 +110,24 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
       await platform.setMediaPlaybackRequiresUserGesture(false);
     }
     await _controller.loadRequest(widget.uri);
+  }
+
+  Future<void> _pushMapToUnity() async {
+    final map = widget.initialMap;
+    if (map == null || map.isEmpty) {
+      return;
+    }
+    final mapJson = jsonEncode(map);
+    final script = buildHostedUnityInjectScript(
+      mapJson: mapJson,
+      patch: widget.mapPatch,
+      focusRoomId: widget.focusRoomId,
+    );
+    try {
+      await _controller.runJavaScript(script);
+    } catch (e) {
+      debugPrint('HostedUnity: inject map failed: $e');
+    }
   }
 
   Future<void> _handleSystemBack(NavigatorState navigator) async {

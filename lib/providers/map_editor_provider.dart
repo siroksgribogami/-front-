@@ -54,6 +54,27 @@ class MapEditorProvider extends ChangeNotifier {
     notifyListeners();
   }
 
+  /// Полностью заменить список комнат (например, при открытии карты конкретного
+  /// проекта). Иконки подбираем по имени.
+  void replaceRooms(Iterable<String> names) {
+    final cleaned = <String>{};
+    for (final raw in names) {
+      final n = raw.trim();
+      if (n.isNotEmpty) cleaned.add(n);
+    }
+    if (cleaned.isEmpty) return;
+    _rooms = cleaned
+        .map(
+          (n) => MapEditorRoom(
+            name: n,
+            icon: iconForRoomName(n),
+            taskList: const [],
+          ),
+        )
+        .toList();
+    notifyListeners();
+  }
+
   void addRoom(String name, IconData icon) {
     if (_rooms.any((room) => room.name == name)) {
       return;

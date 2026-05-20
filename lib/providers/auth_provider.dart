@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_marketplace_role.dart';
@@ -11,6 +13,7 @@ import '../services/survey_service.dart';
 import '../services/marketplace_local_store.dart';
 import '../data/premise_rooms_catalog.dart';
 import '../utils/register_api_error_localizer.dart';
+import '../utils/user_contact_display.dart';
 import 'role_provider.dart';
 
 /// Состояние аутентификации
@@ -135,10 +138,27 @@ class AuthProvider with ChangeNotifier {
         _accountMode = role;
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('arthouse_account_mode', role!);
+        final isMaster = role == 'master';
+        await prefs.setBool('arthouse_mp_role_customer', !isMaster);
+        await prefs.setBool('arthouse_mp_role_master', isMaster);
+        await prefs.setString(
+          'arthouse_mp_active_role',
+          isMaster ? 'master' : 'customer',
+        );
+        // Роль выбрана на регистрации и больше не меняется.
+        // Тот же ключ, что и для демо-аккаунтов: `isMarketplaceRoleLocked == true`.
+        await prefs.setString(
+          RoleProvider.demoFixedMarketplaceRoleKey,
+          isMaster ? 'master' : 'customer',
+        );
       }
-      // Mark that the flow just registered — show survey even if backend state differs
       _justRegistered = true;
-      _pendingEmailVerificationStep = true;
+      // При регистрации по телефону у нас фейковый @phone.arthouse.app — реального
+      // ящика нет, экран подтверждения email только мешает. Показываем его
+      // только для настоящих email-адресов.
+      final isPhoneEmail =
+          UserContactDisplay.isSyntheticPhoneEmail(email);
+      _pendingEmailVerificationStep = !isPhoneEmail;
       _setState(AuthState.authenticated);
       return true;
     } on ApiException catch (e) {
@@ -149,14 +169,12 @@ class AuthProvider with ChangeNotifier {
       final msg = e.toString().toLowerCase();
       if (msg.contains('timeout')) {
         _setError(
-          'Сервер не ответил. Проверьте Wi‑Fi, IP в flutter run и http://IP:8000/health с телефона.',
+          'Сервер не ответил вовремя.',
         );
       } else if (msg.contains('formatexception') || msg.contains('type ')) {
-        _setError(
-          'Ошибка ответа сервера. Проверьте /health — database: ok.',
-        );
+        _setError('Ошибка ответа сервера.');
       } else {
-        _setError('Не удалось зарегистрироваться. Проверьте бэкенд и сеть.');
+        _setError('Не удалось зарегистрироваться.');
       }
       return false;
     }
@@ -258,6 +276,18 @@ class AuthProvider with ChangeNotifier {
     _setState(AuthState.unauthenticated);
   }
 
+  /// Сохраняет поля, которых нет в ответе `PUT /me` (survey_completed и т.д.).
+  User _mergeUserAfterProfileUpdate(User previous, User fromApi) {
+    return fromApi.copyWith(
+      surveyCompleted: previous.surveyCompleted,
+      roomsCount: previous.roomsCount ?? fromApi.roomsCount,
+      floorsCount: previous.floorsCount ?? fromApi.floorsCount,
+      wallHeight: previous.wallHeight ?? fromApi.wallHeight,
+      totalArea: previous.totalArea ?? fromApi.totalArea,
+      isVerified: fromApi.isVerified || previous.isVerified,
+    );
+  }
+
   /// Обновить профиль
   Future<bool> updateProfile({String? username}) async {
     if (_user == null) return false;
@@ -266,7 +296,11 @@ class AuthProvider with ChangeNotifier {
       final data = <String, dynamic>{};
       if (username != null) data['username'] = username;
       
-      _user = await _authService.updateProfile(data);
+      final previous = _user!;
+      _user = _mergeUserAfterProfileUpdate(
+        previous,
+        await _authService.updateProfile(data),
+      );
       notifyListeners();
       return true;
     } on ApiException catch (e) {
@@ -278,18 +312,57 @@ class AuthProvider with ChangeNotifier {
     }
   }
 
-  /// Поменять отображаемое имя локально (для демо/офлайн режима).
-  /// Если бэкенд доступен — пробует обновить через API, иначе обновляет
-  /// только in-memory модель.
+  /// Поменять отображаемое имя (`display_name` на бэкенде, не логин).
+  ///
+  /// UI обновляется сразу, серверный апдейт идёт в фоне; даже если API упадёт —
+  /// локально имя остаётся изменённым (для офлайн / демо).
   Future<bool> setDisplayName(String value) async {
     final trimmed = value.trim();
     if (_user == null || trimmed.isEmpty) return false;
-    try {
-      _user = await _authService.updateProfile({'username': trimmed});
-    } catch (_) {
-      _user = _user!.copyWith(username: trimmed);
-    }
+    if (trimmed == _user!.visibleName) return true;
+
+    final previous = _user!;
+    _user = previous.copyWith(displayName: trimmed);
+    _error = null;
     notifyListeners();
+
+    unawaited(() async {
+      try {
+        final fromApi = await _authService.updateProfile({'display_name': trimmed});
+        final merged = _mergeUserAfterProfileUpdate(previous, fromApi).copyWith(
+          displayName: fromApi.displayName ?? trimmed,
+        );
+        _user = merged;
+        notifyListeners();
+      } catch (_) {
+        // Сервер недоступен — оставляем локальное имя.
+      }
+    }());
+    return true;
+  }
+
+  /// Обновить номер телефона в профиле.
+  Future<bool> setPhone(String value) async {
+    final trimmed = value.trim();
+    if (_user == null || trimmed.isEmpty) return false;
+
+    final normalized = UserContactDisplay.normalizePhoneForApi(trimmed);
+    if (normalized == _user!.phone) return true;
+
+    final previous = _user!;
+    _user = previous.copyWith(phone: normalized);
+    _error = null;
+    notifyListeners();
+
+    unawaited(() async {
+      try {
+        final fromApi = await _authService.updateProfile({'phone': normalized});
+        _user = _mergeUserAfterProfileUpdate(previous, fromApi).copyWith(
+          phone: fromApi.phone ?? normalized,
+        );
+        notifyListeners();
+      } catch (_) {}
+    }());
     return true;
   }
 
@@ -329,47 +402,69 @@ class AuthProvider with ChangeNotifier {
   /// Сохранить результаты пострегистрационного опроса (заказчик / мастер).
   Future<bool> submitSurvey({
     required OnboardingRole role,
-    /// Заказчик: категория работы (id из опроса)
+    /// Заказчик: категории работ (мультивыбор)
+    List<String>? workCategoryIds,
+    /// Заказчик: первая/основная категория (legacy)
     String? workCategoryId,
     /// Заказчик: apartment | house | office
     String? premiseKind,
     /// Заказчик: количество этажей для дома
     String? houseFloors,
-    /// Заказчик: условный диапазон площади (для числовых полей API)
+    /// Заказчик: точная площадь объекта, м²
+    double? totalAreaSqm,
+    /// Заказчик: условный диапазон площади (fallback)
     String? areaApproxId,
+    /// Заказчик: выбранные комнаты с размерами
+    List<Map<String, dynamic>>? roomsDetail,
     /// Заказчик: срок старта — urgent | within_month | browsing
     String? startTimelineId,
+    /// Город (заказчик / мастер)
+    String? city,
     /// Мастер: специализации (id)
     List<String>? specializationIds,
     /// Мастер: опыт — lt1 | y1_3 | y3_5 | gt5
     String? experienceId,
-    /// Мастер: город
-    String? city,
   }) async {
+    if (_user == null) return false;
+    _setState(AuthState.loading);
+    notifyListeners();
+
     try {
       final isCustomer = role == OnboardingRole.customer;
       final userType = isCustomer ? UserType.b2c : UserType.service;
 
       final premiseType = isCustomer ? (premiseKind ?? 'apartment') : 'master';
+      final categories = workCategoryIds ??
+          (workCategoryId != null ? [workCategoryId] : <String>[]);
+      final primaryWork = categories.isNotEmpty ? categories.first : workCategoryId;
+
       final totalArea = isCustomer
-          ? _approxAreaSqm(areaApproxId)
+          ? (totalAreaSqm?.round() ??
+              _approxAreaSqm(areaApproxId))
           : 50;
       const wallHeight = 260;
       const floorsCount = 1;
       final catalogRooms = isCustomer
-          ? PremiseRoomsCatalog.roomsForMap(premiseType)
+          ? (roomsDetail != null && roomsDetail.isNotEmpty
+              ? PremiseRoomsCatalog.roomsFromSurveySelections(roomsDetail)
+              : PremiseRoomsCatalog.roomsForMap(premiseType))
           : <Map<String, dynamic>>[];
       final roomsCount =
           isCustomer ? catalogRooms.length.clamp(1, 99) : 1;
 
       final additional = <String, dynamic>{
-        'onboarding_version': 2,
+        'onboarding_version': 3,
         'role': isCustomer ? 'customer' : 'master',
         if (isCustomer) ...{
-          'work_category': workCategoryId,
+          'work_categories': categories,
+          'work_category': primaryWork,
+          'total_area_sqm': totalArea,
           'start_timeline': startTimelineId,
+          if (roomsDetail != null && roomsDetail.isNotEmpty)
+            'rooms_detail': roomsDetail,
           if (houseFloors != null && premiseKind == 'house')
             'house_floors': houseFloors,
+          if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
         },
         if (!isCustomer) ...{
           'specializations': specializationIds ?? [],
@@ -396,12 +491,12 @@ class AuthProvider with ChangeNotifier {
       ProjectSummary? createdProject;
       if (isCustomer) {
         final projectTitle = _buildProjectTitle(
-          workCategoryId: workCategoryId,
+          workCategoryId: primaryWork,
           premiseType: premiseType,
         );
         final projectPayload = <String, dynamic>{
           'title': projectTitle,
-          'work_type': workCategoryId,
+          'work_type': primaryWork,
           'property_type': premiseType,
           'total_area': totalArea.toDouble(),
           'ceiling_height': wallHeight / 100.0,
@@ -420,11 +515,16 @@ class AuthProvider with ChangeNotifier {
             premiseType: premiseType,
             totalArea: totalArea.toDouble(),
             houseFloors: houseFloors,
-            workCategoryId: workCategoryId,
+            workCategoryId: primaryWork,
             startTimelineId: startTimelineId,
           ),
         };
-        createdProject = await _projectService.createDraftFromSurvey(projectPayload);
+        try {
+          createdProject = await _projectService.createDraftFromSurvey(projectPayload);
+        } on ApiException catch (e) {
+          // Проект не обязателен для завершения онбординга
+          if (e.statusCode != 404 && e.statusCode != 0) rethrow;
+        }
       }
 
       final accountModeLabel = isCustomer ? 'customer' : 'master';
@@ -454,6 +554,9 @@ class AuthProvider with ChangeNotifier {
       if (isCustomer) {
         await prefs.remove('arthouse_usage_mode');
         await PremiseRoomsCatalog.persistRoomsJson(catalogRooms);
+        if (city != null && city.trim().isNotEmpty) {
+          await prefs.setString('arthouse_city', city.trim());
+        }
       } else {
         await prefs.remove(PremiseRoomsCatalog.prefsKey);
       }
@@ -473,23 +576,28 @@ class AuthProvider with ChangeNotifier {
         await MarketplaceLocalStore.instance.saveCustomerProjects(currentProjects);
       }
 
-      _user = await _authService.updateProfile({
-        'user_type': userType.name,
-        'total_area': totalArea,
-        'wall_height': wallHeight,
-        'floors_count': floorsCount,
-        'rooms_count': roomsCount,
-        'survey_completed': true,
-      });
+      _user = _user!.copyWith(
+        userType: userType,
+        surveyCompleted: true,
+        roomsCount: roomsCount,
+        floorsCount: floorsCount,
+        wallHeight: wallHeight,
+        totalArea: totalArea,
+      );
       _justRegistered = false;
       _pendingPostRegisterSurvey = false;
+      _setState(AuthState.authenticated);
       notifyListeners();
       return true;
     } on ApiException catch (e) {
       _setError(e.message);
+      _setState(AuthState.authenticated);
+      notifyListeners();
       return false;
     } catch (e) {
       _setError('Ошибка при сохранении опроса');
+      _setState(AuthState.authenticated);
+      notifyListeners();
       return false;
     }
   }

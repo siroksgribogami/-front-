@@ -111,8 +111,55 @@ class LocalAiMapEngine {
       }
     }
 
+    if (target != null) {
+      _maybeAddFurniture(target, text);
+    }
+
     merged['rooms'] = rooms;
     return merged;
+  }
+
+  void _maybeAddFurniture(Map<String, dynamic> room, String text) {
+    final additions = <(String, String)>[];
+    if (text.contains('остров') || text.contains('кухн')) {
+      additions.add(('kitchen_island', 'Кухонный остров'));
+    }
+    if (text.contains('диван') || text.contains('гостин')) {
+      additions.add(('sofa', 'Диван'));
+    }
+    if (text.contains('кроват') || text.contains('спальн')) {
+      additions.add(('bed_double', 'Кровать'));
+    }
+    if (text.contains('стол') || text.contains('кабинет')) {
+      additions.add(('desk', 'Рабочий стол'));
+    }
+    if (text.contains('шкаф') || text.contains('гардероб')) {
+      additions.add(('wardrobe', 'Шкаф'));
+    }
+
+    final furniture =
+        (room['furniture'] as List?)?.cast<Map<String, dynamic>>() ?? [];
+    final roomId = room['roomId']?.toString() ?? 'room';
+    for (final (templateId, label) in additions) {
+      final instanceId = '${roomId}_$templateId';
+      if (furniture.any((f) => f['instanceId'] == instanceId)) continue;
+      furniture.add({
+        'instanceId': instanceId,
+        'roomId': roomId,
+        'templateId': templateId,
+        'displayName': label,
+        'category': templateId == 'kitchen_island' ? 'kitchen' : 'livingRoom',
+        'gridPosition': {'x': 1, 'y': 1},
+        'footprint': {'x': 2, 'y': 2},
+        'rotationQuarterTurns': 0,
+        'supportsStackingAbove': false,
+        'requiresSupportSurface': false,
+        'blocksPlacement': true,
+        'parentFurnitureInstanceId': '',
+        'elevation': 0,
+      });
+    }
+    room['furniture'] = furniture;
   }
 
   Map<String, dynamic> _extractPatch(

@@ -1,3 +1,5 @@
+import 'user_contact_display.dart';
+
 /// Валидация email и телефона при регистрации (одно поле «email или телефон»).
 abstract final class RegisterContactValidation {
   RegisterContactValidation._();
@@ -128,10 +130,9 @@ abstract final class RegisterContactValidation {
     final normalized = digits.length == 11 && digits.startsWith('8')
         ? '7${digits.substring(1)}'
         : digits;
-    // `.local` отклоняется Pydantic EmailStr на бэке; нужен обычный домен.
     return (
-      email: '$normalized@phone.arthouse.app',
-      phone: v,
+      email: '$normalized${UserContactDisplay.phoneEmailDomain}',
+      phone: UserContactDisplay.normalizePhoneForApi(v),
     );
   }
 }

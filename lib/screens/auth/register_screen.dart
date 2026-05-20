@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/app_theme.dart';
 import '../../core/theme/app_text_style.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/role_provider.dart';
 import '../../utils/password_validation.dart';
 import '../../utils/register_contact_validation.dart';
 
@@ -149,6 +151,10 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
 
     if (success && mounted) {
+      // Перечитываем роль маркетплейса из prefs (она сохранена в AuthProvider.register)
+      // — чтобы экран профиля/нижние вкладки сразу увидели «мастер» вместо дефолтного «заказчик».
+      await context.read<RoleProvider>().load();
+      if (!mounted) return;
       widget.onRegisterSuccess?.call();
     }
     if (mounted) {
@@ -163,41 +169,62 @@ class _RegisterScreenState extends State<RegisterScreen>
       opacity: _fadeAnim,
       child: SlideTransition(
         position: _slideAnim,
-        child: Scaffold(
-          backgroundColor: AppTheme.primaryColor,
-          resizeToAvoidBottomInset: true,
-          body: SafeArea(
-            child: Column(
+        child: AnnotatedRegion<SystemUiOverlayStyle>(
+          value: const SystemUiOverlayStyle(
+            statusBarColor: Colors.transparent,
+            statusBarIconBrightness: Brightness.light,
+            statusBarBrightness: Brightness.dark,
+            systemNavigationBarColor: Colors.transparent,
+            systemNavigationBarIconBrightness: Brightness.light,
+            systemNavigationBarContrastEnforced: false,
+          ),
+          child: Scaffold(
+            backgroundColor: AppTheme.primaryColor,
+            resizeToAvoidBottomInset: true,
+            body: Column(
               children: [
                 Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.symmetric(horizontal: 28),
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 400),
-                        child: Form(
-                          key: _formKey,
-                          child: Column(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              ..._buildStepContent(),
-                              const SizedBox(height: 16),
-                              _buildErrorBanner(),
-                            ],
+                  child: SafeArea(
+                    bottom: false,
+                    child: Center(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 28),
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 400),
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                ..._buildStepContent(),
+                                const SizedBox(height: 16),
+                                _buildErrorBanner(),
+                              ],
+                            ),
                           ),
                         ),
                       ),
                     ),
                   ),
                 ),
-                _buildBottomNav(),
-                if (_step == _RegisterStep.name) ...[
-                  const SizedBox(height: 4),
-                  _buildLoginLink(),
-                  const SizedBox(height: 8),
-                ] else
-                  const SizedBox(height: 12),
+                Padding(
+                  padding: EdgeInsets.only(
+                    bottom: MediaQuery.viewPaddingOf(context).bottom,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      _buildBottomNav(),
+                      if (_step == _RegisterStep.name) ...[
+                        const SizedBox(height: 4),
+                        _buildLoginLink(),
+                        const SizedBox(height: 8),
+                      ] else
+                        const SizedBox(height: 12),
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
@@ -217,12 +244,23 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   List<Widget> _buildNameStep() {
     return [
-      _buildTitle('Как вас зовут?'),
+      _buildTitle('Давайте познакомимся'),
+      const SizedBox(height: 10),
+      Text(
+        'Как к вам обращаться?',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 15,
+          color: Colors.white.withOpacity(0.75),
+          fontFamily: AppTextStyle.fontFamily,
+          height: AppTextStyle.defaultHeight,
+        ),
+      ),
       const SizedBox(height: 28),
       _buildTextField(
         controller: _nameController,
         label: 'Ваше имя',
-        textAlign: TextAlign.center,
+        textAlign: TextAlign.start,
         onChanged: (_) => context.read<AuthProvider>().clearError(),
         validator: (value) {
           if (value == null || value.trim().isEmpty) return 'Введите имя';
@@ -237,15 +275,6 @@ class _RegisterScreenState extends State<RegisterScreen>
   List<Widget> _buildContactStep() {
     return [
       _buildTitle('Email или телефон'),
-      const SizedBox(height: 8),
-      Text(
-        'Укажите способ связи',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.white.withOpacity(0.7),
-        ),
-      ),
       const SizedBox(height: 28),
       _buildTextField(
         controller: _contactController,

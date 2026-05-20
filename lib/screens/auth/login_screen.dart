@@ -4,6 +4,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/role_provider.dart';
 import '../../config/app_theme.dart';
 import '../../core/theme/app_text_style.dart';
+import '../../utils/register_contact_validation.dart';
+import '../../utils/user_contact_display.dart';
 
 /// Экран входа - в стиле HTML дизайна (шалфейно-зеленый фон)
 class LoginScreen extends StatefulWidget {
@@ -77,8 +79,13 @@ class _LoginScreenState extends State<LoginScreen>
     if (!_formKey.currentState!.validate()) return;
 
     final authProvider = context.read<AuthProvider>();
+    final contact = _emailController.text.trim();
+    final loginEmail = contact.contains('@')
+        ? contact
+        : UserContactDisplay.resolveLoginEmail(contact);
+
     final success = await authProvider.login(
-      email: _emailController.text.trim(),
+      email: loginEmail,
       password: _passwordController.text,
     );
 
@@ -204,13 +211,10 @@ class _LoginScreenState extends State<LoginScreen>
                 const SizedBox(height: 32),
                 _buildTextField(
                   controller: _emailController,
-                  label: 'Email',
+                  label: 'Email или телефон',
                   keyboardType: TextInputType.emailAddress,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) return 'Введите email';
-                    if (!_isValidEmail(value)) return 'Введите корректный email';
-                    return null;
-                  },
+                  validator: (value) =>
+                      RegisterContactValidation.validateContact(value ?? ''),
                 ),
                 const SizedBox(height: 16),
                 _buildTextField(

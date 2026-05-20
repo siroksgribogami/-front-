@@ -81,8 +81,8 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
                     final messenger = ScaffoldMessenger.maybeOf(context);
                     final auth = context.read<AuthProvider>();
                     final user = auth.user;
-                    final masterName = user?.username.trim().isNotEmpty == true
-                        ? user!.username
+                    final masterName = user?.visibleName.trim().isNotEmpty == true
+                        ? user!.visibleName
                         : 'Исполнитель';
 
                     await MarketplaceLocalStore.instance.ensureLoaded();

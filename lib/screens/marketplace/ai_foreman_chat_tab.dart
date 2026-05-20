@@ -1,15 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
+import '../../core/theme/app_text_style.dart';
 import '../../core/theme/marketplace_colors.dart';
 import '../../data/premise_rooms_catalog.dart';
 import '../../models/ai_responses.dart';
 import '../../services/api_service.dart';
 import '../../services/survey_service.dart';
 
-/// Вкладка чата с ИИ-прорабом (сбор ТЗ; офлайн-ответы до API). Вынесено для reuse в [MessagesHubScreen].
+/// Чат с ИИ-прорабом. Аватар — в шапке (как Telegram), не в каждом сообщении.
 class AiForemanChatTab extends StatefulWidget {
-  const AiForemanChatTab({super.key});
+  /// `false`, если аватар уже в AppBar родительского экрана.
+  final bool showHeader;
+
+  const AiForemanChatTab({super.key, this.showHeader = true});
 
   @override
   State<AiForemanChatTab> createState() => _AiForemanChatTabState();
@@ -19,12 +23,10 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
 
-  static const double _foremanAvatarSize = 64;
-
   final List<_ChatMessage> _messages = [
     _ChatMessage(
       text:
-          'Привет! Я ИИ-прораб ARTkhaus.\n\nСоберу из твоего описания ТЗ, смету и список материалов.\n\nС чего начнём: комната, бюджет или сроки?',
+          'Привет! Я ИИ-прораб ARTkhaus.\n\nСоберу из вашего описания ТЗ, смету и список материалов.\n\nС чего начнём: комната, бюджет или сроки?',
       isUser: false,
       timestamp: DateTime.now().subtract(const Duration(minutes: 5)),
       emotion: 'обычный',
@@ -50,19 +52,8 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
       ));
     });
     _messageController.clear();
+    _scrollToEnd();
 
-    // прокрутка вниз
-    Future.delayed(const Duration(milliseconds: 100), () {
-      if (_scrollController.hasClients) {
-        _scrollController.animateTo(
-          _scrollController.position.maxScrollExtent,
-          duration: const Duration(milliseconds: 300),
-          curve: Curves.easeOut,
-        );
-      }
-    });
-
-    // Показать думалку
     setState(() {
       _messages.add(_ChatMessage(
         text: '...',
@@ -91,27 +82,30 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
       };
       final resp = await api.post('/ai/foreman/chat', body: body);
 
-      // ожидаем ответ вида { text: '...', emotion: 'рад'|'think'|'обычный', avatar_url?: 'http...'}
-      final replyText = resp is Map && resp['text'] != null ? resp['text'].toString() : (getAiAssistantReply(text));
-      final emotion = resp is Map && resp['emotion'] != null ? resp['emotion'].toString() : 'обычный';
-      final avatar = resp is Map && resp['avatar_url'] != null ? resp['avatar_url'].toString() : null;
+      final replyText = resp is Map && resp['text'] != null
+          ? resp['text'].toString()
+          : getAiAssistantReply(text);
+      final emotion = resp is Map && resp['emotion'] != null
+          ? resp['emotion'].toString()
+          : 'обычный';
 
-      // убираем последнюю думалку (три точки)
       setState(() {
-        if (_messages.isNotEmpty && _messages.last.text == '...') _messages.removeLast();
+        if (_messages.isNotEmpty && _messages.last.text == '...') {
+          _messages.removeLast();
+        }
         _messages.add(_ChatMessage(
           text: replyText,
           isUser: false,
           timestamp: DateTime.now(),
           emotion: emotion,
-          avatarUrl: avatar,
         ));
       });
-    } catch (e) {
-      // fallback: локальный оффлайн-ответ
+    } catch (_) {
       final response = getAiAssistantReply(text);
       setState(() {
-        if (_messages.isNotEmpty && _messages.last.text == '...') _messages.removeLast();
+        if (_messages.isNotEmpty && _messages.last.text == '...') {
+          _messages.removeLast();
+        }
         _messages.add(_ChatMessage(
           text: response,
           isUser: false,
@@ -121,6 +115,10 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
       });
     }
 
+    _scrollToEnd();
+  }
+
+  void _scrollToEnd() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (_scrollController.hasClients) {
         _scrollController.animateTo(
@@ -144,6 +142,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
       color: bg,
       child: Column(
         children: [
+          if (widget.showHeader) _ForemanChatHeader(),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
@@ -191,6 +190,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
                     ),
                     child: TextField(
                       controller: _messageController,
+                      textAlign: TextAlign.start,
                       style: TextStyle(color: textPrimary, fontSize: 15),
                       decoration: InputDecoration(
                         filled: true,
@@ -199,7 +199,9 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
                         hintStyle: TextStyle(color: textMuted),
                         border: InputBorder.none,
                         contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 20, vertical: 12),
+                          horizontal: 20,
+                          vertical: 12,
+                        ),
                       ),
                       onSubmitted: (_) => _sendMessage(),
                     ),
@@ -215,8 +217,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
                       color: MarketplaceColors.aiTurquoise,
                       shape: BoxShape.circle,
                     ),
-                    child:
-                        const Icon(Icons.send, color: Colors.white, size: 20),
+                    child: const Icon(Icons.send, color: Colors.white, size: 20),
                   ),
                 ),
               ],
@@ -229,30 +230,9 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
 
   Widget _buildMessageBubble(_ChatMessage message, BuildContext context) {
     final isUser = message.isUser;
-    if (isUser) {
-      return Align(
-        alignment: Alignment.centerRight,
-        child: _buildBubbleBody(message, context, isUser: true),
-      );
-    }
-
     return Align(
-      alignment: Alignment.centerLeft,
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _ForemanCharacterAvatar(
-            size: _foremanAvatarSize,
-            emotion: message.emotion,
-            avatarUrl: message.avatarUrl,
-          ),
-          const SizedBox(width: 10),
-          Flexible(
-            child: _buildBubbleBody(message, context, isUser: false),
-          ),
-        ],
-      ),
+      alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+      child: _buildBubbleBody(message, context, isUser: isUser),
     );
   }
 
@@ -266,11 +246,9 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
     final textMuted = MarketplaceColors.textMutedFor(context);
 
     return Container(
-      margin: EdgeInsets.only(
-        top: 6,
-        bottom: 6,
-        left: isUser ? 50 : 0,
-        right: isUser ? 0 : 8,
+      margin: const EdgeInsets.symmetric(vertical: 6),
+      constraints: BoxConstraints(
+        maxWidth: MediaQuery.sizeOf(context).width * 0.82,
       ),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
@@ -293,18 +271,6 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser)
-            const Padding(
-              padding: EdgeInsets.only(bottom: 6),
-              child: Text(
-                'ИИ-прораб',
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                  color: MarketplaceColors.aiTurquoise,
-                ),
-              ),
-            ),
           Text(
             message.text,
             style: TextStyle(
@@ -360,19 +326,99 @@ class _AiForemanChatTabState extends State<AiForemanChatTab> {
   }
 }
 
+/// Шапка чата: аватар + имя (как в Telegram).
+class _ForemanChatHeader extends StatelessWidget {
+  @override
+  Widget build(BuildContext context) {
+    final card = MarketplaceColors.cardFor(context);
+    final textPrimary = MarketplaceColors.textPrimaryFor(context);
+    final textMuted = MarketplaceColors.textMutedFor(context);
+
+    return Material(
+      color: card,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+        child: Row(
+          children: [
+            const ForemanAvatar(size: 40),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'ИИ-прораб',
+                    style: TextStyle(
+                      fontFamily: AppTextStyle.fontFamily,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w800,
+                      color: textPrimary,
+                    ),
+                  ),
+                  Text(
+                    'Соберёт ТЗ, смету и материалы',
+                    style: TextStyle(fontSize: 12, color: textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// Компактный аватар для AppBar / списка чатов.
+class ForemanAvatar extends StatelessWidget {
+  const ForemanAvatar({
+    super.key,
+    this.size = 40,
+    this.emotion,
+  });
+
+  final double size;
+  final String? emotion;
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          color: const Color(0xFFF4EDE4),
+          borderRadius: BorderRadius.circular(size * 0.28),
+          border: Border.all(
+            color: MarketplaceColors.aiTurquoise.withOpacity(0.4),
+          ),
+        ),
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(size * 0.24),
+          child: Padding(
+            padding: EdgeInsets.all(size * 0.04),
+            child: SvgPicture.asset(
+              _avatarAssetFor(emotion),
+              fit: BoxFit.contain,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _ChatMessage {
   final String text;
   final bool isUser;
   final DateTime timestamp;
   final String? emotion;
-  final String? avatarUrl;
 
   _ChatMessage({
     required this.text,
     required this.isUser,
     required this.timestamp,
     this.emotion,
-    this.avatarUrl,
   });
 }
 
@@ -385,56 +431,5 @@ String _avatarAssetFor(String? emotion) {
       return 'picture/веселый.svg';
     default:
       return 'picture/обычный.svg';
-  }
-}
-
-/// Крупный персонаж прораба слева от пузыря (не мелкий кружок внутри сообщения).
-class _ForemanCharacterAvatar extends StatelessWidget {
-  const _ForemanCharacterAvatar({
-    required this.size,
-    this.emotion,
-    this.avatarUrl,
-  });
-
-  final double size;
-  final String? emotion;
-  final String? avatarUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = avatarUrl;
-    return SizedBox(
-      width: size,
-      height: size,
-      child: DecoratedBox(
-        decoration: BoxDecoration(
-          color: MarketplaceColors.aiTurquoise.withOpacity(0.12),
-          borderRadius: BorderRadius.circular(size * 0.28),
-          border: Border.all(
-            color: MarketplaceColors.aiTurquoise.withOpacity(0.35),
-          ),
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(size * 0.24),
-          child: url != null && url.isNotEmpty
-              ? Image.network(
-                  url,
-                  fit: BoxFit.cover,
-                  errorBuilder: (_, __, ___) => _svgFace(),
-                )
-              : Padding(
-                  padding: EdgeInsets.all(size * 0.06),
-                  child: _svgFace(),
-                ),
-        ),
-      ),
-    );
-  }
-
-  Widget _svgFace() {
-    return SvgPicture.asset(
-      _avatarAssetFor(emotion),
-      fit: BoxFit.contain,
-    );
   }
 }

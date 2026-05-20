@@ -40,7 +40,8 @@ class FurnitureTab extends StatelessWidget {
                 crossAxisCount: 2,
                 crossAxisSpacing: 12,
                 mainAxisSpacing: 12,
-                childAspectRatio: 0.72,
+                // Высота карточки фиксирована: контент компактный, ничего не вылезает.
+                mainAxisExtent: 320,
               ),
               itemBuilder: (context, index) =>
                   _buildFurnitureCard(context, (items ?? catalogFurniture)[index]),
@@ -88,167 +89,133 @@ class FurnitureTab extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
-            height: 120,
+            height: 96,
             decoration: BoxDecoration(
               color: MarketplaceColors.bluePrimary.withOpacity(0.08),
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(14)),
             ),
             child: Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(categoryIcon, style: const TextStyle(fontSize: 48)),
-                  const SizedBox(height: 8),
-                  Text(
-                    item.category,
-                    style: TextStyle(fontSize: 11, color: textMuted),
-                  ),
-                ],
-              ),
+              child: Text(categoryIcon, style: const TextStyle(fontSize: 40)),
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.name,
-                        style: TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimary,
-                        ),
-                      ),
+          Expanded(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(10, 10, 10, 10),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.name,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w700,
+                      color: textPrimary,
+                      height: 1.2,
                     ),
-                    Text(
-                      _formatPrice(item.price),
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w700,
-                        color: MarketplaceColors.bluePrimary,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 4),
-                Row(
-                  children: [
-                    const Icon(Icons.star_rounded, size: 14, color: MarketplaceColors.gold),
-                    const SizedBox(width: 2),
-                    Text(
-                      item.rating.toStringAsFixed(1),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: textSecondary,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const Spacer(),
-                    Text(
-                      item.region,
-                      style: TextStyle(fontSize: 11, color: textMuted),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  item.description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: textMuted,
-                    height: 1.4,
                   ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 8),
-                Wrap(
-                  spacing: 8,
-                  runSpacing: 6,
-                  children: [
-                    _buildSpecChip(context, Icons.straighten, item.dimensions),
-                    _buildSpecChip(context, Icons.category_outlined, item.material),
-                  ],
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Text(
-                      'Цвета: ',
-                      style: TextStyle(fontSize: 12, color: textMuted),
+                  const SizedBox(height: 4),
+                  Text(
+                    _formatPrice(item.price),
+                    style: const TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                      color: MarketplaceColors.bluePrimary,
                     ),
-                    Expanded(
-                      child: Text(
-                        item.colors.join(', '),
+                  ),
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      const Icon(Icons.star_rounded,
+                          size: 14, color: MarketplaceColors.gold),
+                      const SizedBox(width: 2),
+                      Text(
+                        item.rating.toStringAsFixed(1),
                         style: TextStyle(
                           fontSize: 12,
-                          fontWeight: FontWeight.w500,
-                          color: textPrimary,
+                          color: textSecondary,
+                          fontWeight: FontWeight.w600,
                         ),
-                        overflow: TextOverflow.ellipsis,
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: () {
-                          if (onViewOnMap != null) {
-                            onViewOnMap!();
-                          } else {
+                      const SizedBox(width: 6),
+                      Expanded(
+                        child: Text(
+                          item.region,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(fontSize: 11, color: textMuted),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 6),
+                  _buildSpecChip(context, Icons.straighten, item.dimensions),
+                  const Spacer(),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () {
+                            if (onViewOnMap != null) {
+                              onViewOnMap!();
+                            } else {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text('Переход на карту...'),
+                                  behavior: SnackBarBehavior.floating,
+                                ),
+                              );
+                            }
+                          },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: MarketplaceColors.bluePrimary,
+                            side: BorderSide(
+                              color:
+                                  MarketplaceColors.bluePrimary.withOpacity(0.5),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            minimumSize: const Size.fromHeight(36),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                          ),
+                          child: const Text(
+                            'На плане',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
                             ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Переход на карту...'),
+                              SnackBar(
+                                content: Text('Добавлено в корзину: ${item.name}'),
                                 behavior: SnackBarBehavior.floating,
                               ),
                             );
-                          }
-                        },
-                        icon: const Icon(Icons.map_outlined, size: 18),
-                        label: const Text('На плане'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: MarketplaceColors.bluePrimary,
-                          side: BorderSide(color: MarketplaceColors.bluePrimary.withOpacity(0.5)),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: ElevatedButton.icon(
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text('Добавлено в корзину: ${item.name}'),
-                              behavior: SnackBarBehavior.floating,
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: MarketplaceColors.ctaOrange,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 8),
+                            minimumSize: const Size.fromHeight(36),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
                             ),
-                          );
-                        },
-                        icon: const Icon(Icons.shopping_cart_outlined, size: 18),
-                        label: const Text('Купить'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: MarketplaceColors.ctaOrange,
-                          foregroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Text(
+                            'Купить',
+                            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],
