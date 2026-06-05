@@ -1,4 +1,4 @@
-// Каталог мебели для редактора комнат АРТхаус.
+// Каталог мебели для редактора комнат Приделе.
 
 class FurnitureTemplate {
   const FurnitureTemplate({

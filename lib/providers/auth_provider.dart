@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_marketplace_role.dart';
+import '../models/map_floor_plan.dart';
 import '../models/marketplace_project.dart';
 import '../models/onboarding_survey.dart';
 import '../models/user.dart';
@@ -443,7 +444,12 @@ class AuthProvider with ChangeNotifier {
               _approxAreaSqm(areaApproxId))
           : 50;
       const wallHeight = 260;
-      const floorsCount = 1;
+      final floorsCount = isCustomer
+          ? MapFloorPlanHelper.suggestedFloorCount(
+              premiseType: premiseType,
+              houseFloors: houseFloors,
+            )
+          : 1;
       final catalogRooms = isCustomer
           ? (roomsDetail != null && roomsDetail.isNotEmpty
               ? PremiseRoomsCatalog.roomsFromSurveySelections(roomsDetail)
@@ -506,7 +512,10 @@ class AuthProvider with ChangeNotifier {
           'additional_info': additional,
           'map_data': <String, dynamic>{
             'before': <String, dynamic>{},
-            'after': <String, dynamic>{},
+            'after': MapFloorPlanHelper.initialAfterFromCatalog(
+              catalogRooms: catalogRooms,
+              floorsCount: floorsCount,
+            ),
             'rooms': catalogRooms,
             'source': 'post_register_survey',
           },
@@ -613,6 +622,13 @@ class AuthProvider with ChangeNotifier {
     if (!_justRegistered) return;
     _justRegistered = false;
     _pendingPostRegisterSurvey = true;
+    notifyListeners();
+  }
+
+  /// Пропуск welcome + опроса — сразу в приложение.
+  void skipPostRegisterWelcome() {
+    _justRegistered = false;
+    _pendingPostRegisterSurvey = false;
     notifyListeners();
   }
 

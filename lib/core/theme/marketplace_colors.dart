@@ -1,52 +1,45 @@
 import 'package:flutter/material.dart';
 import '../../config/app_theme.dart';
+import '../../config/brand_colors.dart';
 
-/// Семантическая палитра ARTkhaus для первого (зелёного) дизайна.
+/// Семантическая палитра маркетплейса Приделе (брендбук).
 class MarketplaceColors {
   MarketplaceColors._();
 
-  /// Макс. ширина основной колонки контента (как [PostRegisterSurveyScreen]).
   static const double contentMaxWidth = 520;
 
-  // --- Фоны ---
-  static const Color background = Color(0xFFF7F3EC);
-  static const Color card = Color(0xFFFFFFFF);
-  static const Color lightSurface = Color(0xFFEDE8E0);
-  static const Color lightBlueTint = Color(0xFFC6D9CE);
-  static const Color accentWarmBg = Color(0xFFFFF4E6);
+  static const Color background = BrandColors.canvas;
+  static const Color card = BrandColors.milk;
+  static const Color lightSurface = BrandColors.linen;
+  static const Color lightBlueTint = BrandColors.linen;
+  static const Color accentWarmBg = BrandColors.sandstone;
 
-  // --- Брендовая шкала первого дизайна (шалфей) ---
-  static const Color bluePrimary = Color(0xFF659171);
-  static const Color blueSaturated = Color(0xFF547A62);
-  static const Color blueDark = Color(0xFF3F5F4B);
-  static const Color blueDeep = Color(0xFF2A3A2C);
+  static const Color bluePrimary = BrandColors.needles;
+  static const Color blueSaturated = BrandColors.needlesDeep;
+  static const Color blueDark = BrandColors.needlesBor;
+  static const Color blueDeep = BrandColors.needlesDeep;
 
-  /// CTA: терракотовый акцент.
-  static const Color ctaOrange = Color(0xFFD4956A);
+  // g100 — бледно-зелёный, фон чипов, статус-пилюль и т.д.
+  static const Color paleSurface = BrandColors.needlesPale;
 
-  static const Color gold = Color(0xFFE8B931);
+  /// Clay — один главный CTA на экран (отправка, 3D).
+  static const Color ctaOrange = BrandColors.clay;
+  static const Color clayAccent = BrandColors.clay;
 
-  /// Акцент для AI/подсказок.
-  static const Color aiTurquoise = Color(0xFF80B490);
+  static const Color gold = BrandColors.gilded;
 
-  /// Успешные сервисные статусы.
-  static const Color successService = Color(0xFF659171);
+  /// Структурный зелёный (кнопки, выбранные чипы).
+  static const Color aiTurquoise = BrandColors.needles;
 
-  /// Отказ / ошибка по сделке.
-  static const Color statusDeclined = Color(0xFFB87070);
+  static const Color successService = BrandColors.needles;
+  static const Color statusDeclined = BrandColors.surik;
 
-  // --- Текст ---
-  static const Color textOnDark = Color(0xFF2A3A2C);
-  static const Color textMuted = Color(0xFF506A58);
+  static const Color textOnDark = BrandColors.onNeedles;
+  static const Color textMuted = Color(0xFF5C6B62);
+  static const Color textPrimary = BrandColors.tar;
+  static const Color textSecondary = Color(0xFF3D4A42);
 
-  /// Основной текст на тёмном фоне маркетплейса.
-  static const Color textPrimary = textOnDark;
-
-  /// Вторичный текст (по гайду — приглушённый сине-серый).
-  static const Color textSecondary = textMuted;
-
-  // Совместимость с ранним кодом (accent / turquoise).
-  static const Color accent = ctaOrange;
+  static const Color accent = clayAccent;
   static const Color turquoise = aiTurquoise;
 
   static bool isDark(BuildContext context) =>
@@ -70,13 +63,11 @@ class MarketplaceColors {
   static Color textMutedFor(BuildContext context) =>
       isDark(context) ? AppTheme.darkTextHint : textMuted;
 
-  /// Респонсивный горизонтальный отступ от краёв контентной области
-  /// (используется во всех экранах маркетплейса для согласованности).
   static double horizontalPaddingFor(BuildContext context) {
     final width = MediaQuery.sizeOf(context).width;
     if (width >= 1200) return 96;
     if (width >= 900) return 72;
     if (width >= 600) return 32;
-    return 16;
+    return BrandColors.screenPadding;
   }
 }

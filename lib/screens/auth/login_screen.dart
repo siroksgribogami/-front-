@@ -1,13 +1,18 @@
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/role_provider.dart';
 import '../../config/app_theme.dart';
-import '../../core/theme/app_text_style.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/brand_solid_background.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../utils/register_contact_validation.dart';
 import '../../utils/user_contact_display.dart';
+import 'widgets/brand_frame_splash.dart';
 
-/// Экран входа - в стиле HTML дизайна (шалфейно-зеленый фон)
+/// Экран входа — сплошной бренд-зелёный #325D3C, рамка с логотипом.
 class LoginScreen extends StatefulWidget {
   final VoidCallback? onRegisterTap;
   final VoidCallback? onLoginSuccess;
@@ -23,7 +28,7 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -46,7 +51,6 @@ class _LoginScreenState extends State<LoginScreen>
       begin: const Offset(0, 0.06),
       end: Offset.zero,
     ).animate(CurvedAnimation(parent: _transitionCtrl, curve: Curves.easeOutCubic));
-    // Начальная анимация появления
     _transitionCtrl.forward();
   }
 
@@ -58,21 +62,19 @@ class _LoginScreenState extends State<LoginScreen>
     super.dispose();
   }
 
-  /// Переключение между welcome и формой с анимацией
-  void _openForm() {
-    _transitionCtrl.reverse().then((_) {
-      if (!mounted) return;
-      setState(() => _showForm = true);
-      _transitionCtrl.forward();
-    });
+  void _closeForm() {
+    if (!mounted) return;
+    setState(() => _showForm = false);
   }
 
-  void _closeForm() {
-    _transitionCtrl.reverse().then((_) {
-      if (!mounted) return;
-      setState(() => _showForm = false);
-      _transitionCtrl.forward();
-    });
+  void _afterFrameExitOpenLogin() {
+    if (!mounted) return;
+    setState(() => _showForm = true);
+  }
+
+  void _afterFrameExitOpenRegister() {
+    if (!mounted) return;
+    widget.onRegisterTap?.call();
   }
 
   Future<void> _handleLogin() async {
@@ -105,206 +107,21 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
-  
-  /// Начальный экран в стиле дизайна
+
   Widget _buildWelcomeScreen() {
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            Center(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 40),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Text(
-                      'АРТхаус',
-                      style: TextStyle(
-                        fontSize: 63,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        letterSpacing: -2.4,
-                        fontFamily: AppTextStyle.fontFamily,
-                        height: AppTextStyle.defaultHeight,
-                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    ConstrainedBox(
-                      constraints: const BoxConstraints(maxWidth: 300),
-                      child: Column(
-                        children: [
-                          _buildPillButton(
-                            label: 'Вход',
-                            onTap: _openForm,
-                          ),
-                          const SizedBox(height: 12),
-                          _buildPillButton(
-                            label: 'Регистрация',
-                            outlined: true,
-                            onTap: widget.onRegisterTap == null
-                                ? null
-                                : () {
-                                    _transitionCtrl.reverse().then((_) {
-                                      widget.onRegisterTap?.call();
-                                    });
-                                  },
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  /// Форма входа
-  Widget _buildLoginForm() {
-    return Scaffold(
-      backgroundColor: AppTheme.primaryColor,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.white),
-          onPressed: _closeForm,
-        ),
-      ),
-      body: SafeArea(
-        child: Center(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(32),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Form(
-                key: _formKey,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                const Text(
-                  'Вход',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    fontFamily: AppTextStyle.fontFamily,
-                    height: AppTextStyle.defaultHeight,
-                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Рады видеть вас снова',
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white.withOpacity(0.7),
-                  ),
-                ),
-                const SizedBox(height: 32),
-                _buildTextField(
-                  controller: _emailController,
-                  label: 'Email или телефон',
-                  keyboardType: TextInputType.emailAddress,
-                  validator: (value) =>
-                      RegisterContactValidation.validateContact(value ?? ''),
-                ),
-                const SizedBox(height: 16),
-                _buildTextField(
-                  controller: _passwordController,
-                  label: 'Пароль',
-                  obscureText: _obscurePassword,
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      _obscurePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
-                      color: Colors.white.withOpacity(0.6),
-                    ),
-                    onPressed: () {
-                      setState(() => _obscurePassword = !_obscurePassword);
-                    },
-                  ),
-                  validator: (value) {
-                    final issues = _passwordIssues(value ?? '');
-                    if (issues.isEmpty) return null;
-                    return issues.join('\n');
-                  },
-                ),
-                const SizedBox(height: 32),
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    if (auth.error != null) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 16),
-                        child: Container(
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.1),
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          child: Text(
-                            auth.error!,
-                            style: const TextStyle(color: Colors.white),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
-                      );
-                    }
-                    return const SizedBox.shrink();
-                  },
-                ),
-                Consumer<AuthProvider>(
-                  builder: (context, auth, _) {
-                    return ElevatedButton(
-                      onPressed: auth.isLoading ? null : _handleLogin,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.white,
-                        foregroundColor: AppTheme.primaryColor,
-                        padding: const EdgeInsets.symmetric(vertical: 18),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(100),
-                        ),
-                        elevation: 0,
-                        textStyle: const TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          fontFamily: AppTextStyle.fontFamily,
-                          height: AppTextStyle.defaultHeight,
-                          leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                        ),
-                      ),
-                      child: auth.isLoading
-                          ? const SizedBox(
-                              height: 20,
-                              width: 20,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                color: AppTheme.primaryColor,
-                              ),
-                            )
-                          : const Text(
-                              'Войти',
-                              style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                                fontFamily: AppTextStyle.fontFamily,
-                                height: AppTextStyle.defaultHeight,
-                                leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                              ),
-                            ),
-                    );
-                  },
-                ),
-              ],
-                ),
+      body: BrandSolidBackground(
+        child: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 20),
+              child: BrandFrameSplash(
+                key: ValueKey('brand_frame_$_showForm'),
+                onLogin: _afterFrameExitOpenLogin,
+                onRegister: widget.onRegisterTap == null
+                    ? null
+                    : _afterFrameExitOpenRegister,
               ),
             ),
           ),
@@ -312,100 +129,207 @@ class _LoginScreenState extends State<LoginScreen>
       ),
     );
   }
-  
-  /// Поле ввода в стиле дизайна
-  Widget _buildTextField({
+
+  Widget _buildLoginForm() {
+    return Scaffold(
+      backgroundColor: AppTheme.primaryColor,
+      body: BrandSolidBackground(
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(28, 16, 28, 40),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: BrandBackButton(onPressed: _closeForm, onDark: true),
+                  ),
+                  const SizedBox(height: 30),
+                  const BrandKicker('С возвращением', onDark: true, fontSize: 10.5),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Вход',
+                    style: pochaevsk(
+                      fontSize: 40,
+                      color: BrandColors.onNeedles,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 38),
+                  _buildAuthField(
+                    controller: _emailController,
+                    hint: 'Электронная почта',
+                    keyboardType: TextInputType.emailAddress,
+                    prefix: Icon(
+                      Icons.mail_outline_rounded,
+                      size: 20,
+                      color: BrandColors.onNeedles.withOpacity(0.7),
+                    ),
+                    validator: (value) =>
+                        RegisterContactValidation.validateContact(value ?? ''),
+                  ),
+                  const SizedBox(height: 13),
+                  _buildAuthField(
+                    controller: _passwordController,
+                    hint: 'Пароль',
+                    obscureText: _obscurePassword,
+                    prefix: Icon(
+                      Icons.lock_outline_rounded,
+                      size: 18,
+                      color: BrandColors.onNeedles.withOpacity(0.7),
+                    ),
+                    suffix: GestureDetector(
+                      onTap: () =>
+                          setState(() => _obscurePassword = !_obscurePassword),
+                      child: Text(
+                        _obscurePassword ? 'Показать' : 'Скрыть',
+                        style: BrandUi.inter(
+                          fontSize: 12.5,
+                          color: BrandColors.onNeedles.withOpacity(0.6),
+                        ),
+                      ),
+                    ),
+                    validator: (value) {
+                      final issues = _passwordIssues(value ?? '');
+                      if (issues.isEmpty) return null;
+                      return issues.join('\n');
+                    },
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () {},
+                      style: TextButton.styleFrom(
+                        foregroundColor: BrandColors.dawn,
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                      ),
+                      child: Text(
+                        'Забыли пароль?',
+                        style: BrandUi.inter(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                          color: BrandColors.dawn,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const Spacer(),
+                  Consumer<AuthProvider>(
+                    builder: (context, auth, _) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          if (auth.error != null) ...[
+                            Container(
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: Colors.white.withOpacity(0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: SelectableText(
+                                auth.error!,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  height: 1.35,
+                                ),
+                                textAlign: TextAlign.center,
+                              ),
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                          BrandAccentButton(
+                            label: auth.isLoading ? 'Входим…' : 'Войти',
+                            onPressed: auth.isLoading ? null : _handleLogin,
+                          ),
+                          const SizedBox(height: 18),
+                          if (widget.onRegisterTap != null)
+                            Text.rich(
+                              TextSpan(
+                                style: BrandUi.inter(
+                                  fontSize: 14,
+                                  color: BrandColors.onNeedles.withOpacity(0.7),
+                                ),
+                                children: [
+                                  const TextSpan(text: 'Нет аккаунта? '),
+                                  TextSpan(
+                                    text: 'Регистрация',
+                                    style: BrandUi.inter(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w600,
+                                      color: BrandColors.onNeedles,
+                                    ),
+                                    recognizer: TapGestureRecognizer()
+                                      ..onTap = widget.onRegisterTap,
+                                  ),
+                                ],
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                        ],
+                      );
+                    },
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildAuthField({
     required TextEditingController controller,
-    required String label,
+    required String hint,
     TextInputType? keyboardType,
     bool obscureText = false,
-    Widget? suffixIcon,
+    Widget? prefix,
+    Widget? suffix,
     String? Function(String?)? validator,
   }) {
     return TextFormField(
       controller: controller,
       keyboardType: keyboardType,
       obscureText: obscureText,
-      style: const TextStyle(color: Colors.white),
+      style: BrandUi.inter(fontSize: 15.5, color: BrandColors.onNeedles),
       decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
+        hintText: hint,
+        hintStyle: BrandUi.inter(
+          fontSize: 15.5,
+          color: BrandColors.onNeedles.withOpacity(0.5),
+        ),
+        prefixIcon: prefix,
+        suffixIcon: suffix != null
+            ? Padding(
+                padding: const EdgeInsets.only(right: 14),
+                child: suffix,
+              )
+            : null,
+        suffixIconConstraints: const BoxConstraints(minHeight: 0, minWidth: 0),
         filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
+        fillColor: Colors.white.withOpacity(0.10),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.18), width: 1.5),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.18), width: 1.5),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.7)),
+          borderSide: BorderSide(color: Colors.white.withOpacity(0.55), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
           borderSide: const BorderSide(color: Colors.redAccent),
         ),
-        suffixIcon: suffixIcon,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       ),
       validator: validator,
     );
-  }
-
-  Widget _buildPillButton({
-    required String label,
-    required VoidCallback? onTap,
-    bool outlined = false,
-  }) {
-    final baseStyle = TextStyle(
-      fontSize: 16,
-      fontWeight: FontWeight.w700,
-      color: outlined ? Colors.white : AppTheme.primaryColor,
-      fontFamily: AppTextStyle.fontFamily,
-      letterSpacing: 0.5,
-      height: AppTextStyle.defaultHeight,
-      leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-    );
-
-    final decoration = BoxDecoration(
-      color: outlined ? Colors.transparent : Colors.white,
-      borderRadius: BorderRadius.circular(100),
-      border: outlined
-          ? Border.all(color: Colors.white.withOpacity(0.4), width: 1.5)
-          : null,
-      boxShadow: outlined
-          ? null
-          : [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.14),
-                blurRadius: 28,
-                offset: const Offset(0, 10),
-              ),
-            ],
-    );
-
-    return AnimatedOpacity(
-      duration: const Duration(milliseconds: 150),
-      opacity: onTap == null ? 0.6 : 1,
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
-          decoration: decoration,
-          alignment: Alignment.center,
-          child: Text(label, style: baseStyle),
-        ),
-      ),
-    );
-  }
-
-  bool _isValidEmail(String value) {
-    final emailRegex = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
-    return emailRegex.hasMatch(value.trim());
   }
 
   List<String> _passwordIssues(String value) {

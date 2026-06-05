@@ -8,7 +8,10 @@ import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/role_provider.dart';
 import '../../config/app_theme.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
 import '../../core/theme/app_text_style.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../core/theme/marketplace_colors.dart';
 import 'account_settings_screen.dart';
 import 'appearance_screen.dart';
@@ -73,16 +76,17 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final scaffoldBg = isDark ? AppTheme.darkBackground : MarketplaceColors.background;
-    final cardBg = isDark ? AppTheme.darkCard : Colors.white;
+    final cardBg = isDark ? AppTheme.darkCard : MarketplaceColors.card;
     final textMain = isDark ? AppTheme.darkTextPrimary : MarketplaceColors.textPrimary;
     final textHintC = isDark ? AppTheme.darkTextHint : MarketplaceColors.textSecondary;
-    final dividerColor = isDark ? AppTheme.darkBorder.withOpacity(0.4) : null;
-
     return Scaffold(
-      backgroundColor: scaffoldBg,
+      backgroundColor: widget.embedded ? BrandColors.canvas : scaffoldBg,
       appBar: widget.embedded
           ? null
-          : AppBar(title: const Text('Профиль')),
+          : AppBar(
+              title: const Text('Профиль'),
+              backgroundColor: BrandColors.canvas,
+            ),
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final user = auth.user;
@@ -103,18 +107,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
             padding: EdgeInsets.fromLTRB(horizontalPad, 16, horizontalPad, 24),
             children: [
               if (widget.embedded) ...[
-                Text(
-                  'Профиль',
-                  style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: AppTextStyle.fontFamily,
-                    color: textMain,
-                    height: AppTextStyle.defaultHeight,
-                    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                  ),
-                ),
-                const SizedBox(height: 16),
+                const BrandAppBar(title: 'Профиль', big: true),
+                const SizedBox(height: 8),
               ],
               _buildProfileHeader(
                 user: user,
@@ -123,7 +117,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 textHintC: textHintC,
                 isDark: isDark,
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 12),
+              _buildCustomerStatsRow(),
+              const SizedBox(height: 16),
               Consumer<RoleProvider>(
                 builder: (context, roles, _) {
                   if (roles.activeRole != AppMarketplaceRole.master ||
@@ -169,23 +165,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   return const SizedBox.shrink();
                 },
               ),
-              Text(
-                'Настройки',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: AppTextStyle.fontFamily,
-                  color: textMain,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _buildSettingsCard(context, auth, cardBg, dividerColor, isDark),
+              _buildSettingsGroups(context, auth),
               const SizedBox(height: 28),
               _buildLogoutButton(context, cardBg),
               const SizedBox(height: 24),
               Center(
                 child: Text(
-                  'АРТхаус v1.0.0',
+                  'Приделе v1.0.0',
                   style: TextStyle(color: textHintC, fontSize: 12),
                 ),
               ),
@@ -203,167 +189,196 @@ class _ProfileScreenState extends State<ProfileScreen> {
     required Color textHintC,
     required bool isDark,
   }) {
-    DecorationImage? avatarImage;
+    ImageProvider? avatarImage;
     if (_avatarPath != null && _avatarPath!.isNotEmpty) {
-      avatarImage = DecorationImage(
-        image: FileImage(File(_avatarPath!)),
-        fit: BoxFit.cover,
-      );
+      avatarImage = FileImage(File(_avatarPath!));
     } else if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
-      avatarImage = DecorationImage(
-        image: NetworkImage(user.avatarUrl!),
-        fit: BoxFit.cover,
-      );
+      avatarImage = NetworkImage(user.avatarUrl!);
     }
 
     final subtitle = user.contactSubtitle;
+    final role = context.watch<RoleProvider>().activeRole;
+    final roleLabel =
+        role == AppMarketplaceRole.master ? 'Мастер' : 'Заказчик';
 
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: cardBg,
+        color: BrandColors.milk,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: BrandColors.borderSubtle),
       ),
       child: Row(
         children: [
-          Container(
-            width: 64,
-            height: 64,
-            decoration: BoxDecoration(
-              color: AppTheme.primaryColor,
-              borderRadius: BorderRadius.circular(18),
-              image: avatarImage,
-            ),
-            child: avatarImage == null
-                ? Center(
-                    child: Text(
-                      user.avatarInitial,
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white,
-                        fontFamily: AppTextStyle.fontFamily,
-                      ),
-                    ),
-                  )
-                : null,
+          BrandAvatar(
+            name: user.visibleName,
+            size: 64,
+            radius: 18,
+            image: avatarImage,
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   user.visibleName,
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    fontFamily: AppTextStyle.fontFamily,
-                    color: textMain,
-                  ),
+                  style: pochaevsk(fontSize: 22, color: BrandColors.tar, height: 1),
                 ),
                 if (subtitle != null && subtitle.isNotEmpty) ...[
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   Text(
                     subtitle,
-                    style: TextStyle(fontSize: 14, color: textHintC),
+                    style: BrandUi.inter(
+                      fontSize: 13,
+                      color: BrandColors.tar.withOpacity(0.55),
+                    ),
                   ),
                 ],
+                const SizedBox(height: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: BrandColors.linen.withOpacity(0.7),
+                    borderRadius: BorderRadius.circular(999),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 6,
+                        height: 6,
+                        decoration: const BoxDecoration(
+                          color: BrandColors.needlesLight,
+                          shape: BoxShape.circle,
+                        ),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        roleLabel,
+                        style: BrandUi.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: BrandColors.needles,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
               ],
             ),
+          ),
+          BrandIconButton(
+            icon: Icon(Icons.edit_outlined, size: 18, color: BrandColors.needles),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder: (_) => const AccountSettingsScreen(),
+                ),
+              );
+            },
           ),
         ],
       ),
     );
   }
 
-  Widget _buildSettingsCard(
-    BuildContext context,
-    AuthProvider auth,
-    Color cardBg,
-    Color? dividerColor,
-    bool isDark,
-  ) {
-    final user = auth.user;
+  Widget _buildCustomerStatsRow() {
+    return const Row(
+      children: [
+        Expanded(
+          child: BrandStatTile(value: '3', label: 'проекта', centered: true),
+        ),
+        SizedBox(width: 10),
+        Expanded(
+          child: BrandStatTile(value: '10', label: 'откликов', centered: true),
+        ),
+        SizedBox(width: 10),
+        Expanded(
+          child: BrandStatTile(value: '4.9', label: 'рейтинг', centered: true),
+        ),
+      ],
+    );
+  }
+
+  Widget _settingsIcon(IconData icon) {
     return Container(
+      width: 32,
+      height: 32,
       decoration: BoxDecoration(
-        color: cardBg,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        color: BrandColors.linen.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(9),
       ),
-      child: Column(
-        children: [
-          _buildSettingsRow(
-            context,
-            icon: Icons.person_outline,
-            label: 'Аккаунт',
-            onTap: () async {
-              await _openNestedSettings(context, const AccountSettingsScreen());
-              if (mounted) _loadAvatarPath();
-            },
-          ),
-          const Divider(height: 1, indent: 56),
-          _buildSettingsRow(
-            context,
-            icon: Icons.notifications_outlined,
-            label: 'Настройки уведомлений',
-            onTap: () {
-              _openNestedSettings(context, const NotificationSettingsScreen());
-            },
-          ),
-          const Divider(height: 1, indent: 56),
-          _buildSettingsRow(
-            context,
-            icon: Icons.lock_outline,
-            label: 'Безопасность',
-            onTap: () {
-              _openNestedSettings(context, const SecuritySettingsScreen());
-            },
-          ),
-          const Divider(height: 1, indent: 56),
-          _buildSettingsRow(
-            context,
-            icon: Icons.palette_outlined,
-            label: 'Внешний вид',
-            onTap: () {
-              _openNestedSettings(context, const AppearanceScreen());
-            },
-          ),
-          Divider(height: 1, indent: 56, color: dividerColor),
-          _buildSettingsRow(
-            context,
-            icon: Icons.language_outlined,
-            label: 'Язык',
-            onTap: () {
-              _openNestedSettings(context, const LanguageSettingsScreen());
-            },
-          ),
-          if (auth.premiseType == 'commerce' || (user?.isAdmin ?? false)) ...[
-            Divider(height: 1, indent: 56, color: dividerColor),
-            _buildSettingsRow(
-              context,
-              icon: Icons.admin_panel_settings_outlined,
-              label: 'Админ',
-              onTap: () {
-                _openNestedSettings(context, const AdminSettingsScreen());
+      child: Icon(icon, size: 17, color: BrandColors.needles),
+    );
+  }
+
+  Widget _buildSettingsGroups(BuildContext context, AuthProvider auth) {
+    final user = auth.user;
+    final showAdmin = auth.premiseType == 'commerce' || (user?.isAdmin ?? false);
+
+    return Column(
+      children: [
+        BrandSettingsGroup(
+          children: [
+            BrandSettingsRow(
+              icon: _settingsIcon(Icons.person_outline),
+              label: 'Аккаунт',
+              value: 'Имя, телефон, email',
+              onTap: () async {
+                await _openNestedSettings(context, const AccountSettingsScreen());
+                if (mounted) _loadAvatarPath();
               },
             ),
+            BrandSettingsRow(
+              icon: _settingsIcon(Icons.notifications_outlined),
+              label: 'Уведомления',
+              onTap: () {
+                _openNestedSettings(context, const NotificationSettingsScreen());
+              },
+            ),
+            BrandSettingsRow(
+              icon: _settingsIcon(Icons.lock_outline),
+              label: 'Безопасность',
+              onTap: () {
+                _openNestedSettings(context, const SecuritySettingsScreen());
+              },
+              last: !showAdmin,
+            ),
+            if (showAdmin)
+              BrandSettingsRow(
+                icon: _settingsIcon(Icons.admin_panel_settings_outlined),
+                label: 'Админ',
+                onTap: () {
+                  _openNestedSettings(context, const AdminSettingsScreen());
+                },
+                last: true,
+              ),
           ],
-        ],
-      ),
+        ),
+        const SizedBox(height: 18),
+        BrandSettingsGroup(
+          children: [
+            BrandSettingsRow(
+              icon: _settingsIcon(Icons.brightness_6_outlined),
+              label: 'Внешний вид',
+              value: 'Светлая',
+              onTap: () {
+                _openNestedSettings(context, const AppearanceScreen());
+              },
+            ),
+            BrandSettingsRow(
+              icon: _settingsIcon(Icons.language_outlined),
+              label: 'Язык',
+              value: 'Русский',
+              onTap: () {
+                _openNestedSettings(context, const LanguageSettingsScreen());
+              },
+              last: true,
+            ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -371,25 +386,26 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return GestureDetector(
       onTap: () => _handleLogout(context),
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: cardBg,
-          borderRadius: BorderRadius.circular(16),
+          color: BrandColors.milk,
+          borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: AppTheme.errorColor.withOpacity(0.3),
+            color: BrandColors.chipBorder,
+            width: 1.5,
           ),
         ),
-        child: const Row(
+        child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.logout, color: AppTheme.errorColor, size: 20),
-            SizedBox(width: 10),
+            Icon(Icons.logout_rounded, color: BrandColors.surik, size: 18),
+            const SizedBox(width: 9),
             Text(
               'Выйти из аккаунта',
-              style: TextStyle(
-                color: AppTheme.errorColor,
+              style: BrandUi.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w600,
+                color: BrandColors.surik,
               ),
             ),
           ],
@@ -425,50 +441,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
 
-  Widget _buildSettingsRow(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
-    final textHint = isDark ? AppTheme.darkTextSecondary : AppTheme.textHint;
-
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon, color: AppTheme.primaryColor, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.w500,
-                  color: textMain,
-                ),
-              ),
-            ),
-            Icon(Icons.chevron_right, color: textHint, size: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   /// Карточка статистики по заказам/отзывам/доходу.
   Widget _buildMarketplaceStatsCard(
     BuildContext context,
@@ -498,7 +470,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w700,
-              fontFamily: AppTextStyle.fontFamily,
+              fontFamily: AppTextStyle.uiFontFamily,
               color: textMain,
             ),
           ),

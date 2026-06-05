@@ -5,7 +5,7 @@ chcp 65001 >nul
 cd /d "%~dp0"
 
 echo ==========================================
-echo   ARTHOUSE FRONTEND START (Flutter)
+echo   ПРИДЕЛЕ FRONTEND START (Flutter)
 echo ==========================================
 
 if not exist "pubspec.yaml" (

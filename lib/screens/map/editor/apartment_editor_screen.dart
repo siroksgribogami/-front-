@@ -1,18 +1,20 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../../config/app_theme.dart';
+import '../../../config/brand_colors.dart';
+import '../../../config/text_theme.dart';
 import '../../../config/unity_webgl_config.dart';
-import '../../../core/theme/app_text_style.dart';
+import '../../../core/theme/brand_ui.dart';
+import '../../../core/theme/map_editor_theme.dart';
 import '../../../providers/map_editor_provider.dart';
 import '../../tasks/add_task_screen.dart';
 import '../unity/hosted_unity_webgl_screen.dart';
 import 'furniture_catalog.dart';
 
-const _sage = Color(0xFF659171);
-const _terra = Color(0xFFD4956A);
-const _cream = Color(0xFFF7F3EC);
-const _dark = Color(0xFF2A3A2C);
+const _sage = MapEditorTheme.needles;
+const _terra = MapEditorTheme.clay;
+const _cream = MapEditorTheme.canvas;
+const _dark = MapEditorTheme.text;
 
 class _RoomSlot {
   const _RoomSlot({
@@ -144,6 +146,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
 
   int _activeRoomIndex = 0;
   int? _toolbarMode;
+  int _statsTab = 0;
   int _layoutChipIndex = 0;
   int _activeTextureIndex = 0;
   int? _furnitureCategoryIndex;
@@ -285,100 +288,103 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
     final rooms = provider.rooms;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE8E2D8),
+      backgroundColor: BrandColors.milk,
       body: Column(
         children: [
           _buildHeader(provider),
           Expanded(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(20),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          child: Container(
-                            decoration: const BoxDecoration(
-                              gradient: LinearGradient(
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                                colors: [
-                                  Color(0xFF2C2924),
-                                  Color(0xFF1B1813),
-                                ],
-                              ),
-                            ),
-                            child: Center(
-                              child: Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 14,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.black.withOpacity(0.45),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                    color: Colors.white.withOpacity(0.15),
-                                  ),
-                                ),
-                                child: Text(
-                                  'Нажмите «Просмотр» — 3D-карта откроется здесь, во встроенном окне.',
-                                  style: TextStyle(
-                                    fontFamily: AppTextStyle.fontFamily,
-                                    fontSize: 12,
-                                    color: Colors.white.withOpacity(0.82),
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: LayoutBuilder(
+                    builder: (context, constraints) {
+                      return Stack(
+                        children: [
+                          Positioned.fill(
+                            child: CustomPaint(
+                              painter: _DesktopGridPainter(),
+                              child: Container(color: BrandColors.milk),
                             ),
                           ),
-                        ),
-                        ..._buildRoomLabels(constraints, rooms),
-                        ..._buildTaskBadges(constraints, rooms),
-                        if (_currentRoomFurniture().isNotEmpty)
                           Positioned(
-                            left: 12,
-                            bottom: 12,
-                            child: _buildPlacedFurnitureChips(),
-                          ),
-                        if (_selectedFurnitureId != null)
-                          Positioned(
-                            top: 16,
-                            left: 0,
-                            right: 0,
-                            child: Center(child: _buildEditActionsBar()),
-                          ),
-                        Positioned(
-                          right: 16,
-                          top: 0,
-                          bottom: 0,
-                          child: Center(child: _buildRightToolbar()),
-                        ),
-                        _buildBottomSheet(provider),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 8,
-                          child: Center(
-                            child: Text(
-                              'WebGL Unity открывается внутри приложения (кнопка «Просмотр»).',
-                              style: TextStyle(
-                                fontFamily: AppTextStyle.fontFamily,
-                                fontSize: 11,
-                                color: Colors.white.withOpacity(0.42),
-                                fontWeight: FontWeight.w500,
+                            top: 18,
+                            left: 18,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 13,
+                                vertical: 7,
+                              ),
+                              decoration: BoxDecoration(
+                                color: BrandColors.canvas,
+                                borderRadius: BorderRadius.circular(999),
+                                border: Border.all(color: BrandColors.borderSubtle),
+                              ),
+                              child: Text(
+                                'ПЛАН СВЕРХУ · М 1:50',
+                                style: BrandUi.monoLabel(
+                                  fontSize: 10,
+                                  color: BrandColors.tar.withOpacity(0.55),
+                                ),
                               ),
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
+                          Positioned(
+                            top: 18,
+                            right: 18,
+                            child: Row(
+                              children: ['−', '100%', '+'].map((t) {
+                                return Container(
+                                  margin: const EdgeInsets.only(left: 6),
+                                  constraints: const BoxConstraints(minWidth: 36),
+                                  height: 32,
+                                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                                  decoration: BoxDecoration(
+                                    color: BrandColors.canvas,
+                                    borderRadius: BorderRadius.circular(9),
+                                    border: Border.all(color: BrandColors.borderSubtle),
+                                  ),
+                                  alignment: Alignment.center,
+                                  child: Text(
+                                    t,
+                                    style: BrandUi.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                      color: BrandColors.needles,
+                                    ),
+                                  ),
+                                );
+                              }).toList(),
+                            ),
+                          ),
+                          ..._buildRoomLabels(constraints, rooms),
+                          ..._buildTaskBadges(constraints, rooms),
+                          if (_currentRoomFurniture().isNotEmpty)
+                            Positioned(
+                              left: 12,
+                              bottom: 140,
+                              child: _buildPlacedFurnitureChips(),
+                            ),
+                          if (_selectedFurnitureId != null)
+                            Positioned(
+                              top: 16,
+                              left: 0,
+                              right: 84,
+                              child: Center(child: _buildEditActionsBar()),
+                            ),
+                          if (_toolbarMode != null) _buildBottomSheet(provider),
+                          Positioned(
+                            left: 24,
+                            right: 24,
+                            bottom: 22,
+                            child: _buildStatsSheet(provider),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
                 ),
-              ),
+                _buildRightToolbar(),
+              ],
             ),
           ),
         ],
@@ -388,92 +394,85 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
 
   Widget _buildHeader(MapEditorProvider provider) {
     final rooms = provider.rooms;
+    final activeName =
+        _activeRoomIndex < rooms.length ? rooms[_activeRoomIndex].name : 'Объект';
+
     return Container(
-      height: 56,
-      padding: const EdgeInsets.only(left: 20, right: 12),
+      height: 60,
+      padding: const EdgeInsets.symmetric(horizontal: 22),
       decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          bottom: BorderSide(color: _dark.withOpacity(0.08)),
-        ),
+        color: BrandColors.canvas,
+        border: Border(bottom: BorderSide(color: BrandColors.borderSubtle)),
       ),
       child: Row(
         children: [
+          RichText(
+            text: TextSpan(
+              style: pochaevsk(fontSize: 22, color: BrandColors.needles),
+              children: [
+                const TextSpan(text: 'При'),
+                TextSpan(
+                  text: ' деле',
+                  style: pochaevsk(fontSize: 22, color: BrandColors.clay),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            width: 1,
+            height: 26,
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            color: BrandColors.borderSubtle,
+          ),
           Expanded(
-            child: Row(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'МОЙ ДОМ <3',
-                  style: AppTextStyle.gropled(
-                    fontSize: 18,
-                    fontWeight: FontWeight.w700,
-                    color: _dark,
-                    letterSpacing: -0.5,
-                  ),
-                  overflow: TextOverflow.ellipsis,
+                  activeName,
+                  style: pochaevsk(fontSize: 17, color: BrandColors.tar, height: 1),
                 ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: SingleChildScrollView(
-                    scrollDirection: Axis.horizontal,
-                    child: Row(
-                      children: List.generate(rooms.length, (index) {
-                        final isActive = index == _activeRoomIndex;
-                        return GestureDetector(
-                          onTap: () => _selectRoom(index),
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 150),
-                            margin: const EdgeInsets.only(right: 6),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 14, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: isActive ? _sage : const Color(0xFFEEF1EE),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              rooms[index].name,
-                              style: TextStyle(
-                                fontFamily: AppTextStyle.fontFamily,
-                                fontSize: 12,
-                                fontWeight:
-                                    isActive ? FontWeight.w600 : FontWeight.w400,
-                                color: isActive
-                                    ? Colors.white
-                                    : const Color(0xFF7A8A7C),
-                                height: AppTextStyle.defaultHeight,
-                                leadingDistribution:
-                                    AppTextStyle.defaultLeadingDistribution,
-                              ),
-                            ),
-                          ),
-                        );
-                      }),
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 4),
-                GestureDetector(
-                  onTap: () {
-                    // TODO: Add room
-                  },
-                  child: Container(
-                    width: 28,
-                    height: 28,
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEEF1EE),
-                      shape: BoxShape.circle,
-                      border: Border.all(color: _dark.withOpacity(0.1)),
-                    ),
-                    child: const Icon(Icons.add, size: 16, color: Color(0xFF7A8A7C)),
+                Text(
+                  'Хамовники · план объекта · сохранено',
+                  style: BrandUi.inter(
+                    fontSize: 12,
+                    color: BrandColors.tar.withOpacity(0.55),
                   ),
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 6),
-          _headerButton('Просмотр', filled: false, onTap: _openHostedUnityWebGl),
-          const SizedBox(width: 6),
-          _headerButton('Сохранить', filled: true, onTap: () {}),
+          _headerButton('Поделиться', filled: false, onTap: () {}),
+          const SizedBox(width: 10),
+          Material(
+            color: BrandColors.clay,
+            borderRadius: BorderRadius.circular(10),
+            child: InkWell(
+              onTap: _openHostedUnityWebGl,
+              borderRadius: BorderRadius.circular(10),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 9),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.view_in_ar_outlined, size: 16, color: BrandColors.onClay),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Открыть 3D',
+                      style: BrandUi.inter(
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w600,
+                        color: BrandColors.onClay,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          const BrandAvatar(name: 'Анна Карелина', size: 38, radius: 11),
         ],
       ),
     );
@@ -484,21 +483,18 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 7),
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         decoration: BoxDecoration(
-          color: filled ? _sage : Colors.transparent,
-          borderRadius: BorderRadius.circular(20),
-          border: filled
-              ? null
-              : Border.all(color: _dark.withOpacity(0.1)),
+          color: filled ? BrandColors.needles : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: filled ? null : Border.all(color: BrandColors.borderSubtle, width: 1.5),
         ),
         child: Text(
           label,
-          style: TextStyle(
-            fontFamily: AppTextStyle.fontFamily,
-            fontSize: 12,
+          style: BrandUi.inter(
+            fontSize: 13.5,
             fontWeight: FontWeight.w600,
-            color: filled ? Colors.white : _dark,
+            color: filled ? BrandColors.onNeedles : BrandColors.needles,
           ),
         ),
       ),
@@ -528,25 +524,35 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
             duration: const Duration(milliseconds: 200),
             opacity: isActive ? 1.0 : 0.65,
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
               decoration: BoxDecoration(
                 color: isActive
-                    ? _sage.withOpacity(0.88)
-                    : Colors.black.withOpacity(0.45),
+                    ? BrandColors.clay.withOpacity(0.12)
+                    : BrandColors.milk,
                 borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                room.name,
-                style: const TextStyle(
-                  fontFamily: AppTextStyle.fontFamily,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                  color: Colors.white,
-                  height: AppTextStyle.defaultHeight,
-                  leadingDistribution:
-                      AppTextStyle.defaultLeadingDistribution,
+                border: Border.all(
+                  color: isActive ? BrandColors.clay : BrandColors.borderSubtle,
+                  width: isActive ? 2.5 : 1.6,
                 ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    room.name,
+                    style: pochaevsk(
+                      fontSize: 14,
+                      color: BrandColors.needles,
+                    ),
+                  ),
+                  Text(
+                    '24.0 м²',
+                    style: BrandUi.monoLabel(
+                      fontSize: 10,
+                      color: BrandColors.tar.withOpacity(0.55),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -747,7 +753,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
               child: const Text(
                 'Готово',
                 style: TextStyle(
-                  fontFamily: AppTextStyle.fontFamily,
+                  fontFamily: AppTextStyle.uiFontFamily,
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,
@@ -780,41 +786,209 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
 
   Widget _buildRightToolbar() {
     return Container(
-      width: 52,
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        color: _terra,
-        borderRadius: BorderRadius.circular(100),
-        boxShadow: [
-          BoxShadow(
-            color: _terra.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
+      width: 84,
+      color: BrandColors.needlesDeep,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 14),
       child: Column(
-        mainAxisSize: MainAxisSize.min,
         children: [
-          _ToolbarButton(
-            icon: Icons.grid_view_rounded,
-            tooltip: 'Редактировать планировку',
+          _DesktopTool(
+            label: 'Стены',
+            icon: Icons.square_outlined,
             active: _toolbarMode == 0,
             onTap: () => _openSheet(0),
           ),
-          const SizedBox(height: 8),
-          _ToolbarButton(
-            icon: Icons.weekend_rounded,
-            tooltip: 'Мебель / Обстановка',
+          _DesktopTool(
+            label: 'Двери',
+            icon: Icons.door_front_door_outlined,
             active: _toolbarMode == 1,
             onTap: () => _openSheet(1),
           ),
-          const SizedBox(height: 8),
-          _ToolbarButton(
-            icon: Icons.check_circle_outline_rounded,
-            tooltip: 'Задачи по предметам',
+          _DesktopTool(
+            label: 'Окна',
+            icon: Icons.window_outlined,
+            active: false,
+            onTap: () {},
+          ),
+          _DesktopTool(
+            label: 'Мебель',
+            icon: Icons.weekend_outlined,
+            active: _toolbarMode == 1,
+            onTap: () => _openSheet(1),
+          ),
+          _DesktopTool(
+            label: 'Размер',
+            icon: Icons.straighten,
+            active: false,
+            onTap: () {},
+          ),
+          const Spacer(),
+          _DesktopTool(
+            label: 'Задачи',
+            icon: Icons.check_circle_outline,
             active: _toolbarMode == 2,
             onTap: () => _openSheet(2),
+          ),
+          _DesktopTool(
+            label: 'ИИ',
+            icon: Icons.auto_awesome_outlined,
+            active: false,
+            onTap: () {},
+            accentIcon: true,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStatsSheet(MapEditorProvider provider) {
+    const tabs = ['Планировка', 'Мебель', 'Задачи'];
+    const stats = [
+      ('Комнат', '5'),
+      ('Общая площадь', '66.7 м²'),
+      ('Жилая', '52.6 м²'),
+      ('Мебель', '14 шт'),
+      ('Задачи ремонта', '5 активных'),
+      ('Смета', '1,18 млн ₽'),
+    ];
+
+    return Container(
+      decoration: BoxDecoration(
+        color: BrandColors.canvas,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: BrandColors.borderSubtle),
+        boxShadow: [
+          BoxShadow(
+            color: BrandColors.needlesDeep.withOpacity(0.12),
+            blurRadius: 50,
+            offset: const Offset(0, 18),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            children: [
+              for (var i = 0; i < tabs.length; i++)
+                GestureDetector(
+                  onTap: () => setState(() => _statsTab = i),
+                  child: Container(
+                    padding: const EdgeInsets.fromLTRB(22, 13, 22, 13),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        bottom: BorderSide(
+                          color: _statsTab == i
+                              ? BrandColors.clay
+                              : Colors.transparent,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Text(
+                          tabs[i],
+                          style: BrandUi.inter(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: _statsTab == i
+                                ? BrandColors.tar
+                                : BrandColors.tar.withOpacity(0.55),
+                          ),
+                        ),
+                        if (i == 2) ...[
+                          const SizedBox(width: 7),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 7,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: BrandColors.sandstone,
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              '${provider.rooms.fold<int>(0, (s, r) => s + r.taskList.length)}',
+                              style: BrandUi.inter(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w600,
+                                color: BrandColors.surik,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+              const Spacer(),
+              Padding(
+                padding: const EdgeInsets.only(right: 16),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 26,
+                      height: 26,
+                      decoration: BoxDecoration(
+                        color: BrandColors.linen,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(Icons.support_agent, size: 16, color: BrandColors.needles),
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      'ИИ-прораб готов помочь',
+                      style: BrandUi.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: BrandColors.needles,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          Divider(height: 1, color: BrandColors.borderSubtle),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
+            child: Row(
+              children: [
+                for (var i = 0; i < stats.length; i++) ...[
+                  if (i > 0)
+                    Container(
+                      width: 1,
+                      height: 42,
+                      margin: const EdgeInsets.symmetric(horizontal: 14),
+                      color: BrandColors.borderSubtle,
+                    ),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          stats[i].$1.toUpperCase(),
+                          style: BrandUi.inter(
+                            fontSize: 11,
+                            color: BrandColors.tar.withOpacity(0.4),
+                          ).copyWith(letterSpacing: 0.5),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          stats[i].$2,
+                          style: pochaevsk(
+                            fontSize: 22,
+                            color: i == 5 ? BrandColors.clay : BrandColors.needles,
+                            height: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
           ),
         ],
       ),
@@ -830,8 +1004,8 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
         }
         return Positioned(
           left: 0,
-          right: 70,
-          bottom: 0,
+          right: 84,
+          bottom: 130,
           height: 280 * _sheetSlide.value,
           child: ClipRRect(
             borderRadius: const BorderRadius.only(
@@ -1166,11 +1340,13 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
         const Divider(height: 1),
         Expanded(
           child: tasks.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Задач пока нет',
-                    style:
-                        TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                    style: TextStyle(
+                      fontSize: 14,
+                      color: _dark.withOpacity(0.65),
+                    ),
                   ),
                 )
               : ListView.builder(
@@ -1233,35 +1409,72 @@ class _SceneRect {
   final double height;
 }
 
-class _ToolbarButton extends StatelessWidget {
-  const _ToolbarButton({
+class _DesktopGridPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    const step = 31.0;
+    final paint = Paint()..color = BrandColors.needles.withOpacity(0.045);
+    for (var y = step; y < size.height; y += step) {
+      canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
+    }
+    for (var x = step; x < size.width; x += step) {
+      canvas.drawLine(Offset(x, 0), Offset(x, size.height), paint);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+class _DesktopTool extends StatelessWidget {
+  const _DesktopTool({
+    required this.label,
     required this.icon,
-    required this.tooltip,
     required this.active,
     required this.onTap,
+    this.accentIcon = false,
   });
 
+  final String label;
   final IconData icon;
-  final String tooltip;
   final bool active;
   final VoidCallback onTap;
+  final bool accentIcon;
 
   @override
   Widget build(BuildContext context) {
-    return Tooltip(
-      message: tooltip,
-      child: GestureDetector(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            color: active ? Colors.white.withOpacity(0.25) : Colors.transparent,
-            borderRadius: BorderRadius.circular(12),
-            border: active ? Border.all(color: Colors.white, width: 2) : null,
+    final fg = active
+        ? BrandColors.onClay
+        : BrandColors.onNeedles.withOpacity(0.8);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Material(
+        color: active ? BrandColors.clay : Colors.transparent,
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            child: Column(
+              children: [
+                Icon(
+                  icon,
+                  size: 22,
+                  color: accentIcon && !active ? BrandColors.dawn : fg,
+                ),
+                const SizedBox(height: 5),
+                Text(
+                  label,
+                  style: BrandUi.inter(
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                    color: fg,
+                  ),
+                ),
+              ],
+            ),
           ),
-          child: Icon(icon, color: Colors.white, size: 22),
         ),
       ),
     );

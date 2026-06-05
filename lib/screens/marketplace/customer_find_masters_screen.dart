@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_text_style.dart';
-import '../../core/theme/marketplace_colors.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../data/marketplace_seed_catalog.dart';
 import 'master_public_profile_screen.dart';
 
@@ -26,8 +27,11 @@ class _CustomerFindMastersScreenState extends State<CustomerFindMastersScreen> {
       )
       .toList();
 
+  static const _categories = ['Все', 'Сантехника', 'Электрика', 'Отделка'];
+
   String _selectedMasterId = '';
   String _query = '';
+  String _selectedCategory = 'Все';
 
   void _openMaster(BuildContext context, String id) {
     Navigator.of(context).push(
@@ -37,88 +41,103 @@ class _CustomerFindMastersScreenState extends State<CustomerFindMastersScreen> {
     );
   }
 
+  List<_MasterEntry> get _filtered {
+    var list = _masters;
+    if (_selectedCategory != 'Все') {
+      final key = _selectedCategory.toLowerCase();
+      list = list.where((m) => m.specialty.toLowerCase().contains(key)).toList();
+    }
+    if (_query.isNotEmpty) {
+      final q = _query.toLowerCase();
+      list = list
+          .where((m) =>
+              m.name.toLowerCase().contains(q) ||
+              m.specialty.toLowerCase().contains(q))
+          .toList();
+    }
+    return list;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final bg = MarketplaceColors.backgroundFor(context);
-    final card = MarketplaceColors.cardFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textSecondary = MarketplaceColors.textSecondaryFor(context);
-    final horizontalPad = MarketplaceColors.horizontalPaddingFor(context);
-
-    final filtered = _query.isEmpty
-        ? _masters
-        : _masters
-            .where((m) =>
-                m.name.toLowerCase().contains(_query.toLowerCase()) ||
-                m.specialty.toLowerCase().contains(_query.toLowerCase()))
-            .toList();
+    final filtered = _filtered;
+    final countLabel = '${_masters.length} исполнителя';
 
     return ColoredBox(
-      color: bg,
+      color: BrandColors.canvas,
       child: SafeArea(
-        child: ListView(
-              padding: EdgeInsets.fromLTRB(horizontalPad, 12, horizontalPad, 20),
-              children: [
-                Text(
-                  'Поиск мастеров',
-                  style: TextStyle(
-                    fontFamily: AppTextStyle.fontFamily,
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: textPrimary,
-                    height: AppTextStyle.defaultHeight,
-                  ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BrandAppBar(
+              title: 'Мастера',
+              subtitle: countLabel,
+              big: true,
+              actions: BrandIconButton(
+                icon: Icon(
+                  Icons.tune_rounded,
+                  size: 20,
+                  color: BrandColors.needles,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Нажмите на карточку, чтобы открыть профиль и связаться.',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: textSecondary,
-                    height: AppTextStyle.defaultHeight,
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  BrandSearchField(
+                    hint: 'Плиточник, электрик, бригада…',
+                    onChanged: (v) => setState(() => _query = v.trim()),
                   ),
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  onChanged: (v) => setState(() => _query = v.trim()),
-                  decoration: InputDecoration(
-                    hintText: 'Город, район, тип работ…',
-                    filled: true,
-                    fillColor: card,
-                    hintStyle: TextStyle(color: textSecondary.withOpacity(0.9)),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12),
-                      borderSide: BorderSide.none,
+                  const SizedBox(height: 12),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        for (var i = 0; i < _categories.length; i++) ...[
+                          if (i > 0) const SizedBox(width: 8),
+                          BrandChip(
+                            label: _categories[i],
+                            selected: _selectedCategory == _categories[i],
+                            onTap: () => setState(() => _selectedCategory = _categories[i]),
+                          ),
+                        ],
+                      ],
                     ),
-                    prefixIcon: Icon(Icons.search, color: textSecondary),
                   ),
-                ),
-                const SizedBox(height: 16),
-                if (filtered.isEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 32),
-                    child: Center(
+                ],
+              ),
+            ),
+            Expanded(
+              child: filtered.isEmpty
+                  ? Center(
                       child: Text(
                         'По запросу никого не нашли',
-                        style: TextStyle(color: textSecondary),
+                        style: BrandUi.inter(
+                          color: BrandColors.tar.withOpacity(0.55),
+                        ),
                       ),
+                    )
+                  : ListView.separated(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 20),
+                      itemCount: filtered.length,
+                      separatorBuilder: (_, __) => const SizedBox(height: 11),
+                      itemBuilder: (context, i) {
+                        final m = filtered[i];
+                        return _MasterTile(
+                          master: m,
+                          index: i,
+                          isSelected: _selectedMasterId == m.id,
+                          onProfile: () {
+                            setState(() => _selectedMasterId = m.id);
+                            _openMaster(context, m.id);
+                          },
+                        );
+                      },
                     ),
-                  )
-                else
-                  ...filtered.map(
-                    (m) => Padding(
-                      padding: const EdgeInsets.only(bottom: 12),
-                      child: _MasterTile(
-                        master: m,
-                        isSelected: _selectedMasterId == m.id,
-                        onTap: () {
-                          setState(() => _selectedMasterId = m.id);
-                          _openMaster(context, m.id);
-                        },
-                      ),
-                    ),
-                  ),
-              ],
+            ),
+          ],
         ),
       ),
     );
@@ -143,92 +162,151 @@ class _MasterEntry {
 
 class _MasterTile extends StatelessWidget {
   final _MasterEntry master;
+  final int index;
   final bool isSelected;
-  final VoidCallback onTap;
+  final VoidCallback onProfile;
 
   const _MasterTile({
     required this.master,
+    required this.index,
     required this.isSelected,
-    required this.onTap,
+    required this.onProfile,
   });
+
+  static const _areas = ['Хамовники', 'ЦАО', 'Басманный', 'Якиманка'];
+  static const _prices = [
+    'от 1 800 ₽/м²',
+    'от 9 500 ₽/м²',
+    'от 750 ₽/точка',
+    'от 600 ₽/м²',
+  ];
+
+  BrandAvatarTone get _tone {
+    const tones = BrandAvatarTone.values;
+    return tones[index % tones.length];
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: isSelected
-          ? MarketplaceColors.bluePrimary.withOpacity(0.12)
-          : MarketplaceColors.cardFor(context),
-      borderRadius: BorderRadius.circular(12),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(12),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor: MarketplaceColors.bluePrimary.withOpacity(0.22),
-                child: Text(
-                  master.name.isNotEmpty ? master.name[0].toUpperCase() : '?',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: MarketplaceColors.textPrimaryFor(context),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+    final area = _areas[index % _areas.length];
+    final price = _prices[index % _prices.length];
+    final verified = index.isEven;
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: BrandColors.milk,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: isSelected
+              ? BrandColors.needles.withOpacity(0.5)
+              : BrandColors.borderSubtle,
+        ),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          BrandAvatar(
+            name: master.name,
+            size: 54,
+            radius: 15,
+            tone: _tone,
+          ),
+          const SizedBox(width: 13),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
                   children: [
-                    Text(
-                      master.name,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                        color: MarketplaceColors.textPrimaryFor(context),
+                    Flexible(
+                      child: Text(
+                        master.name,
+                        style: pochaevsk(
+                          fontSize: 18,
+                          color: BrandColors.tar,
+                          height: 1,
+                        ),
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    if (verified) ...[
+                      const SizedBox(width: 6),
+                      Icon(
+                        Icons.verified_rounded,
+                        size: 15,
+                        color: BrandColors.needles,
+                      ),
+                    ],
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  master.specialty,
+                  style: BrandUi.inter(
+                    fontSize: 13,
+                    color: BrandColors.surik,
+                  ),
+                ),
+                const SizedBox(height: 7),
+                Row(
+                  children: [
+                    BrandStars(value: master.rating, size: 12),
+                    const SizedBox(width: 8),
                     Text(
-                      master.specialty,
-                      style: TextStyle(
+                      master.rating.toStringAsFixed(1),
+                      style: BrandUi.inter(
                         fontSize: 13,
-                        color: MarketplaceColors.textSecondaryFor(context),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    Text(
+                      ' · ${master.jobs} отзывов · $area',
+                      style: BrandUi.inter(
+                        fontSize: 12.5,
+                        color: BrandColors.tar.withOpacity(0.45),
                       ),
                     ),
                   ],
                 ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Text(
+                price,
+                textAlign: TextAlign.right,
+                style: BrandUi.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: BrandColors.needles,
+                ),
               ),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.star_rounded, color: MarketplaceColors.gold, size: 18),
-                      const SizedBox(width: 4),
-                      Text(
-                        master.rating.toStringAsFixed(1),
-                        style: TextStyle(
-                          fontWeight: FontWeight.w700,
-                          color: MarketplaceColors.textPrimaryFor(context),
-                        ),
+              const SizedBox(height: 12),
+              Material(
+                color: BrandColors.needles,
+                borderRadius: BorderRadius.circular(10),
+                child: InkWell(
+                  onTap: onProfile,
+                  borderRadius: BorderRadius.circular(10),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+                    child: Text(
+                      'Профиль',
+                      style: BrandUi.inter(
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        color: BrandColors.onNeedles,
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Text(
-                    '${master.jobs} заказов',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: MarketplaceColors.textSecondaryFor(context),
                     ),
                   ),
-                ],
+                ),
               ),
             ],
           ),
-        ),
+        ],
       ),
     );
   }

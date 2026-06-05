@@ -1,5 +1,5 @@
 name: art_front
-description: ARTkhaus — маркетплейс ремонта с ИИ-прорабом, ТЗ и 3D
+description: Приделе — маркетплейс ремонта с ИИ-прорабом, ТЗ и 3D
 publish_to: 'none'
 version: 1.0.0+1
 
@@ -34,9 +34,11 @@ flutter:
     - picture/
     - assets/data/work_price_catalog.json
   fonts:
-    - family: Gropled
+    - family: Pochaevsk
       fonts:
-        - asset: Gropled-Bold.otf
+        - asset: fonts/Pochaevsk-Regular.otf
+          weight: 400
+        - asset: fonts/Pochaevsk-Regular.otf
           weight: 700
     - family: NotoColorEmoji
       fonts:

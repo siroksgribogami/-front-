@@ -3,16 +3,15 @@ import '../core/theme/app_text_style.dart';
 
 export '../core/theme/app_text_style.dart';
 
-/// Базовый TextStyle для Gropled с исправленными вертикальными метриками.
-/// Убирает лишнее пространство сверху/снизу букв, которое Gropled добавляет.
-TextStyle gropled({
+/// Базовый TextStyle для Pochaevsk (логотип, заголовки, кнопки бренда).
+TextStyle pochaevsk({
   double fontSize = 16,
   FontWeight fontWeight = FontWeight.w400,
-  Color color = const Color(0xFF2A3A2C),
+  Color color = const Color(0xFF1A2820),
   double? letterSpacing,
   double? height,
 }) {
-  return AppTextStyle.gropled(
+  return AppTextStyle.pochaevsk(
     fontSize: fontSize,
     fontWeight: fontWeight,
     color: color,
@@ -21,6 +20,24 @@ TextStyle gropled({
   );
 }
 
+@Deprecated('Use pochaevsk()')
+TextStyle gropled({
+  double fontSize = 16,
+  FontWeight fontWeight = FontWeight.w400,
+  Color color = const Color(0xFF1A2820),
+  double? letterSpacing,
+  double? height,
+}) =>
+    pochaevsk(
+      fontSize: fontSize,
+      fontWeight: fontWeight,
+      color: color,
+      letterSpacing: letterSpacing,
+      height: height,
+    );
+
 /// Глобальный TextHeightBehavior — применяется на уровне MaterialApp.
-/// Аналог Figma «Vertical trim → Cap height».
-const kGropledHeightBehavior = kAppTextHeightBehavior;
+const kPochaevskHeightBehavior = kAppTextHeightBehavior;
+
+@Deprecated('Use kPochaevskHeightBehavior')
+const kGropledHeightBehavior = kPochaevskHeightBehavior;

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_text_style.dart';
-import '../../core/theme/marketplace_colors.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../services/marketplace_local_store.dart';
 import '../../models/marketplace_project.dart';
 import 'contract_confirm_screen.dart';
@@ -45,42 +46,34 @@ class _CustomerProjectResponsesScreenState
     });
   }
 
+  String? _bestBidId(List<MasterBid> bids) {
+    if (bids.isEmpty) return null;
+    MasterBid? best;
+    for (final b in bids) {
+      if (best == null || b.rating > best.rating) best = b;
+    }
+    return best?.id;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loading) {
       final loading = const Center(child: CircularProgressIndicator());
       if (widget.embedded) {
         return ColoredBox(
-          color: MarketplaceColors.backgroundFor(context),
+          color: BrandColors.canvas,
           child: SafeArea(top: false, child: loading),
         );
       }
       return Scaffold(
-        backgroundColor: MarketplaceColors.backgroundFor(context),
-        appBar: AppBar(
-          backgroundColor: MarketplaceColors.cardFor(context),
-          foregroundColor: MarketplaceColors.textPrimaryFor(context),
-          surfaceTintColor: Colors.transparent,
-          iconTheme: IconThemeData(color: MarketplaceColors.textPrimaryFor(context)),
-          title: Text(
-            'Отклики',
-            style: TextStyle(
-              fontFamily: AppTextStyle.fontFamily,
-              fontWeight: FontWeight.w700,
-              color: MarketplaceColors.textPrimaryFor(context),
-            ),
-          ),
-        ),
-        body: ColoredBox(
-          color: MarketplaceColors.backgroundFor(context),
-          child: SafeArea(child: loading),
-        ),
+        backgroundColor: BrandColors.canvas,
+        body: SafeArea(child: loading),
       );
     }
 
     final bids = _bids;
-    final textMuted = MarketplaceColors.textMutedFor(context);
-    final horizontalPad = MarketplaceColors.horizontalPaddingFor(context);
+    final bestId = _bestBidId(bids);
+    final subtitle = widget.projectTitle;
 
     final inner = bids.isEmpty
         ? Center(
@@ -89,12 +82,15 @@ class _CustomerProjectResponsesScreenState
               child: Text(
                 'На этот проект пока нет откликов. Опубликуйте заявку или подождите мастеров из ленты.',
                 textAlign: TextAlign.center,
-                style: TextStyle(color: textMuted, height: 1.4),
+                style: BrandUi.inter(
+                  color: BrandColors.tar.withOpacity(0.55),
+                  height: 1.4,
+                ),
               ),
             ),
           )
         : ListView.separated(
-            padding: EdgeInsets.fromLTRB(horizontalPad, 16, horizontalPad, 28),
+            padding: const EdgeInsets.fromLTRB(16, 4, 16, 28),
             itemCount: bids.length,
             separatorBuilder: (_, __) => const SizedBox(height: 12),
             itemBuilder: (context, i) {
@@ -102,38 +98,41 @@ class _CustomerProjectResponsesScreenState
               return _BidTile(
                 bid: b,
                 projectTitle: widget.projectTitle,
+                isBest: b.id == bestId,
+                index: i,
               );
             },
           );
 
-    if (widget.embedded) {
-      return ColoredBox(
-        color: MarketplaceColors.backgroundFor(context),
-        child: SafeArea(top: false, child: inner),
-      );
-    }
-
-    return Scaffold(
-      backgroundColor: MarketplaceColors.backgroundFor(context),
-      appBar: AppBar(
-        backgroundColor: MarketplaceColors.cardFor(context),
-        foregroundColor: MarketplaceColors.textPrimaryFor(context),
-        surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(color: MarketplaceColors.textPrimaryFor(context)),
-        title: Text(
-          'Отклики · ${widget.projectTitle}',
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontFamily: AppTextStyle.fontFamily,
-            fontWeight: FontWeight.w700,
-            color: MarketplaceColors.textPrimaryFor(context),
-          ),
+    final body = ColoredBox(
+      color: BrandColors.canvas,
+      child: SafeArea(
+        top: !widget.embedded,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            BrandAppBar(
+              title: 'Отклики',
+              subtitle: subtitle,
+              onBack: widget.embedded
+                  ? null
+                  : () => Navigator.of(context).maybePop(),
+              actions: BrandStatus(
+                label: '${bids.length} откликов',
+                kind: BrandStatusKind.market,
+              ),
+            ),
+            Expanded(child: inner),
+          ],
         ),
       ),
-      body: ColoredBox(
-        color: MarketplaceColors.backgroundFor(context),
-        child: SafeArea(child: inner),
-      ),
+    );
+
+    if (widget.embedded) return body;
+
+    return Scaffold(
+      backgroundColor: BrandColors.canvas,
+      body: body,
     );
   }
 }
@@ -141,140 +140,257 @@ class _CustomerProjectResponsesScreenState
 class _BidTile extends StatelessWidget {
   final MasterBid bid;
   final String projectTitle;
+  final bool isBest;
+  final int index;
 
   const _BidTile({
     required this.bid,
     required this.projectTitle,
+    required this.isBest,
+    required this.index,
   });
+
+  BrandAvatarTone get _tone {
+    const tones = BrandAvatarTone.values;
+    return tones[index % tones.length];
+  }
 
   @override
   Widget build(BuildContext context) {
-    final card = MarketplaceColors.cardFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textSecondary = MarketplaceColors.textSecondaryFor(context);
-    final textMuted = MarketplaceColors.textMutedFor(context);
-
-    return Material(
-      color: card,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return Container(
+      decoration: BoxDecoration(
+        color: BrandColors.milk,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: isBest ? BrandColors.needles : BrandColors.borderSubtle,
+          width: isBest ? 1.5 : 1,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (isBest)
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+              color: BrandColors.needles,
+              child: Row(
+                children: [
+                  Icon(Icons.star_rounded, size: 13, color: BrandColors.dawn),
+                  const SizedBox(width: 7),
+                  Text(
+                    'РЕКОМЕНДАЦИЯ ПРОРАБА · ЛУЧШАЯ ЦЕНА/РЕЙТИНГ',
+                    style: BrandUi.inter(
+                      fontSize: 11.5,
+                      fontWeight: FontWeight.w600,
+                      color: BrandColors.onNeedles,
+                    ).copyWith(letterSpacing: 0.03 * 16),
+                  ),
+                ],
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsets.all(14),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        bid.masterName,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w800,
-                          color: textPrimary,
-                        ),
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    BrandAvatar(
+                      name: bid.masterName,
+                      size: 46,
+                      radius: 13,
+                      tone: _tone,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            bid.masterName,
+                            style: pochaevsk(
+                              fontSize: 17,
+                              color: BrandColors.tar,
+                              height: 1,
+                            ),
+                          ),
+                          const SizedBox(height: 5),
+                          Row(
+                            children: [
+                              _StarRating(value: bid.rating, size: 11),
+                              const SizedBox(width: 6),
+                              Flexible(
+                                child: Text(
+                                  '${bid.rating.toStringAsFixed(1)} · ${bid.completedJobs} · ${bid.specialty}',
+                                  style: BrandUi.inter(
+                                    fontSize: 12.5,
+                                    color: BrandColors.tar.withOpacity(0.65),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 4),
-                      Text(
-                        bid.specialty,
-                        style: TextStyle(fontSize: 13, color: textSecondary),
-                      ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 11),
+                Text(
+                  bid.message,
+                  style: BrandUi.inter(
+                    fontSize: 13.5,
+                    color: BrandColors.tar.withOpacity(0.65),
+                    height: 1.45,
                   ),
                 ),
+                const SizedBox(height: 11),
+                Container(
+                  padding: const EdgeInsets.symmetric(vertical: 11),
+                  decoration: const BoxDecoration(
+                    border: Border(
+                      top: BorderSide(color: BrandColors.borderSubtle),
+                      bottom: BorderSide(color: BrandColors.borderSubtle),
+                    ),
+                  ),
+                  child: IntrinsicHeight(
+                    child: Row(
+                      children: [
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'ЦЕНА',
+                                style: BrandUi.inter(
+                                  fontSize: 11,
+                                  color: BrandColors.tar.withOpacity(0.45),
+                                ).copyWith(letterSpacing: 0.04 * 16),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                bid.priceOffer,
+                                style: pochaevsk(
+                                  fontSize: 22,
+                                  color: BrandColors.needles,
+                                  height: 1,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Container(
+                          width: 1,
+                          color: BrandColors.borderSubtle,
+                        ),
+                        Expanded(
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 14),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'СРОК',
+                                  style: BrandUi.inter(
+                                    fontSize: 11,
+                                    color: BrandColors.tar.withOpacity(0.45),
+                                  ).copyWith(letterSpacing: 0.04 * 16),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  bid.durationOffer,
+                                  style: pochaevsk(
+                                    fontSize: 22,
+                                    color: BrandColors.tar,
+                                    height: 1,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.star_rounded, color: MarketplaceColors.gold, size: 20),
-                    const SizedBox(width: 2),
-                    Text(
-                      bid.rating.toStringAsFixed(1),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: MarketplaceColors.gold,
-                      ),
+                    BrandGhostButton(
+                      label: 'Профиль',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => MasterPublicProfileScreen(
+                              masterId: bid.masterId,
+                              projectTitleForContract: projectTitle,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: isBest
+                          ? SizedBox(
+                              width: double.infinity,
+                              child: BrandAccentButton(
+                                label: 'Выбрать мастера',
+                                onPressed: () => _chooseMaster(context),
+                              ),
+                            )
+                          : BrandPrimaryButton(
+                              label: 'Выбрать мастера',
+                              onPressed: () => _chooseMaster(context),
+                            ),
                     ),
                   ],
                 ),
               ],
             ),
-            const SizedBox(height: 8),
-            Text(
-              '${bid.completedJobs} завершённых заказов',
-              style: TextStyle(fontSize: 12, color: textMuted),
-            ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                Text(
-                  bid.priceOffer,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    color: MarketplaceColors.gold,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Text(
-                  bid.durationOffer,
-                  style: TextStyle(fontSize: 14, color: textSecondary),
-                ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Text(
-              bid.message,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.35,
-                color: textPrimary,
-              ),
-            ),
-            const SizedBox(height: 14),
-            Row(
-              children: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => MasterPublicProfileScreen(
-                          masterId: bid.masterId,
-                          projectTitleForContract: projectTitle,
-                        ),
-                      ),
-                    );
-                  },
-                  style: TextButton.styleFrom(foregroundColor: MarketplaceColors.bluePrimary),
-                  child: const Text('Профиль'),
-                ),
-                const Spacer(),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).push(
-                      MaterialPageRoute<void>(
-                        builder: (_) => ContractConfirmScreen(
-                          masterName: bid.masterName,
-                          projectTitle: projectTitle,
-                          priceOffer: bid.priceOffer,
-                          durationOffer: bid.durationOffer,
-                        ),
-                      ),
-                    );
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: MarketplaceColors.ctaOrange,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: const Text('Выбрать'),
-                ),
-              ],
-            ),
-          ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _chooseMaster(BuildContext context) {
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => ContractConfirmScreen(
+          masterName: bid.masterName,
+          projectTitle: projectTitle,
+          priceOffer: bid.priceOffer,
+          durationOffer: bid.durationOffer,
+          rating: bid.rating,
+          specialty: bid.specialty,
         ),
       ),
+    );
+  }
+}
+
+class _StarRating extends StatelessWidget {
+  const _StarRating({required this.value, this.size = 12});
+
+  final double value;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (i) {
+        final filled = value >= i + 1 || (value > i && value < i + 1);
+        return Icon(
+          filled ? Icons.star_rounded : Icons.star_outline_rounded,
+          size: size,
+          color: BrandColors.gilded,
+        );
+      }),
     );
   }
 }

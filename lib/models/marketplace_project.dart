@@ -1,12 +1,14 @@
-/// Сводка проекта заказчика.
 class ProjectSummary {
   final String id;
   final String title;
   final String status;
   final DateTime updatedAt;
   final int responsesCount;
-  /// Карта квартиры: {before: {...}, after: {...}} или пусто
   final Map<String, dynamic> mapData;
+  final String workType;
+  final String budget;
+  final String address;
+  final String spec;
 
   const ProjectSummary({
     required this.id,
@@ -15,7 +17,23 @@ class ProjectSummary {
     required this.updatedAt,
     this.responsesCount = 0,
     this.mapData = const {},
+    this.workType = '',
+    this.budget = '',
+    this.address = '',
+    this.spec = '',
   });
+
+  bool get hasBrief =>
+      workType.trim().isNotEmpty ||
+      budget.trim().isNotEmpty ||
+      address.trim().isNotEmpty ||
+      spec.trim().isNotEmpty;
+
+  String get briefLine {
+    if (workType.trim().isNotEmpty) return workType.trim();
+    if (budget.trim().isNotEmpty) return budget.trim();
+    return 'Заполните заявку';
+  }
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -24,6 +42,10 @@ class ProjectSummary {
         'updated_at': updatedAt.toIso8601String(),
         'responses_count': responsesCount,
         'map_data': mapData,
+        'work_type': workType,
+        'budget': budget,
+        'address': address,
+        'spec': spec,
       };
 
   factory ProjectSummary.fromJson(Map<String, dynamic> j) {
@@ -35,6 +57,36 @@ class ProjectSummary {
           DateTime.now(),
       responsesCount: (j['responses_count'] as num?)?.toInt() ?? 0,
       mapData: (j['map_data'] as Map<String, dynamic>?) ?? {},
+      workType: j['work_type']?.toString() ?? '',
+      budget: j['budget']?.toString() ?? '',
+      address: j['address']?.toString() ?? '',
+      spec: j['spec']?.toString() ?? '',
+    );
+  }
+
+  ProjectSummary copyWith({
+    String? id,
+    String? title,
+    String? status,
+    DateTime? updatedAt,
+    int? responsesCount,
+    Map<String, dynamic>? mapData,
+    String? workType,
+    String? budget,
+    String? address,
+    String? spec,
+  }) {
+    return ProjectSummary(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      status: status ?? this.status,
+      updatedAt: updatedAt ?? this.updatedAt,
+      responsesCount: responsesCount ?? this.responsesCount,
+      mapData: mapData ?? this.mapData,
+      workType: workType ?? this.workType,
+      budget: budget ?? this.budget,
+      address: address ?? this.address,
+      spec: spec ?? this.spec,
     );
   }
 }

@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
 import '../../core/theme/app_text_style.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../core/theme/marketplace_colors.dart';
 import '../../models/marketplace_project.dart';
 import '../../services/marketplace_local_store.dart';
@@ -66,12 +69,21 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
                 children: [
                   const ForemanAvatar(size: 36),
                   const SizedBox(width: 10),
-                  Text(
-                    'ИИ-прораб',
-                    style: TextStyle(
-                      fontFamily: AppTextStyle.fontFamily,
-                      fontWeight: FontWeight.w700,
-                      color: MarketplaceColors.textPrimaryFor(context),
+                  RichText(
+                    text: TextSpan(
+                      style: TextStyle(
+                        fontFamily: AppTextStyle.uiFontFamily,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 17,
+                        color: MarketplaceColors.textPrimaryFor(context),
+                      ),
+                      children: const [
+                        TextSpan(text: 'ИИ-'),
+                        TextSpan(
+                          text: 'прораб',
+                          style: TextStyle(color: BrandColors.clay),
+                        ),
+                      ],
                     ),
                   ),
                 ],
@@ -106,15 +118,16 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Padding(
-            padding: EdgeInsets.fromLTRB(horizontalPad, 16, horizontalPad, 8),
-            child: Text(
-              'Чаты',
-              style: TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.w800,
-                fontFamily: AppTextStyle.fontFamily,
-                color: textPrimary,
-                height: AppTextStyle.defaultHeight,
+            padding: EdgeInsets.fromLTRB(horizontalPad, 8, horizontalPad, 8),
+            child: BrandAppBar(
+              title: 'Сообщения',
+              big: true,
+              actions: BrandIconButton(
+                icon: Icon(
+                  Icons.search_rounded,
+                  size: 20,
+                  color: BrandColors.tar.withOpacity(0.55),
+                ),
               ),
             ),
           ),
@@ -124,23 +137,40 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
                 final isWide = constraints.maxWidth >= 720;
                 final dateFmt = DateFormat('d MMM, HH:mm', 'ru');
 
-                final list = ListView.separated(
+                final list = ListView.builder(
                   padding: EdgeInsets.fromLTRB(horizontalPad, 4, horizontalPad, 16),
-                  itemCount: _threads.length + 1,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
+                  itemCount: _threads.length + 2,
                   itemBuilder: (context, i) {
                     if (i == 0) {
-                      return _PinnedAiTile(
-                        selected: _selectedId == _aiPinnedId,
-                        onTap: () => _openAi(context, isWide: isWide),
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: _PinnedAiTile(
+                          selected: _selectedId == _aiPinnedId,
+                          onTap: () => _openAi(context, isWide: isWide),
+                        ),
                       );
                     }
-                    final t = _threads[i - 1];
+                    if (i == 1) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 12, 4, 6),
+                        child: Text(
+                          'МАСТЕРА И БРИГАДЫ',
+                          style: BrandUi.inter(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: BrandColors.tar.withOpacity(0.4),
+                          ).copyWith(letterSpacing: 0.5),
+                        ),
+                      );
+                    }
+                    final t = _threads[i - 2];
                     return _ThreadTile(
                       thread: t,
                       dateFmt: dateFmt,
+                      index: i - 2,
                       selected: _selectedId == t.id,
                       onTap: () => _openThread(context, t, isWide: isWide),
+                      isLast: i == _threads.length + 1,
                     );
                   },
                 );
@@ -188,7 +218,7 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
                             child: Text(
                               headerLabel,
                               style: TextStyle(
-                                fontFamily: AppTextStyle.fontFamily,
+                                fontFamily: AppTextStyle.uiFontFamily,
                                 fontSize: 15,
                                 fontWeight: FontWeight.w700,
                                 color: textPrimary,
@@ -228,53 +258,87 @@ class _PinnedAiTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final card = MarketplaceColors.cardFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textMuted = MarketplaceColors.textMutedFor(context);
-
     return Material(
-      color: selected
-          ? MarketplaceColors.aiTurquoise.withOpacity(0.18)
-          : card,
-      borderRadius: BorderRadius.circular(12),
+      color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
+        borderRadius: BorderRadius.circular(16),
+        child: Ink(
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            color: BrandColors.needles,
+            boxShadow: selected
+                ? [
+                    BoxShadow(
+                      color: BrandColors.needles.withOpacity(0.35),
+                      blurRadius: 12,
+                      offset: const Offset(0, 4),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Stack(
             children: [
-              const ForemanAvatar(size: 48),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            'ИИ-прораб',
-                            style: TextStyle(
-                              fontFamily: AppTextStyle.fontFamily,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 14,
-                              color: textPrimary,
-                            ),
-                          ),
-                        ),
-                        Icon(Icons.push_pin, size: 14, color: textMuted),
+              Positioned.fill(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: RadialGradient(
+                      center: const Alignment(0.9, -0.2),
+                      radius: 1.2,
+                      colors: [
+                        BrandColors.needlesLight.withOpacity(0.45),
+                        Colors.transparent,
                       ],
                     ),
-                    const SizedBox(height: 4),
+                  ),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(14),
+                child: Row(
+                  children: [
+                    const ForemanAvatar(size: 46, radius: 13),
+                    const SizedBox(width: 13),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'ИИ-прораб',
+                                style: pochaevsk(
+                                  fontSize: 17,
+                                  color: BrandColors.onNeedles,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Icon(
+                                Icons.auto_awesome_rounded,
+                                size: 13,
+                                color: BrandColors.dawn,
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            'Смета по кухне готова — посмотрим?',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: BrandUi.inter(
+                              fontSize: 13,
+                              color: BrandColors.onNeedles.withOpacity(0.82),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Text(
-                      'Соберёт ТЗ, смету и список материалов',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: MarketplaceColors.aiTurquoise,
-                        fontWeight: FontWeight.w600,
+                      '10:05',
+                      style: BrandUi.inter(
+                        fontSize: 11.5,
+                        color: BrandColors.onNeedles.withOpacity(0.7),
                       ),
                     ),
                   ],
@@ -291,99 +355,191 @@ class _PinnedAiTile extends StatelessWidget {
 class _ThreadTile extends StatelessWidget {
   final DirectChatThread thread;
   final DateFormat dateFmt;
+  final int index;
   final bool selected;
+  final bool isLast;
   final VoidCallback onTap;
 
   const _ThreadTile({
     required this.thread,
     required this.dateFmt,
+    required this.index,
     required this.selected,
+    required this.isLast,
     required this.onTap,
   });
 
+  static BrandAvatarTone _toneFor(int index) {
+    switch (index % 3) {
+      case 0:
+        return BrandAvatarTone.clay;
+      case 1:
+        return BrandAvatarTone.green;
+      default:
+        return BrandAvatarTone.sand;
+    }
+  }
+
+  static int _unreadCount(DirectChatThread thread) {
+    final preview = thread.lastMessagePreview.trim();
+    if (preview.startsWith('Вы:') || preview.startsWith('Вы ')) return 0;
+    return 1;
+  }
+
   @override
   Widget build(BuildContext context) {
-    final card = MarketplaceColors.cardFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textSecondary = MarketplaceColors.textSecondaryFor(context);
-    final textMuted = MarketplaceColors.textMutedFor(context);
+    final profile = thread.masterId != null
+        ? MarketplaceLocalStore.instance.profileById(thread.masterId!)
+        : null;
+    final role = profile?.specialty.isNotEmpty == true
+        ? 'Мастер · ${profile!.specialty}'
+        : thread.projectTitle;
+    final unread = _unreadCount(thread);
+    final timeLabel = _formatTime(thread.updatedAt, dateFmt);
 
     return Material(
-      color: selected
-          ? MarketplaceColors.bluePrimary.withOpacity(0.12)
-          : card,
-      borderRadius: BorderRadius.circular(12),
+      color: selected ? BrandColors.linen.withOpacity(0.45) : Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(12),
         onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(12),
-          child: Row(
-            children: [
-              CircleAvatar(
-                backgroundColor:
-                    MarketplaceColors.bluePrimary.withOpacity(0.25),
-                child: Text(
-                  thread.peerName.isNotEmpty
-                      ? thread.peerName[0].toUpperCase()
-                      : '?',
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    color: textPrimary,
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: isLast
+                ? null
+                : const Border(
+                    bottom: BorderSide(color: BrandColors.borderSubtle),
                   ),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 11),
+            child: Row(
+              children: [
+                Stack(
+                  clipBehavior: Clip.none,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            thread.peerName,
-                            style: TextStyle(
-                              fontFamily: AppTextStyle.fontFamily,
-                              fontWeight: FontWeight.w700,
-                              fontSize: 14,
-                              color: textPrimary,
+                    BrandAvatar(
+                      name: thread.peerName,
+                      size: 48,
+                      radius: 14,
+                      tone: _toneFor(index),
+                    ),
+                    if (index == 0)
+                      Positioned(
+                        right: -2,
+                        bottom: -2,
+                        child: Container(
+                          width: 18,
+                          height: 18,
+                          decoration: BoxDecoration(
+                            color: BrandColors.gilded,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: BrandColors.canvas,
+                              width: 2,
                             ),
                           ),
+                          child: const Icon(
+                            Icons.star_rounded,
+                            size: 9,
+                            color: BrandColors.onClay,
+                          ),
                         ),
-                        Text(
-                          dateFmt.format(thread.updatedAt),
-                          style: TextStyle(fontSize: 11, color: textMuted),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      thread.projectTitle,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: MarketplaceColors.aiTurquoise,
-                        fontWeight: FontWeight.w600,
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      thread.lastMessagePreview,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: textSecondary,
-                        height: 1.3,
-                      ),
-                    ),
                   ],
                 ),
-              ),
-            ],
+                const SizedBox(width: 13),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              thread.peerName,
+                              style: BrandUi.inter(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: BrandColors.tar,
+                              ),
+                            ),
+                          ),
+                          Text(
+                            timeLabel,
+                            style: BrandUi.inter(
+                              fontSize: 11.5,
+                              color: BrandColors.tar.withOpacity(0.4),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 1),
+                      Text(
+                        role,
+                        style: BrandUi.inter(
+                          fontSize: 11.5,
+                          color: BrandColors.clay,
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              thread.lastMessagePreview,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: BrandUi.inter(
+                                fontSize: 13,
+                                color: BrandColors.tar.withOpacity(0.65),
+                              ),
+                            ),
+                          ),
+                          if (unread > 0) ...[
+                            const SizedBox(width: 8),
+                            Container(
+                              constraints: const BoxConstraints(minWidth: 19),
+                              height: 19,
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 6),
+                              decoration: BoxDecoration(
+                                color: BrandColors.clay,
+                                borderRadius: BorderRadius.circular(999),
+                              ),
+                              alignment: Alignment.center,
+                              child: Text(
+                                '$unread',
+                                style: BrandUi.inter(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: BrandColors.onClay,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
     );
+  }
+
+  static String _formatTime(DateTime at, DateFormat dateFmt) {
+    final now = DateTime.now();
+    final diff = now.difference(at);
+    if (diff.inDays == 0) {
+      return DateFormat.Hm('ru').format(at);
+    }
+    if (diff.inDays == 1) return 'Вчера';
+    if (diff.inDays < 7) {
+      const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'];
+      return days[at.weekday - 1];
+    }
+    return dateFmt.format(at);
   }
 }

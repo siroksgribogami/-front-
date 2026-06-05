@@ -4,10 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../../core/theme/app_text_style.dart';
+import '../../../core/theme/map_editor_theme.dart';
 import '../../../providers/map_editor_provider.dart';
 
-const _terra = Color(0xFFD4956A);
-const _dark = Color(0xFF2A3A2C);
+const _terra = MapEditorTheme.clay;
+const _dark = MapEditorTheme.text;
 const _canvasDark = Color(0xFF16120F);
 
 class _RoomSlot {
@@ -117,7 +118,7 @@ class _ApartmentOverviewState extends State<ApartmentOverview> {
     final totalTasks = rooms.fold<int>(0, (sum, room) => sum + room.tasksCount);
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE8E2D8),
+      backgroundColor: MapEditorTheme.divider,
       body: Column(
         children: [
           Padding(
@@ -126,7 +127,7 @@ class _ApartmentOverviewState extends State<ApartmentOverview> {
               children: [
                 Text(
                   'МОЙ ДОМ <3',
-                  style: AppTextStyle.gropled(
+                  style: AppTextStyle.pochaevsk(
                     fontSize: 28,
                     fontWeight: FontWeight.w700,
                     color: _dark,
@@ -144,7 +145,7 @@ class _ApartmentOverviewState extends State<ApartmentOverview> {
                   child: Text(
                     'Общий 3D-вид квартиры',
                     style: TextStyle(
-                      fontFamily: AppTextStyle.fontFamily,
+                      fontFamily: AppTextStyle.uiFontFamily,
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: _dark.withOpacity(0.78),
@@ -174,7 +175,7 @@ class _ApartmentOverviewState extends State<ApartmentOverview> {
                         Text(
                           '$totalTasks ${_taskWord(totalTasks)}',
                           style: const TextStyle(
-                            fontFamily: AppTextStyle.fontFamily,
+                            fontFamily: AppTextStyle.uiFontFamily,
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
                             color: Colors.white,
@@ -299,7 +300,7 @@ class _ApartmentOverviewState extends State<ApartmentOverview> {
                               child: Text(
                                 'Нажмите на комнату, чтобы открыть её редактор',
                                 style: TextStyle(
-                                  fontFamily: AppTextStyle.fontFamily,
+                                  fontFamily: AppTextStyle.uiFontFamily,
                                   fontSize: 12,
                                   fontWeight: FontWeight.w500,
                                   color: Colors.white.withOpacity(0.35),
@@ -402,7 +403,7 @@ class _ApartmentOverviewState extends State<ApartmentOverview> {
                 Text(
                   room.name,
                   style: const TextStyle(
-                    fontFamily: AppTextStyle.fontFamily,
+                    fontFamily: AppTextStyle.uiFontFamily,
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     color: Colors.white,
@@ -461,7 +462,7 @@ class _ApartmentOverviewState extends State<ApartmentOverview> {
               Text(
                 '${room.tasksCount}',
                 style: const TextStyle(
-                  fontFamily: AppTextStyle.fontFamily,
+                  fontFamily: AppTextStyle.uiFontFamily,
                   fontSize: 11,
                   fontWeight: FontWeight.w700,
                   color: Colors.white,

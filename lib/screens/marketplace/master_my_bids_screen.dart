@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_text_style.dart';
-import '../../core/theme/marketplace_colors.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../models/marketplace_project.dart';
 import '../../services/marketplace_local_store.dart';
 
@@ -32,49 +33,41 @@ class _MasterMyBidsScreenState extends State<MasterMyBidsScreen> {
     });
   }
 
+  int get _activeCount =>
+      _bids.where((b) => !_isDeclined(b.state)).length;
+
+  int get _inWorkCount => _bids
+      .where((b) => b.state.toLowerCase().contains('выбран'))
+      .length;
+
   @override
   Widget build(BuildContext context) {
-    final bg = MarketplaceColors.backgroundFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textSecondary = MarketplaceColors.textSecondaryFor(context);
-    final textMuted = MarketplaceColors.textMutedFor(context);
-    final horizontalPad = MarketplaceColors.horizontalPaddingFor(context);
-
     if (_loading) {
-      return ColoredBox(
-        color: bg,
-        child: const Center(child: CircularProgressIndicator()),
+      return const ColoredBox(
+        color: BrandColors.canvas,
+        child: Center(child: CircularProgressIndicator()),
       );
     }
 
+    final subtitle = _bids.isEmpty
+        ? 'Пока нет откликов'
+        : '$_activeCount активных · $_inWorkCount в работе';
+
     return ColoredBox(
-      color: bg,
+      color: BrandColors.canvas,
       child: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
-            padding: EdgeInsets.fromLTRB(horizontalPad, 16, horizontalPad, 24),
+            padding: const EdgeInsets.fromLTRB(BrandUi.pad, 8, BrandUi.pad, 24),
             children: [
-              Text(
-                'Мои отклики',
-                style: TextStyle(
-                  fontFamily: AppTextStyle.fontFamily,
-                  fontSize: 28,
-                  fontWeight: FontWeight.w800,
-                  color: textPrimary,
-                  height: AppTextStyle.defaultHeight,
-                ),
+              BrandAppBar(
+                title: 'Мои отклики',
+                subtitle: subtitle,
+                big: true,
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Предложения, которые вы отправляли по заявкам из ленты. Данные хранятся в приложении.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: textSecondary,
-                ),
-              ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 4),
               if (_bids.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 32),
@@ -82,14 +75,17 @@ class _MasterMyBidsScreenState extends State<MasterMyBidsScreen> {
                     child: Text(
                       'Пока нет откликов. Откройте ленту заказов и нажмите «Откликнуться».',
                       textAlign: TextAlign.center,
-                      style: TextStyle(color: textMuted, height: 1.4),
+                      style: BrandUi.inter(
+                        color: BrandColors.tar.withOpacity(0.45),
+                        height: 1.4,
+                      ),
                     ),
                   ),
                 )
               else
                 ..._bids.map(
                   (b) => Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
+                    padding: const EdgeInsets.only(bottom: 11),
                     child: _BidCard(bid: b),
                   ),
                 ),
@@ -101,53 +97,123 @@ class _MasterMyBidsScreenState extends State<MasterMyBidsScreen> {
   }
 }
 
-class _BidCard extends StatelessWidget {
-  final MasterMyBidRecord bid;
+bool _isDeclined(String state) {
+  final s = state.toLowerCase();
+  return s.contains('отклон') || s.contains('не выбран');
+}
 
+BrandStatusKind _statusKindFor(String state) {
+  final s = state.toLowerCase();
+  if (s.contains('выбран') && !s.contains('не')) {
+    return BrandStatusKind.gold;
+  }
+  if (s.contains('отклон') || s.contains('не выбран')) {
+    return BrandStatusKind.draft;
+  }
+  if (s.contains('отправ') || s.contains('рассмотр') || s.contains('просмотр')) {
+    return BrandStatusKind.active;
+  }
+  return BrandStatusKind.active;
+}
+
+String _statusLabelFor(String state) {
+  final s = state.toLowerCase();
+  if (s.contains('выбран') && !s.contains('не')) return 'Выбран';
+  if (s.contains('не выбран') || s.contains('отклон')) return 'Не выбран';
+  if (s.contains('рассмотр') || s.contains('просмотр')) return 'На рассмотрении';
+  if (s.contains('отправ')) return 'Отправлен';
+  return state;
+}
+
+String _footerHintFor(String state) {
+  final s = state.toLowerCase();
+  if (s.contains('выбран') && !s.contains('не')) {
+    return 'Заказчик подтвердил';
+  }
+  if (s.contains('не выбран') || s.contains('отклон')) {
+    return 'Заказчик выбрал другого';
+  }
+  if (s.contains('отправ')) return 'Ждём ответа';
+  return state;
+}
+
+class _BidCard extends StatelessWidget {
   const _BidCard({required this.bid});
+
+  final MasterMyBidRecord bid;
 
   @override
   Widget build(BuildContext context) {
-    final card = MarketplaceColors.cardFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textMuted = MarketplaceColors.textMutedFor(context);
+    final kind = _statusKindFor(bid.state);
+    final statusLabel = _statusLabelFor(bid.state);
+    final footerHint = _footerHintFor(bid.state);
+
     return Material(
-      color: card,
-      borderRadius: BorderRadius.circular(12),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              bid.projectTitle,
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w700,
-                color: textPrimary,
+      color: BrandColors.milk,
+      borderRadius: BorderRadius.circular(16),
+      child: DecoratedBox(
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: BrandColors.borderSubtle),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(15),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          bid.projectTitle,
+                          style: pochaevsk(
+                            fontSize: 18,
+                            color: BrandColors.tar,
+                            height: 1,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  BrandStatus(label: statusLabel, kind: kind),
+                ],
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              bid.price,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: MarketplaceColors.gold,
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.only(top: 12),
+                decoration: const BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: BrandColors.borderSubtle),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        footerHint,
+                        style: BrandUi.inter(
+                          fontSize: 12.5,
+                          color: BrandColors.tar.withOpacity(0.55),
+                        ),
+                      ),
+                    ),
+                    Text(
+                      bid.price,
+                      style: pochaevsk(
+                        fontSize: 18,
+                        color: BrandColors.needles,
+                        height: 1,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              bid.state,
-              style: TextStyle(
-                fontSize: 13,
-                color: bid.state.contains('Отклон')
-                    ? MarketplaceColors.statusDeclined
-                    : textMuted,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

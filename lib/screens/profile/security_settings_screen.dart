@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
-import '../../config/app_theme.dart';
+import '../../config/brand_colors.dart';
+import '../../core/theme/brand_ui.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
   const SecuritySettingsScreen({super.key});
@@ -80,99 +81,168 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
     );
   }
 
+  Widget _settingsIcon(IconData icon) {
+    return Container(
+      width: 32,
+      height: 32,
+      decoration: BoxDecoration(
+        color: BrandColors.linen.withOpacity(0.7),
+        borderRadius: BorderRadius.circular(9),
+      ),
+      child: Icon(icon, size: 17, color: BrandColors.needles),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (!_loaded) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
+      return const BrandScreen(
+        body: Center(child: CircularProgressIndicator()),
+      );
     }
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? AppTheme.darkCard : Colors.white;
-    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Безопасность')),
+
+    return BrandScreen(
+      appBar: AppBar(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: BrandColors.canvas,
+        foregroundColor: BrandColors.tar,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const SizedBox.shrink(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: BrandAppBar(
+            title: 'Безопасность',
+            onBack: () => Navigator.of(context).maybePop(),
+          ),
+        ),
+      ),
+      padding: EdgeInsets.zero,
       body: Center(
         child: ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: math.min(860, MediaQuery.sizeOf(context).width - 24)),
-          child: ListView(
-            padding: const EdgeInsets.all(16),
-            children: [
-              Card(
-            elevation: 0,
-            color: cardBg,
-            child: Column(
-              children: [
-                SwitchListTile(
-                  value: _biometric,
-                  onChanged: (v) {
-                    setState(() => _biometric = v);
-                    _saveBool('security_biometric', v);
-                  },
-                  activeColor: AppTheme.primaryColor,
-                  title: const Text('Биометрия'),
-                  subtitle: const Text('Вход по отпечатку/Face ID (если доступно)'),
-                ),
-                const Divider(height: 1),
-                SwitchListTile(
-                  value: _sessionLock,
-                  onChanged: (v) {
-                    setState(() => _sessionLock = v);
-                    _saveBool('security_session_lock', v);
-                  },
-                  activeColor: AppTheme.primaryColor,
-                  title: const Text('Блокировка сессии'),
-                  subtitle: const Text('Запрашивать вход после бездействия'),
-                ),
-              ],
-            ),
+          constraints: BoxConstraints(
+            maxWidth: math.min(860, MediaQuery.sizeOf(context).width - 24),
           ),
-          const SizedBox(height: 16),
-          Card(
-            elevation: 0,
-            color: cardBg,
-            child: Padding(
-              padding: const EdgeInsets.all(12),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
+            children: [
+              BrandSettingsGroup(
+                header: 'Вход в приложение',
                 children: [
-                  Text(
-                    'Сменить пароль',
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 16,
-                      color: textMain,
+                  BrandSettingsRow(
+                    icon: _settingsIcon(Icons.fingerprint_rounded),
+                    label: 'Face ID / отпечаток',
+                    trailing: BrandToggle(
+                      value: _biometric,
+                      onChanged: (v) {
+                        setState(() => _biometric = v);
+                        _saveBool('security_biometric', v);
+                      },
                     ),
+                    showChevron: false,
                   ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _oldCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Текущий пароль'),
+                  BrandSettingsRow(
+                    icon: _settingsIcon(Icons.lock_outline_rounded),
+                    label: 'Код-пароль',
+                    value: 'Вкл',
+                    onTap: () {},
                   ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _newCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Новый пароль'),
-                  ),
-                  const SizedBox(height: 10),
-                  TextField(
-                    controller: _confirmCtrl,
-                    obscureText: true,
-                    decoration: const InputDecoration(labelText: 'Подтверждение'),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: _changePassword,
-                      style: FilledButton.styleFrom(backgroundColor: AppTheme.primaryColor),
-                      child: const Text('Обновить пароль'),
+                  BrandSettingsRow(
+                    icon: _settingsIcon(Icons.timer_outlined),
+                    label: 'Блокировать через',
+                    value: _sessionLock ? '1 мин' : 'Выкл',
+                    trailing: BrandToggle(
+                      value: _sessionLock,
+                      onChanged: (v) {
+                        setState(() => _sessionLock = v);
+                        _saveBool('security_session_lock', v);
+                      },
                     ),
+                    showChevron: false,
+                    last: true,
                   ),
                 ],
               ),
-            ),
-          ),
+              const SizedBox(height: 18),
+              BrandSettingsGroup(
+                header: 'Пароль и сессии',
+                children: [
+                  BrandSettingsRow(
+                    label: 'Сменить пароль',
+                    onTap: () {},
+                  ),
+                  BrandSettingsRow(
+                    label: 'Активные сессии',
+                    value: '2 устройства',
+                    onTap: () {},
+                    last: true,
+                  ),
+                ],
+              ),
+              const SizedBox(height: 14),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: BrandColors.milk,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: BrandColors.borderSubtle),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Text(
+                      'Сменить пароль',
+                      style: BrandUi.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: BrandColors.tar,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _oldCtrl,
+                      obscureText: true,
+                      decoration: BrandUi.inputDecoration(hint: 'Текущий пароль'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _newCtrl,
+                      obscureText: true,
+                      decoration: BrandUi.inputDecoration(hint: 'Новый пароль'),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: _confirmCtrl,
+                      obscureText: true,
+                      decoration: BrandUi.inputDecoration(hint: 'Подтверждение'),
+                    ),
+                    const SizedBox(height: 12),
+                    BrandPrimaryButton(
+                      label: 'Обновить пароль',
+                      onPressed: _changePassword,
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 18),
+              BrandSettingsGroup(
+                header: 'Данные',
+                children: [
+                  BrandSettingsRow(
+                    label: 'Экспорт данных',
+                    onTap: () {},
+                  ),
+                  BrandSettingsRow(
+                    label: 'Удалить аккаунт',
+                    danger: true,
+                    onTap: () {},
+                    last: true,
+                  ),
+                ],
+              ),
             ],
           ),
         ),

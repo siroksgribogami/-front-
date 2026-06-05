@@ -99,7 +99,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
           style: TextStyle(
             fontSize: 18,
             fontWeight: FontWeight.w700,
-            fontFamily: AppTextStyle.fontFamily,
+            fontFamily: AppTextStyle.uiFontFamily,
             color: textMain,
           ),
         ),

@@ -86,20 +86,28 @@ class MarketplaceMockData {
           id: 'm2',
           name: 'Бригада «Угол»',
           specialty: 'Сантехника · плитка',
+          about: 'Работаем бригадой под ключ: сантехника, плитка, отделка.',
           rating: 4.8,
           reviewsCount: 120,
+          completedJobs: 51,
           statusLabel: 'ООО',
           portfolioPlaceholders: ['a', 'b', 'c', 'd', 'e', 'f'],
+          certificates: [],
+          reviews: [],
         );
       default:
         return const MasterProfile(
           id: 'm1',
           name: 'Алексей М.',
           specialty: 'Электрика · слаботочка',
+          about: 'Электромонтаж и мелкий ремонт. Выезд на замер в день обращения.',
           rating: 4.9,
           reviewsCount: 56,
+          completedJobs: 84,
           statusLabel: 'Самозанятый',
           portfolioPlaceholders: ['1', '2', '3', '4', '5', '6'],
+          certificates: [],
+          reviews: [],
         );
     }
   }

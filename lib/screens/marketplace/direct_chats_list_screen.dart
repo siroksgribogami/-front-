@@ -67,7 +67,7 @@ class DirectChatsListScreen extends StatelessWidget {
                               child: Text(
                                 t.peerName,
                                 style: TextStyle(
-                                  fontFamily: AppTextStyle.fontFamily,
+                                  fontFamily: AppTextStyle.uiFontFamily,
                                   fontWeight: FontWeight.w700,
                                   fontSize: 15,
                                   color: MarketplaceColors.textPrimary,

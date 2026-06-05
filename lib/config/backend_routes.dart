@@ -1,5 +1,5 @@
 /// Пути REST API относительно [ApiConfig.apiBaseUrl] (`…/api/v1`).
-/// Соответствуют `ARThouse-backend`: роутеры в `app/api/v1/endpoints/` без
+/// Соответствуют бэкенду Приделе (`ARThouse-backend`): роутеры в `app/api/v1/endpoints/` без
 /// дополнительных префиксов (`/register`, `/me`, `/my`, `/dashboard`, …).
 abstract final class BackendRoutes {
   BackendRoutes._();

@@ -63,7 +63,7 @@ class ProfileAccountSection extends StatelessWidget {
               style: TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.w700,
-                fontFamily: AppTextStyle.fontFamily,
+                fontFamily: AppTextStyle.uiFontFamily,
                 color: textMain,
               ),
             ),
@@ -92,7 +92,7 @@ class ProfileAccountSection extends StatelessWidget {
                                 fontSize: 36,
                                 fontWeight: FontWeight.w700,
                                 color: Colors.white,
-                                fontFamily: AppTextStyle.fontFamily,
+                                fontFamily: AppTextStyle.uiFontFamily,
                               ),
                             ),
                           )

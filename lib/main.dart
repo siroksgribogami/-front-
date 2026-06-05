@@ -28,8 +28,8 @@ void main() async {
 
   api_platform.initApiConfigForPlatform();
   if (kDebugMode) {
-    debugPrint('ARThouse API: ${ApiConfig.baseUrl}');
-    debugPrint('ARThouse API v1: ${ApiConfig.apiBaseUrl}');
+    debugPrint('Приделе API: ${ApiConfig.baseUrl}');
+    debugPrint('Приделе API v1: ${ApiConfig.apiBaseUrl}');
   }
   if (!kIsWeb) {
     _setSystemUIOverlay();
@@ -37,7 +37,7 @@ void main() async {
 
   await initializeDateFormatting('ru', null);
 
-  runApp(const ArtkhausApp());
+  runApp(const PridelApp());
 }
 
 void _setSystemUIOverlay() {
@@ -62,8 +62,8 @@ void _applySystemUIOverlay(Brightness brightness) {
   );
 }
 
-class ArtkhausApp extends StatelessWidget {
-  const ArtkhausApp({super.key});
+class PridelApp extends StatelessWidget {
+  const PridelApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -88,7 +88,7 @@ class ArtkhausApp extends StatelessWidget {
               textScaler: TextScaler.linear(themeProv.fontScale),
             ),
             child: MaterialApp(
-              title: 'АРТхаус',
+              title: 'Приделе',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,
@@ -186,6 +186,9 @@ class _AppRootState extends State<AppRoot> {
             key: const ValueKey('welcome'),
             onContinue: () {
               context.read<AuthProvider>().completePostRegisterWelcome();
+            },
+            onSkip: () {
+              context.read<AuthProvider>().skipPostRegisterWelcome();
             },
           );
         } else if (auth.needsSurvey) {

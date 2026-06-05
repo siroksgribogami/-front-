@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -5,10 +6,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import '../../config/app_theme.dart';
+import '../../config/brand_colors.dart';
+import '../../core/theme/brand_ui.dart';
+import '../../models/user.dart';
 import '../../providers/auth_provider.dart';
 import '../../utils/register_contact_validation.dart';
-import 'widgets/profile_account_section.dart';
 
 /// Редактирование аккаунта: фото, имя, телефон, email.
 class AccountSettingsScreen extends StatefulWidget {
@@ -90,39 +92,40 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
     );
   }
 
-  static String _accountModeLabel(String? mode) {
-    switch (mode) {
-      case 'customer':
-        return 'Заказчик';
-      case 'master':
-        return 'Мастер';
-      case 'b2b':
-        return 'B2B (офисы/склады)';
-      case 'p2p':
-        return 'P2P (на заказ)';
-      case 'service':
-        return 'Услуги (временный доступ)';
-      case 'b2c':
-      default:
-        return 'B2C (ремонт жилья)';
+  ImageProvider? _avatarImage(User user) {
+    if (_avatarPath != null && _avatarPath!.isNotEmpty) {
+      return FileImage(File(_avatarPath!));
     }
+    if (user.avatarUrl != null && user.avatarUrl!.isNotEmpty) {
+      return NetworkImage(user.avatarUrl!);
+    }
+    return null;
   }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final cardBg = isDark ? AppTheme.darkCard : Colors.white;
-    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
-    final textHint = isDark ? AppTheme.darkTextHint : AppTheme.textSecondary;
-
-    return Scaffold(
-      appBar: AppBar(title: const Text('Аккаунт')),
-      body: Consumer<AuthProvider>(
+    return BrandScreen(
+      padding: EdgeInsets.zero,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          SafeArea(
+            bottom: false,
+            child: BrandAppBar(
+              title: 'Аккаунт',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
+          ),
+          Expanded(
+            child: Consumer<AuthProvider>(
         builder: (context, auth, _) {
           final user = auth.user;
           if (user == null) {
             return const Center(child: CircularProgressIndicator());
           }
+
+          final phone = user.displayPhone;
+          final email = user.displayEmail;
 
           return Center(
             child: ConstrainedBox(
@@ -130,29 +133,123 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                 maxWidth: math.min(860, MediaQuery.sizeOf(context).width - 24),
               ),
               child: ListView(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 36),
                 children: [
-                  ProfileAccountSection(
-                    user: user,
-                    localAvatarPath: _avatarPath,
-                    onPickAvatar: _pickAvatar,
-                    onEditName: () => _editDisplayName(user.visibleName),
-                    onEditPhone: () => _editPhone(
+                  const SizedBox(height: 8),
+                  Center(
+                    child: GestureDetector(
+                      onTap: _pickAvatar,
+                      child: Column(
+                        children: [
+                          Stack(
+                            clipBehavior: Clip.none,
+                            children: [
+                              BrandAvatar(
+                                name: user.visibleName,
+                                size: 92,
+                                radius: 26,
+                                image: _avatarImage(user),
+                              ),
+                              Positioned(
+                                right: -2,
+                                bottom: -2,
+                                child: Container(
+                                  width: 34,
+                                  height: 34,
+                                  decoration: BoxDecoration(
+                                    color: BrandColors.clay,
+                                    shape: BoxShape.circle,
+                                    border: Border.all(
+                                      color: BrandColors.canvas,
+                                      width: 3,
+                                    ),
+                                  ),
+                                  child: const Icon(
+                                    Icons.camera_alt_rounded,
+                                    size: 17,
+                                    color: BrandColors.onClay,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            'Изменить фото',
+                            style: BrandUi.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: BrandColors.clay,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  BrandLabeledField(
+                    label: 'Имя и фамилия',
+                    value: user.visibleName,
+                    icon: Icon(Icons.person_outline,
+                        size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                    onTap: () => _editDisplayName(user.visibleName),
+                  ),
+                  const SizedBox(height: 14),
+                  BrandLabeledField(
+                    label: 'Телефон',
+                    value: (phone != null && phone.isNotEmpty)
+                        ? phone
+                        : 'Не указан',
+                    icon: Icon(Icons.phone_outlined,
+                        size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                    onTap: () => _editPhone(
                       user.phone ??
                           user.displayPhone?.replaceAll(RegExp(r'[^\d+]'), ''),
                     ),
-                    accountModeLabel: _accountModeLabel(auth.accountMode),
-                    cardBg: cardBg,
-                    textMain: textMain,
-                    textHint: textHint,
-                    isDark: isDark,
-                    showSectionTitle: false,
+                  ),
+                  const SizedBox(height: 14),
+                  if (email != null && email.isNotEmpty)
+                    BrandLabeledField(
+                      label: 'Электронная почта',
+                      value: email,
+                      icon: Icon(Icons.mail_outline,
+                          size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                      trailing: Text(
+                        'Подтв.',
+                        style: BrandUi.inter(
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w600,
+                          color: BrandColors.needles,
+                        ),
+                      ),
+                    ),
+                  if (email != null && email.isNotEmpty)
+                    const SizedBox(height: 14),
+                  BrandLabeledField(
+                    label: 'Город',
+                    value: 'Москва',
+                    icon: Icon(Icons.location_on_outlined,
+                        size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                  ),
+                  const SizedBox(height: 24),
+                  BrandPrimaryButton(
+                    label: 'Сохранить изменения',
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Изменения сохраняются при редактировании полей'),
+                        ),
+                      );
+                    },
                   ),
                 ],
               ),
             ),
           );
         },
+            ),
+          ),
+        ],
       ),
     );
   }

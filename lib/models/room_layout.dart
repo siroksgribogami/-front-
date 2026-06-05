@@ -245,7 +245,7 @@ const List<FurnitureTemplate> kFurnitureCatalog = [
     name: 'Большое растение',
     emoji: '🌿',
     category: FurnitureCategory.decor,
-    baseColor: Color(0xFF659171),
+    baseColor: Color(0xFF325D3C),
     tileWidth: 1,
     tileHeight: 1,
   ),
@@ -254,11 +254,11 @@ const List<FurnitureTemplate> kFurnitureCatalog = [
     name: 'Ковёр',
     emoji: '🟫',
     category: FurnitureCategory.decor,
-    baseColor: Color(0xFFD4956A),
+    baseColor: Color(0xFFBB5C45),
     tileWidth: 3,
     tileHeight: 2,
     availableColors: [
-      Color(0xFFD4956A), Color(0xFF8D9B8A), Color(0xFF5A6B7F), Color(0xFFE8DFCC),
+      Color(0xFFBB5C45), Color(0xFF325D3C), Color(0xFF5A6B7F), Color(0xFFEFEBE0),
     ],
   ),
   // --- Ванная ---
@@ -289,15 +289,15 @@ const List<SurfaceMaterial> kFloorMaterials = [
   SurfaceMaterial(id: 'tile_white',    name: 'Белая плитка',   color: Color(0xFFF0EDE8)),
   SurfaceMaterial(id: 'tile_grey',     name: 'Серая плитка',   color: Color(0xFFB0ADA8)),
   SurfaceMaterial(id: 'carpet_beige',  name: 'Бежевый ковёр',  color: Color(0xFFD8CCBC)),
-  SurfaceMaterial(id: 'carpet_green',  name: 'Зелёный ковёр',  color: Color(0xFF80B490)),
+  SurfaceMaterial(id: 'carpet_green',  name: 'Зелёный ковёр',  color: Color(0xFF4A7560)),
   SurfaceMaterial(id: 'concrete',      name: 'Бетон',          color: Color(0xFFB8B5B0)),
 ];
 
 /// Каталог обоев / цветов стен
 const List<SurfaceMaterial> kWallMaterials = [
-  SurfaceMaterial(id: 'wall_cream',    name: 'Кремовые',        color: Color(0xFFF7F3EC)),
-  SurfaceMaterial(id: 'wall_sage',     name: 'Шалфейные',       color: Color(0xFF80B490)),
-  SurfaceMaterial(id: 'wall_terracotta',name:'Терракотовые',    color: Color(0xFFD4956A)),
+  SurfaceMaterial(id: 'wall_cream',    name: 'Кремовые',        color: Color(0xFFEFEBE0)),
+  SurfaceMaterial(id: 'wall_sage',     name: 'Лесные',          color: Color(0xFF325D3C)),
+  SurfaceMaterial(id: 'wall_terracotta',name:'Терракотовые',    color: Color(0xFFBB5C45)),
   SurfaceMaterial(id: 'wall_white',    name: 'Белые',           color: Color(0xFFFFFFFF)),
   SurfaceMaterial(id: 'wall_graphite', name: 'Графит',          color: Color(0xFF4A4A4A)),
   SurfaceMaterial(id: 'wall_blush',    name: 'Пыльная роза',    color: Color(0xFFE8C4B4)),

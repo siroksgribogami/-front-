@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme/app_text_style.dart';
-import '../../core/theme/marketplace_colors.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../models/app_marketplace_role.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/role_provider.dart';
@@ -104,7 +105,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final roles = context.watch<RoleProvider>();
     _syncRoleTab(roles.activeRole);
     final navItems = _itemsForRole(roles.activeRole);
-    final bg = MarketplaceColors.backgroundFor(context);
+    final bg = BrandColors.canvas;
 
     final sidebarWidth =
         _sidebarExpanded ? _expandedSidebarWidth : _collapsedSidebarWidth;
@@ -146,9 +147,9 @@ class _HomeScreenState extends State<HomeScreen> {
     required double sidebarWidth,
     required bool showLabels,
   }) {
-    final sidebarBg = MarketplaceColors.cardFor(context);
-    const borderC = Color(0x33FFFFFF);
-    final textMainC = MarketplaceColors.textPrimaryFor(context);
+    const sidebarBg = BrandColors.milk;
+    const borderC = BrandColors.borderSubtle;
+    const textMainC = BrandColors.tar;
 
     return Container(
       width: sidebarWidth,
@@ -157,13 +158,6 @@ class _HomeScreenState extends State<HomeScreen> {
         border: const Border(
           right: BorderSide(color: borderC, width: 1),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 12,
-            offset: const Offset(4, 0),
-          ),
-        ],
       ),
       child: Column(
         children: [
@@ -175,14 +169,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'АРТхаус',
-                      style: TextStyle(
+                      'Приделе',
+                      style: pochaevsk(
                         fontSize: 26,
-                        fontWeight: FontWeight.w700,
-                        fontFamily: AppTextStyle.fontFamily,
-                        color: textMainC,
-                        letterSpacing: -0.8,
-                        height: AppTextStyle.defaultHeight,
+                        color: BrandColors.needlesDark,
+                        height: 1.05,
                       ),
                     ),
                   ),
@@ -255,7 +246,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 34,
                             height: 34,
                             decoration: BoxDecoration(
-                              color: MarketplaceColors.bluePrimary,
+                              color: BrandColors.needles,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(
@@ -316,9 +307,7 @@ class _HomeScreenState extends State<HomeScreen> {
               vertical: 10,
             ),
             decoration: BoxDecoration(
-              color: isSelected
-                  ? MarketplaceColors.bluePrimary.withOpacity(0.14)
-                  : Colors.transparent,
+              color: isSelected ? BrandColors.linen : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Tooltip(
@@ -332,23 +321,21 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     isSelected ? item.selectedIcon : item.icon,
                     color: isSelected
-                        ? MarketplaceColors.bluePrimary
-                        : MarketplaceColors.textMutedFor(context),
+                        ? BrandColors.needles
+                        : BrandColors.inkFaint,
                     size: 19,
                   ),
                   if (showLabels) ...[
                     const SizedBox(width: 12),
                     Text(
                       item.label,
-                      style: TextStyle(
+                      style: BrandUi.inter(
                         fontSize: 13,
-                        fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
-                        fontFamily: AppTextStyle.fontFamily,
-                        height: AppTextStyle.defaultHeight,
-                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+                        fontWeight:
+                            isSelected ? FontWeight.w700 : FontWeight.w500,
                         color: isSelected
-                            ? MarketplaceColors.textPrimaryFor(context)
-                            : MarketplaceColors.textMutedFor(context),
+                            ? BrandColors.needlesDark
+                            : BrandColors.inkFaint,
                       ),
                     ),
                   ],

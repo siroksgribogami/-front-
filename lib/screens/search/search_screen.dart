@@ -205,7 +205,7 @@ class _SearchScreenState extends State<SearchScreen> {
                 style: TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.w700,
-                  fontFamily: AppTextStyle.fontFamily,
+                  fontFamily: AppTextStyle.uiFontFamily,
                   color: textMain,
                   height: AppTextStyle.defaultHeight,
                   leadingDistribution: AppTextStyle.defaultLeadingDistribution,

@@ -93,7 +93,7 @@ class MarketplaceLocalStore {
         budgetLabel: 'По согласованию',
         district: districtLine,
         addressShort: '',
-        teaser: 'Заявка опубликована в ARThouse.',
+        teaser: 'Заявка опубликована в Приделе.',
         has3d: false,
         fullSpec:
             'Подробности уточняйте у заказчика в переписке или по контактам в профиле.',

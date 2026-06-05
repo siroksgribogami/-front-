@@ -2,23 +2,22 @@ import 'package:flutter/material.dart';
 import 'package:model_viewer_plus/model_viewer_plus.dart';
 import 'package:provider/provider.dart';
 
-import '../../../config/app_theme.dart';
 import '../../../core/theme/app_text_style.dart';
+import '../../../core/theme/map_editor_theme.dart';
 import '../../../providers/map_editor_provider.dart';
 import 'furniture_catalog.dart';
 
-// ─── Цвета из промта ───
-const _sage = Color(0xFF659171);
-const _terra = Color(0xFFD4956A);
-const _cream = Color(0xFFF7F3EC);
-const _dark = Color(0xFF2A3A2C);
+const _sage = MapEditorTheme.needles;
+const _terra = MapEditorTheme.clay;
+const _cream = MapEditorTheme.canvas;
+const _dark = MapEditorTheme.text;
 
 /// Полноэкранный десктопный изометрический редактор комнаты.
 /// Занимает всё пространство контента (показывается внутри HomeScreen).
 ///
 /// Три зоны:
 /// - Центральный канвас (кремовый фон) с Unity placeholder
-/// - Правый тулбар (вертикальная пилюля #D4956A)
+/// - Правый тулбар (вертикальная пилюля глина #BB5C45)
 /// - Нижний sheet (планировка / мебель / задачи)
 class RoomEditorScreen extends StatefulWidget {
   const RoomEditorScreen({
@@ -174,7 +173,7 @@ class _RoomEditorScreenState extends State<RoomEditorScreen> with TickerProvider
     final rooms = provider.rooms;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFE8E2D8),
+      backgroundColor: MapEditorTheme.divider,
       body: Column(
         children: [
           // Заголовок + табы комнат
@@ -279,7 +278,7 @@ class _RoomEditorScreenState extends State<RoomEditorScreen> with TickerProvider
               ],
               Text(
                 'МОЙ ДОМ <3',
-                style: AppTextStyle.gropled(
+                style: AppTextStyle.pochaevsk(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
                   color: _dark,
@@ -322,7 +321,7 @@ class _RoomEditorScreenState extends State<RoomEditorScreen> with TickerProvider
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
-                          fontFamily: AppTextStyle.fontFamily,
+                          fontFamily: AppTextStyle.uiFontFamily,
                           height: AppTextStyle.defaultHeight,
                           color: isActive ? Colors.white : _dark,
                         ),
@@ -414,7 +413,7 @@ class _RoomEditorScreenState extends State<RoomEditorScreen> with TickerProvider
                 Text(
                   tasks[i].length > 20 ? '${tasks[i].substring(0, 20)}…' : tasks[i],
                   style: const TextStyle(
-                    fontFamily: AppTextStyle.fontFamily,
+                    fontFamily: AppTextStyle.uiFontFamily,
                     color: Colors.white,
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
@@ -917,10 +916,10 @@ class _RoomEditorScreenState extends State<RoomEditorScreen> with TickerProvider
         const Divider(height: 1),
         Expanded(
           child: tasks.isEmpty
-              ? const Center(
+              ? Center(
                   child: Text(
                     'Задач пока нет',
-                    style: TextStyle(fontSize: 14, color: AppTheme.textSecondary),
+                    style: TextStyle(fontSize: 14, color: _dark.withOpacity(0.65)),
                   ),
                 )
               : ListView.builder(
@@ -1047,7 +1046,7 @@ class _RoomEditorScreenState extends State<RoomEditorScreen> with TickerProvider
               child: const Text(
                 'Готово',
                 style: TextStyle(
-                  fontFamily: AppTextStyle.fontFamily,
+                  fontFamily: AppTextStyle.uiFontFamily,
                   color: Colors.white,
                   fontSize: 13,
                   fontWeight: FontWeight.w600,

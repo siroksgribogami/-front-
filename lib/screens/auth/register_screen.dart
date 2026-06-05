@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
-import '../../config/app_theme.dart';
-import '../../core/theme/app_text_style.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/role_provider.dart';
 import '../../utils/password_validation.dart';
@@ -163,6 +164,13 @@ class _RegisterScreenState extends State<RegisterScreen>
     }
   }
 
+  int get _stepNumber => switch (_step) {
+        _RegisterStep.name => 1,
+        _RegisterStep.contact => 2,
+        _RegisterStep.password => 3,
+        _RegisterStep.role => 4,
+      };
+
   @override
   Widget build(BuildContext context) {
     return FadeTransition(
@@ -172,31 +180,32 @@ class _RegisterScreenState extends State<RegisterScreen>
         child: AnnotatedRegion<SystemUiOverlayStyle>(
           value: const SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
-            statusBarIconBrightness: Brightness.light,
-            statusBarBrightness: Brightness.dark,
-            systemNavigationBarColor: Colors.transparent,
-            systemNavigationBarIconBrightness: Brightness.light,
+            statusBarIconBrightness: Brightness.dark,
+            statusBarBrightness: Brightness.light,
+            systemNavigationBarColor: BrandColors.canvas,
+            systemNavigationBarIconBrightness: Brightness.dark,
             systemNavigationBarContrastEnforced: false,
           ),
           child: Scaffold(
-            backgroundColor: AppTheme.primaryColor,
             resizeToAvoidBottomInset: true,
+            backgroundColor: BrandColors.canvas,
             body: Column(
               children: [
                 Expanded(
                   child: SafeArea(
                     bottom: false,
-                    child: Center(
-                      child: SingleChildScrollView(
-                        padding: const EdgeInsets.symmetric(horizontal: 28),
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(22, 16, 22, 24),
+                      child: Center(
                         child: ConstrainedBox(
                           constraints: const BoxConstraints(maxWidth: 400),
                           child: Form(
                             key: _formKey,
                             child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
                               crossAxisAlignment: CrossAxisAlignment.stretch,
                               children: [
+                                _buildStepHeader(),
+                                const SizedBox(height: 26),
                                 ..._buildStepContent(),
                                 const SizedBox(height: 16),
                                 _buildErrorBanner(),
@@ -233,6 +242,61 @@ class _RegisterScreenState extends State<RegisterScreen>
     );
   }
 
+  Widget _buildStepHeader() {
+    return Row(
+      children: [
+        BrandBackButton(onPressed: _handleBack),
+        const SizedBox(width: 14),
+        Expanded(
+          child: BrandSteps(total: 4, active: _stepNumber),
+        ),
+        const SizedBox(width: 14),
+        Text(
+          'Шаг $_stepNumber / 4',
+          style: BrandUi.inter(
+            fontSize: 12.5,
+            fontWeight: FontWeight.w600,
+            color: BrandColors.tar.withOpacity(0.55),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildStepIntro({
+    required String kicker,
+    required String title,
+    String? subtitle,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        BrandKicker(kicker, fontSize: 10.5),
+        const SizedBox(height: 10),
+        Text(
+          title,
+          style: pochaevsk(
+            fontSize: _step == _RegisterStep.role ? 34 : 30,
+            color: BrandColors.tar,
+            height: 1.02,
+          ),
+        ),
+        if (subtitle != null) ...[
+          const SizedBox(height: 10),
+          Text(
+            subtitle,
+            style: BrandUi.inter(
+              fontSize: 14,
+              color: BrandColors.tar.withOpacity(0.55),
+              height: 1.5,
+            ),
+          ),
+        ],
+        const SizedBox(height: 26),
+      ],
+    );
+  }
+
   List<Widget> _buildStepContent() {
     return switch (_step) {
       _RegisterStep.name => _buildNameStep(),
@@ -244,19 +308,11 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   List<Widget> _buildNameStep() {
     return [
-      _buildTitle('Давайте познакомимся'),
-      const SizedBox(height: 10),
-      Text(
-        'Как к вам обращаться?',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 15,
-          color: Colors.white.withOpacity(0.75),
-          fontFamily: AppTextStyle.fontFamily,
-          height: AppTextStyle.defaultHeight,
-        ),
+      _buildStepIntro(
+        kicker: 'Регистрация',
+        title: 'Давайте познакомимся',
+        subtitle: 'Как к вам обращаться?',
       ),
-      const SizedBox(height: 28),
       _buildTextField(
         controller: _nameController,
         label: 'Ваше имя',
@@ -274,8 +330,10 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   List<Widget> _buildContactStep() {
     return [
-      _buildTitle('Email или телефон'),
-      const SizedBox(height: 28),
+      _buildStepIntro(
+        kicker: 'Контакт',
+        title: 'Email или телефон',
+      ),
       _buildTextField(
         controller: _contactController,
         label: 'Email или телефон',
@@ -291,8 +349,10 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   List<Widget> _buildPasswordStep() {
     return [
-      _buildTitle('Придумайте пароль'),
-      const SizedBox(height: 28),
+      _buildStepIntro(
+        kicker: 'Безопасность',
+        title: 'Придумайте пароль',
+      ),
       _buildTextField(
         controller: _passwordController,
         label: 'Пароль',
@@ -304,7 +364,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             _obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: Colors.white.withOpacity(0.6),
+            color: BrandColors.tar.withOpacity(0.45),
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
@@ -333,7 +393,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             _obscureConfirmPassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: Colors.white.withOpacity(0.6),
+            color: BrandColors.tar.withOpacity(0.45),
           ),
           onPressed: () =>
               setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -349,44 +409,24 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   List<Widget> _buildRoleStep() {
     return [
-      _buildTitle('Вы пришли сюда как'),
-      const SizedBox(height: 8),
-      Text(
-        'Дальше — разные вопросы для заказчика и мастера',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 14,
-          color: Colors.white.withOpacity(0.7),
-        ),
+      _buildStepIntro(
+        kicker: 'Последний шаг',
+        title: 'Кто вы в ремонте?',
+        subtitle:
+            'От роли зависит, что вы увидите первым — свои проекты или ленту заказов.',
       ),
-      const SizedBox(height: 28),
       _buildRoleCard(
         role: 'customer',
         title: 'Заказчик',
-        subtitle: 'Ищу мастера для ремонта',
+        subtitle: 'Планирую ремонт, ищу мастеров и веду проект',
       ),
-      const SizedBox(height: 12),
+      const SizedBox(height: 13),
       _buildRoleCard(
         role: 'master',
         title: 'Мастер',
-        subtitle: 'Выполняю работы',
+        subtitle: 'Беру заказы, отправляю отклики и сметы',
       ),
     ];
-  }
-
-  Widget _buildTitle(String text) {
-    return Text(
-      text,
-      textAlign: TextAlign.center,
-      style: const TextStyle(
-        fontSize: 26,
-        fontWeight: FontWeight.w700,
-        color: Colors.white,
-        fontFamily: AppTextStyle.fontFamily,
-        height: AppTextStyle.defaultHeight,
-        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-      ),
-    );
   }
 
   Widget _buildRoleCard({
@@ -395,40 +435,101 @@ class _RegisterScreenState extends State<RegisterScreen>
     required String subtitle,
   }) {
     final selected = _selectedRole == role;
+    final isCustomer = role == 'customer';
     return GestureDetector(
       onTap: () => setState(() => _selectedRole = role),
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: selected ? Colors.white : Colors.white.withOpacity(0.08),
-          borderRadius: BorderRadius.circular(14),
+          color: selected
+              ? BrandColors.linen.withOpacity(0.85)
+              : BrandColors.milk,
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected
-                ? Colors.white
-                : Colors.white.withOpacity(0.25),
+            color: selected ? BrandColors.needles : BrandColors.borderSubtle,
+            width: 1.5,
           ),
+          boxShadow: selected
+              ? [
+                  BoxShadow(
+                    color: BrandColors.needles.withOpacity(0.25),
+                    blurRadius: 30,
+                    offset: const Offset(0, 14),
+                  ),
+                ]
+              : null,
         ),
-        child: Column(
+        child: Row(
           children: [
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
-                color: selected ? AppTheme.primaryColor : Colors.white,
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: isCustomer ? BrandColors.needles : BrandColors.linen,
+                borderRadius: BorderRadius.circular(14),
+                border: isCustomer
+                    ? null
+                    : Border.all(color: BrandColors.borderSubtle),
+              ),
+              alignment: Alignment.center,
+              child: isCustomer
+                  ? const Icon(
+                      Icons.home_outlined,
+                      color: BrandColors.onNeedles,
+                      size: 26,
+                    )
+                  : BrandAvatar(
+                      name: title,
+                      size: 52,
+                      radius: 14,
+                      tone: BrandAvatarTone.sand,
+                    ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: pochaevsk(
+                      fontSize: 22,
+                      color: BrandColors.tar,
+                      height: 1,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    subtitle,
+                    style: BrandUi.inter(
+                      fontSize: 13,
+                      color: BrandColors.tar.withOpacity(0.55),
+                      height: 1.4,
+                    ),
+                  ),
+                ],
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              subtitle,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 13,
-                color: selected
-                    ? AppTheme.primaryColor.withOpacity(0.8)
-                    : Colors.white.withOpacity(0.65),
+            AnimatedContainer(
+              duration: const Duration(milliseconds: 180),
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: selected ? BrandColors.needles : Colors.transparent,
+                border: Border.all(
+                  color: selected ? BrandColors.needles : BrandColors.chipBorder,
+                  width: 2,
+                ),
               ),
+              child: selected
+                  ? const Icon(
+                      Icons.check_rounded,
+                      size: 14,
+                      color: BrandColors.onNeedles,
+                    )
+                  : null,
             ),
           ],
         ),
@@ -438,25 +539,49 @@ class _RegisterScreenState extends State<RegisterScreen>
 
   Widget _buildBottomNav() {
     final isLast = _step == _RegisterStep.role;
-    final nextLabel = isLast ? 'Готово' : 'Далее';
 
     return Consumer<AuthProvider>(
       builder: (context, auth, _) {
         final loading = auth.isLoading || _submitLock;
+
+        if (isLast) {
+          return Padding(
+            padding: const EdgeInsets.fromLTRB(22, 4, 22, 4),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(minWidth: double.infinity),
+              child: loading
+                  ? const Center(
+                      child: SizedBox(
+                        width: 24,
+                        height: 24,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: BrandColors.clay,
+                        ),
+                      ),
+                    )
+                  : BrandAccentButton(
+                      label: 'Завершить регистрацию',
+                      onPressed: _handleNext,
+                    ),
+            ),
+          );
+        }
+
         return Padding(
-          padding: const EdgeInsets.fromLTRB(20, 4, 20, 4),
+          padding: const EdgeInsets.fromLTRB(22, 4, 22, 4),
           child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              _OvalNavButton(
+              BrandGhostButton(
                 label: 'Назад',
-                outlined: true,
                 onPressed: loading ? null : _handleBack,
               ),
-              _OvalNavButton(
-                label: nextLabel,
-                loading: loading,
-                onPressed: loading ? null : _handleNext,
+              const SizedBox(width: 12),
+              Expanded(
+                child: BrandPrimaryButton(
+                  label: 'Далее',
+                  onPressed: loading ? null : _handleNext,
+                ),
               ),
             ],
           ),
@@ -472,12 +597,16 @@ class _RegisterScreenState extends State<RegisterScreen>
         return Container(
           padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.12),
+            color: BrandColors.surik.withOpacity(0.08),
             borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: BrandColors.surik.withOpacity(0.25)),
           ),
           child: SelectableText(
             auth.error!,
-            style: const TextStyle(color: Colors.white, height: 1.35),
+            style: BrandUi.inter(
+              color: BrandColors.surik,
+              height: 1.35,
+            ),
             textAlign: TextAlign.center,
           ),
         );
@@ -491,18 +620,19 @@ class _RegisterScreenState extends State<RegisterScreen>
       children: [
         Text(
           'Уже есть аккаунт?',
-          style: TextStyle(
-            color: Colors.white.withOpacity(0.7),
+          style: BrandUi.inter(
+            color: BrandColors.tar.withOpacity(0.55),
             fontSize: 14,
           ),
         ),
         TextButton(
           onPressed: _handleBackToLogin,
-          child: const Text(
+          child: Text(
             'Войти',
-            style: TextStyle(
+            style: BrandUi.inter(
               fontWeight: FontWeight.w600,
-              color: Colors.white,
+              color: BrandColors.tar,
+              fontSize: 14,
             ),
           ),
         ),
@@ -526,32 +656,16 @@ class _RegisterScreenState extends State<RegisterScreen>
       obscureText: obscureText,
       textAlign: textAlign,
       onChanged: onChanged,
-      style: const TextStyle(color: Colors.white),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: Colors.white.withOpacity(0.7)),
-        alignLabelWithHint: textAlign == TextAlign.center,
-        filled: true,
-        fillColor: Colors.white.withOpacity(0.1),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.25)),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.white.withOpacity(0.7)),
-        ),
+      style: BrandUi.inter(fontSize: 15, color: BrandColors.tar),
+      cursorColor: BrandColors.needles,
+      decoration: BrandUi.inputDecoration(
+        hint: label,
+        suffix: suffixIcon,
+      ).copyWith(
         errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: const BorderSide(color: Colors.redAccent),
+          borderRadius: BrandUi.buttonRadius,
+          borderSide: const BorderSide(color: BrandColors.surik),
         ),
-        suffixIcon: suffixIcon,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
       ),
       validator: validator,
     );
@@ -562,60 +676,9 @@ class _RegisterScreenState extends State<RegisterScreen>
     if (value.isEmpty) return null;
     final error = RegisterContactValidation.validateContact(value);
     if (error == null) {
-      return const Icon(Icons.check_circle, color: Color(0xFF81C784));
+      return const Icon(Icons.check_circle, color: BrandColors.needlesLight);
     }
-    return const Icon(Icons.error_outline, color: Colors.redAccent);
-  }
-}
-
-class _OvalNavButton extends StatelessWidget {
-  final String label;
-  final VoidCallback? onPressed;
-  final bool outlined;
-  final bool loading;
-
-  const _OvalNavButton({
-    required this.label,
-    this.onPressed,
-    this.outlined = false,
-    this.loading = false,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return Material(
-      color: outlined ? Colors.transparent : Colors.white,
-      shape: StadiumBorder(
-        side: outlined
-            ? BorderSide(color: Colors.white.withOpacity(0.55))
-            : BorderSide.none,
-      ),
-      child: InkWell(
-        onTap: onPressed,
-        customBorder: const StadiumBorder(),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
-          child: loading
-              ? const SizedBox(
-                  width: 18,
-                  height: 18,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    color: AppTheme.primaryColor,
-                  ),
-                )
-              : Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 14,
-                    fontWeight: FontWeight.w600,
-                    color: outlined ? Colors.white : AppTheme.primaryColor,
-                    fontFamily: AppTextStyle.fontFamily,
-                  ),
-                ),
-        ),
-      ),
-    );
+    return const Icon(Icons.error_outline, color: BrandColors.surik);
   }
 }
 
@@ -630,9 +693,9 @@ class _PasswordStrengthPanel extends StatelessWidget {
     final reqs = PasswordValidation.analyze(password);
 
     final (label, color) = switch (strength) {
-      PasswordStrength.weak => ('Слабый пароль', const Color(0xFFE57373)),
-      PasswordStrength.medium => ('Средний уровень', const Color(0xFFFFB74D)),
-      PasswordStrength.strong => ('Надёжный пароль', const Color(0xFF81C784)),
+      PasswordStrength.weak => ('Слабый пароль', BrandColors.surik),
+      PasswordStrength.medium => ('Средний уровень', BrandColors.gilded),
+      PasswordStrength.strong => ('Надёжный пароль', BrandColors.needlesLight),
     };
 
     final filled = reqs.where((r) => r.satisfied).length / reqs.length;
@@ -645,14 +708,14 @@ class _PasswordStrengthPanel extends StatelessWidget {
           child: LinearProgressIndicator(
             value: filled.clamp(0.0, 1.0),
             minHeight: 5,
-            backgroundColor: Colors.white.withOpacity(0.15),
+            backgroundColor: BrandColors.borderSubtle,
             color: color,
           ),
         ),
         const SizedBox(height: 8),
         Text(
           label,
-          style: TextStyle(
+          style: BrandUi.inter(
             color: color,
             fontWeight: FontWeight.w600,
             fontSize: 13,
@@ -671,19 +734,19 @@ class _PasswordStrengthPanel extends StatelessWidget {
                       : Icons.radio_button_unchecked,
                   size: 18,
                   color: r.satisfied
-                      ? const Color(0xFF81C784)
-                      : Colors.white.withOpacity(0.45),
+                      ? BrandColors.needlesLight
+                      : BrandColors.tar.withOpacity(0.35),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     r.label,
-                    style: TextStyle(
+                    style: BrandUi.inter(
                       fontSize: 12,
                       height: 1.3,
                       color: r.satisfied
-                          ? Colors.white.withOpacity(0.9)
-                          : Colors.white.withOpacity(0.65),
+                          ? BrandColors.tar
+                          : BrandColors.tar.withOpacity(0.55),
                     ),
                   ),
                 ),

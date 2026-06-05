@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../config/app_theme.dart';
-import '../../core/theme/app_text_style.dart';
+
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../providers/theme_provider.dart';
 
 /// Экран настроек внешнего вида — тема + размер шрифта
@@ -10,197 +12,158 @@ class AppearanceScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    final isDark = theme.brightness == Brightness.dark;
-    final cardBg = isDark ? AppTheme.darkCard : Colors.white;
-    final textMain = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
-    final textSub = isDark ? AppTheme.darkTextSecondary : AppTheme.textSecondary;
-    final textHint = isDark ? AppTheme.darkTextHint : AppTheme.textHint;
-    final bgColor = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
-
-    return Scaffold(
-      backgroundColor: bgColor,
+    return BrandScreen(
       appBar: AppBar(
-        title: const Text('Внешний вид'),
-        backgroundColor: isDark ? AppTheme.darkSurface : AppTheme.primaryColor,
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        backgroundColor: BrandColors.canvas,
+        foregroundColor: BrandColors.tar,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
+          onPressed: () => Navigator.of(context).maybePop(),
+        ),
+        title: const SizedBox.shrink(),
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(52),
+          child: BrandAppBar(
+            title: 'Внешний вид',
+            onBack: () => Navigator.of(context).maybePop(),
+          ),
+        ),
       ),
+      padding: EdgeInsets.zero,
       body: Consumer<ThemeProvider>(
         builder: (context, themeProv, _) {
           return ListView(
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 24),
             children: [
-              // ── Секция: Тема ──
-              Text(
-                'Тема',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: AppTextStyle.fontFamily,
-                  color: textMain,
-                  height: AppTextStyle.defaultHeight,
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 0, 4, 12),
+                child: Text(
+                  'ТЕМА',
+                  style: BrandUi.inter(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: BrandColors.tar.withOpacity(0.4),
+                  ).copyWith(letterSpacing: 0.6),
                 ),
               ),
-              const SizedBox(height: 12),
-              Container(
-                decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  children: [
-                    _ThemeOption(
-                      icon: Icons.light_mode_outlined,
-                      label: 'Светлая',
-                      isSelected: themeProv.themeMode == ThemeMode.light,
+              Row(
+                children: [
+                  Expanded(
+                    child: _ThemePreviewCard(
+                      name: 'Светлая',
+                      selected: themeProv.themeMode == ThemeMode.light,
+                      bg: BrandColors.milk,
+                      fg: BrandColors.tar,
+                      accent: BrandColors.needles,
                       onTap: () => themeProv.setThemeMode(ThemeMode.light),
-                      textMain: textMain,
-                      textHint: textHint,
                     ),
-                    Divider(height: 1, indent: 56, color: isDark ? AppTheme.darkBorder.withOpacity(0.4) : null),
-                    _ThemeOption(
-                      icon: Icons.dark_mode_outlined,
-                      label: 'Тёмная',
-                      isSelected: themeProv.themeMode == ThemeMode.dark,
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: _ThemePreviewCard(
+                      name: 'Тёмная',
+                      selected: themeProv.themeMode == ThemeMode.dark,
+                      bg: BrandColors.needlesDeep,
+                      fg: BrandColors.milk,
+                      accent: BrandColors.dawn,
                       onTap: () => themeProv.setThemeMode(ThemeMode.dark),
-                      textMain: textMain,
-                      textHint: textHint,
                     ),
-                    Divider(height: 1, indent: 56, color: isDark ? AppTheme.darkBorder.withOpacity(0.4) : null),
-                    _ThemeOption(
-                      icon: Icons.brightness_auto_outlined,
-                      label: 'Как в системе',
-                      isSelected: themeProv.themeMode == ThemeMode.system,
+                  ),
+                  const SizedBox(width: 11),
+                  Expanded(
+                    child: _ThemePreviewCard(
+                      name: 'Системная',
+                      selected: themeProv.themeMode == ThemeMode.system,
+                      gradient: const LinearGradient(
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                        stops: [0.5, 0.5],
+                        colors: [BrandColors.milk, BrandColors.needlesDeep],
+                      ),
+                      fg: BrandColors.tar.withOpacity(0.55),
+                      accent: BrandColors.gilded,
                       onTap: () => themeProv.setThemeMode(ThemeMode.system),
-                      textMain: textMain,
-                      textHint: textHint,
                     ),
-                  ],
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(4, 26, 4, 14),
+                child: Text(
+                  'МАСШТАБ ШРИФТА',
+                  style: BrandUi.inter(
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                    color: BrandColors.tar.withOpacity(0.4),
+                  ).copyWith(letterSpacing: 0.6),
                 ),
               ),
-
-              const SizedBox(height: 28),
-
-              // ── Превью темы ──
-              _ThemePreview(isDark: isDark),
-
-              const SizedBox(height: 28),
-
-              // ── Секция: Размер шрифта ──
-              Text(
-                'Размер шрифта',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                  fontFamily: AppTextStyle.fontFamily,
-                  color: textMain,
-                  height: AppTextStyle.defaultHeight,
-                ),
-              ),
-              const SizedBox(height: 12),
               Container(
-                padding: const EdgeInsets.fromLTRB(20, 20, 20, 12),
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                 decoration: BoxDecoration(
-                  color: cardBg,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                      blurRadius: 16,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
+                  color: BrandColors.milk,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: BrandColors.borderSubtle),
                 ),
                 child: Column(
                   children: [
-                    // Превью текста
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: bgColor,
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'Заголовок',
-                            style: TextStyle(
-                              fontSize: 20 * themeProv.fontScale,
-                              fontWeight: FontWeight.w700,
-                              fontFamily: AppTextStyle.fontFamily,
-                              color: textMain,
-                              height: AppTextStyle.defaultHeight,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Обычный текст выглядит так. Это предпросмотр с текущим масштабом шрифта.',
-                            style: TextStyle(
-                              fontSize: 14 * themeProv.fontScale,
-                              color: textSub,
-                              height: 1.4,
-                            ),
-                          ),
-                          const SizedBox(height: 6),
-                          Text(
-                            'Мелкий текст · подпись',
-                            style: TextStyle(
-                              fontSize: 11 * themeProv.fontScale,
-                              color: textHint,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-
-                    // Слайдер
                     Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
-                        Text('A',
-                            style: TextStyle(
-                                fontSize: 12, color: textHint, fontWeight: FontWeight.w600)),
-                        Expanded(
-                          child: SliderTheme(
-                            data: SliderThemeData(
-                              activeTrackColor: AppTheme.primaryColor,
-                              inactiveTrackColor: AppTheme.primaryColor.withOpacity(0.15),
-                              thumbColor: AppTheme.primaryColor,
-                              overlayColor: AppTheme.primaryColor.withOpacity(0.1),
-                              trackHeight: 4,
-                              thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 8),
-                            ),
-                            child: Slider(
-                              value: themeProv.fontScale,
-                              min: 0.7,
-                              max: 1.2,
-                              divisions: 10,
-                              onChanged: (v) => themeProv.setFontScale(v),
-                            ),
+                        Text(
+                          'А',
+                          style: BrandUi.inter(
+                            fontSize: 13,
+                            color: BrandColors.tar.withOpacity(0.55),
                           ),
                         ),
-                        Text('A',
-                            style: TextStyle(
-                                fontSize: 22, color: textHint, fontWeight: FontWeight.w600)),
+                        Text(
+                          'Ремонт под ключ',
+                          style: pochaevsk(
+                            fontSize: 22 * themeProv.fontScale,
+                            color: BrandColors.tar,
+                          ),
+                        ),
+                        Text(
+                          'А',
+                          style: BrandUi.inter(
+                            fontSize: 22,
+                            color: BrandColors.tar.withOpacity(0.55),
+                          ),
+                        ),
                       ],
+                    ),
+                    const SizedBox(height: 14),
+                    SliderTheme(
+                      data: SliderThemeData(
+                        activeTrackColor: BrandColors.needles,
+                        inactiveTrackColor: BrandColors.borderSubtle,
+                        thumbColor: BrandColors.milk,
+                        overlayColor: BrandColors.needles.withOpacity(0.1),
+                        trackHeight: 6,
+                        thumbShape: const RoundSliderThumbShape(
+                          enabledThumbRadius: 11,
+                          elevation: 2,
+                        ),
+                      ),
+                      child: Slider(
+                        value: themeProv.fontScale,
+                        min: 0.7,
+                        max: 1.2,
+                        divisions: 10,
+                        onChanged: (v) => themeProv.setFontScale(v),
+                      ),
                     ),
                     Text(
                       themeProv.fontScaleLabel,
-                      style: const TextStyle(
+                      style: BrandUi.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: AppTheme.primaryColor,
+                        color: BrandColors.needles,
                       ),
                     ),
-                    const SizedBox(height: 4),
                   ],
                 ),
               ),
@@ -212,197 +175,111 @@ class AppearanceScreen extends StatelessWidget {
   }
 }
 
-/// Вариант темы (радио)
-class _ThemeOption extends StatelessWidget {
-  final IconData icon;
-  final String label;
-  final bool isSelected;
-  final VoidCallback onTap;
-  final Color textMain;
-  final Color textHint;
-
-  const _ThemeOption({
-    required this.icon,
-    required this.label,
-    required this.isSelected,
+class _ThemePreviewCard extends StatelessWidget {
+  const _ThemePreviewCard({
+    required this.name,
+    required this.selected,
+    required this.fg,
+    required this.accent,
     required this.onTap,
-    required this.textMain,
-    required this.textHint,
+    this.bg,
+    this.gradient,
   });
 
+  final String name;
+  final bool selected;
+  final Color? bg;
+  final Gradient? gradient;
+  final Color fg;
+  final Color accent;
+  final VoidCallback onTap;
+
   @override
   Widget build(BuildContext context) {
-    return InkWell(
+    return GestureDetector(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(20),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-        child: Row(
-          children: [
-            Container(
-              width: 36,
-              height: 36,
-              decoration: BoxDecoration(
-                color: AppTheme.primaryColor.withOpacity(isSelected ? 0.15 : 0.08),
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: Icon(icon,
-                  color: isSelected ? AppTheme.primaryColor : textHint, size: 18),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                  color: textMain,
-                ),
-              ),
-            ),
-            if (isSelected)
-              const Icon(Icons.check_circle, color: AppTheme.primaryColor, size: 22)
-            else
-              Icon(Icons.circle_outlined, color: textHint.withOpacity(0.4), size: 22),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Мини-превью текущей темы
-class _ThemePreview extends StatelessWidget {
-  final bool isDark;
-  const _ThemePreview({required this.isDark});
-
-  @override
-  Widget build(BuildContext context) {
-    final bg = isDark ? AppTheme.darkBackground : AppTheme.backgroundColor;
-    final card = isDark ? AppTheme.darkCard : Colors.white;
-    final textM = isDark ? AppTheme.darkTextPrimary : AppTheme.textPrimary;
-    final textS = isDark ? AppTheme.darkTextHint : AppTheme.textHint;
-    final accent = isDark ? AppTheme.darkAccent : AppTheme.accentColor;
-
-    return Container(
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(18),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-            blurRadius: 20,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      clipBehavior: Clip.antiAlias,
       child: Column(
         children: [
-          // Шапка
           Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 18),
-            color: AppTheme.primaryColor,
-            child: Column(
+            height: 96,
+            decoration: BoxDecoration(
+              color: bg,
+              gradient: gradient,
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: selected ? BrandColors.clay : BrandColors.borderSubtle,
+                width: selected ? 2 : 1,
+              ),
+            ),
+            child: Stack(
               children: [
-                const Text(
-                  'КРОВ',
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.w700,
-                    color: Colors.white,
-                    fontFamily: AppTextStyle.fontFamily,
-                    height: AppTextStyle.defaultHeight,
+                Padding(
+                  padding: const EdgeInsets.all(10),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          color: fg.withOpacity(0.85),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: 68,
+                        height: 6,
+                        decoration: BoxDecoration(
+                          color: fg.withOpacity(0.4),
+                          borderRadius: BorderRadius.circular(4),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  'идея → ТЗ → 3D → ремонт',
-                  style: TextStyle(
-                    fontSize: 9,
-                    color: Colors.white.withOpacity(0.5),
-                    fontFamily: AppTextStyle.fontFamily,
-                    letterSpacing: 1.5,
-                    height: AppTextStyle.defaultHeight,
+                Positioned(
+                  left: 10,
+                  bottom: 10,
+                  child: Container(
+                    width: 28,
+                    height: 14,
+                    decoration: BoxDecoration(
+                      color: accent,
+                      borderRadius: BorderRadius.circular(7),
+                    ),
                   ),
                 ),
+                if (selected)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 20,
+                      height: 20,
+                      decoration: const BoxDecoration(
+                        color: BrandColors.clay,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.check_rounded,
+                        size: 13,
+                        color: BrandColors.onClay,
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
-          // Тело
-          Container(
-            width: double.infinity,
-            color: bg,
-            padding: const EdgeInsets.all(14),
-            child: Column(
-              children: [
-                // Карточка задачи
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: AppTheme.primaryColor,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Убрать кухню',
-                                style: TextStyle(
-                                    fontSize: 13, fontWeight: FontWeight.w500, color: textM)),
-                            Text('14:00 · Кухня',
-                                style: TextStyle(fontSize: 10, color: textS)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 10,
-                        height: 10,
-                        decoration: BoxDecoration(
-                          color: accent,
-                          borderRadius: BorderRadius.circular(5),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Полить цветы',
-                                style: TextStyle(
-                                    fontSize: 13, fontWeight: FontWeight.w500, color: textM)),
-                            Text('утром · Гостиная',
-                                style: TextStyle(fontSize: 10, color: textS)),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+          const SizedBox(height: 9),
+          Text(
+            name,
+            style: BrandUi.inter(
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+              color: selected
+                  ? BrandColors.tar
+                  : BrandColors.tar.withOpacity(0.55),
             ),
           ),
         ],

@@ -1,75 +1,199 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/app_text_style.dart';
-import '../../core/theme/marketplace_colors.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 
 /// Полноэкранное портфолио мастера (заглушки до подключения медиа с сервера).
 class MasterPortfolioScreen extends StatelessWidget {
-  const MasterPortfolioScreen({super.key});
+  const MasterPortfolioScreen({
+    super.key,
+    this.masterName = 'Мастер',
+    this.worksCount = 28,
+  });
+
+  final String masterName;
+  final int worksCount;
+
+  static const _gridItems = [
+    ('Санузел гостевой', 'санузел'),
+    ('Кухонный фартук', 'фартук'),
+    ('Душевая ниша', 'душевая'),
+    ('Тёплый пол', 'пол'),
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final bg = MarketplaceColors.backgroundFor(context);
-    final card = MarketplaceColors.cardFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textSecondary = MarketplaceColors.textSecondaryFor(context);
-    final border = MarketplaceColors.textMutedFor(context).withOpacity(0.2);
-
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        title: Text(
-          'Портфолио',
-          style: TextStyle(
-            fontFamily: AppTextStyle.fontFamily,
-            fontWeight: FontWeight.w700,
-            color: MarketplaceColors.textPrimaryFor(context),
-          ),
-        ),
-        backgroundColor: bg,
-        surfaceTintColor: Colors.transparent,
-        elevation: 0,
-        iconTheme: IconThemeData(color: MarketplaceColors.textPrimaryFor(context)),
-      ),
-      body: ListView(
-        padding: EdgeInsets.fromLTRB(
-          MarketplaceColors.horizontalPaddingFor(context),
-          8,
-          MarketplaceColors.horizontalPaddingFor(context),
-          24,
-        ),
-        children: [
-          Text(
-            'Здесь будут фото работ. Сейчас — демо-сетка.',
-            style: TextStyle(fontSize: 13, color: textSecondary, height: 1.35),
-          ),
-          const SizedBox(height: 16),
-          GridView.count(
-            crossAxisCount: 3,
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            mainAxisSpacing: 8,
-            crossAxisSpacing: 8,
-            children: List.generate(
-              12,
-              (i) => Container(
-                decoration: BoxDecoration(
-                  color: card,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: border),
-                ),
-                alignment: Alignment.center,
-                child: Text(
-                  '${i + 1}',
-                  style: TextStyle(
-                    color: textPrimary,
-                    fontWeight: FontWeight.w700,
+      backgroundColor: BrandColors.needlesDeep,
+      body: SafeArea(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 14),
+              child: Row(
+                children: [
+                  BrandBackButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    onDark: true,
                   ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Портфолио',
+                          style: pochaevsk(
+                            fontSize: 19,
+                            color: BrandColors.onNeedles,
+                          ),
+                        ),
+                        Text(
+                          '$masterName · $worksCount работ',
+                          style: BrandUi.inter(
+                            fontSize: 12.5,
+                            color: BrandColors.onNeedles.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: BrandUi.pad),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(18),
+                child: Stack(
+                  children: [
+                    const BrandStripedPlaceholder(
+                      label: 'ванная под ключ · мрамор',
+                      height: 230,
+                      radius: 0,
+                      dark: true,
+                    ),
+                    Positioned(
+                      left: 14,
+                      right: 14,
+                      bottom: 14,
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Ванная «Мрамор»',
+                                  style: pochaevsk(
+                                    fontSize: 20,
+                                    color: BrandColors.onNeedles,
+                                  ),
+                                ),
+                                Text(
+                                  'ХАМОВНИКИ · 8 М² · 2025',
+                                  style: BrandUi.monoLabel(
+                                    fontSize: 10,
+                                    color: BrandColors.onNeedles.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 11,
+                              vertical: 6,
+                            ),
+                            decoration: BoxDecoration(
+                              color: BrandColors.tar.withOpacity(0.4),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.view_in_ar_rounded,
+                                  size: 14,
+                                  color: BrandColors.onNeedles,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  '3D-тур',
+                                  style: BrandUi.inter(
+                                    fontSize: 11.5,
+                                    fontWeight: FontWeight.w600,
+                                    color: BrandColors.onNeedles,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
-          ),
-        ],
+            const SizedBox(height: 12),
+            Expanded(
+              child: GridView.builder(
+                padding: const EdgeInsets.fromLTRB(BrandUi.pad, 0, BrandUi.pad, 24),
+                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: 2,
+                  crossAxisSpacing: 10,
+                  mainAxisSpacing: 10,
+                  childAspectRatio: 1.35,
+                ),
+                itemCount: _gridItems.length,
+                itemBuilder: (_, i) {
+                  final (title, label) = _gridItems[i];
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      return ClipRRect(
+                        borderRadius: BorderRadius.circular(14),
+                        child: Stack(
+                          children: [
+                            BrandStripedPlaceholder(
+                              label: label,
+                              height: constraints.maxHeight,
+                              radius: 0,
+                              dark: true,
+                            ),
+                            Positioned(
+                              left: 10,
+                              bottom: 9,
+                              child: Text(
+                                title,
+                                style: BrandUi.inter(
+                                  fontSize: 12.5,
+                                  fontWeight: FontWeight.w600,
+                                  color: BrandColors.onNeedles,
+                                ).copyWith(
+                                  shadows: const [
+                                    Shadow(
+                                      color: Color(0x99000000),
+                                      blurRadius: 4,
+                                      offset: Offset(0, 1),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

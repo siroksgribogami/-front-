@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../../config/brand_colors.dart';
 import '../../core/arthouse_scroll_behavior.dart';
-import '../../core/theme/app_text_style.dart';
-import '../../core/theme/marketplace_colors.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../models/app_marketplace_role.dart';
 import '../../providers/role_provider.dart';
 import '../marketplace/messages_hub_screen.dart';
@@ -103,7 +103,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
           ];
 
     return Scaffold(
-      backgroundColor: MarketplaceColors.backgroundFor(context),
+      backgroundColor: BrandColors.canvas,
       body: SafeArea(
         bottom: false,
         child: IndexedStack(
@@ -117,44 +117,34 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
           ),
         ),
       ),
-      bottomNavigationBar: RepaintBoundary(child: Container(
-        decoration: BoxDecoration(
-          color: MarketplaceColors.cardFor(context),
-          border: Border(
-            top: BorderSide(
-              color: MarketplaceColors.textMutedFor(context).withOpacity(0.12),
+      bottomNavigationBar: RepaintBoundary(
+        child: DecoratedBox(
+          decoration: const BoxDecoration(
+            color: BrandColors.milk,
+            border: Border(
+              top: BorderSide(color: BrandColors.borderSubtle),
             ),
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(
-                Theme.of(context).brightness == Brightness.dark ? 0.55 : 0.08,
-              ),
-              blurRadius: 12,
-              offset: const Offset(0, -2),
+          child: Padding(
+            padding: EdgeInsets.only(
+              left: 8,
+              right: 8,
+              top: 9,
+              bottom: bottomPadding + 9,
             ),
-          ],
-        ),
-        child: Padding(
-          padding: EdgeInsets.only(
-            left: 8,
-            right: 8,
-            top: 8,
-            bottom: bottomPadding + 8,
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: List.generate(labels.length, (i) {
-              return _buildNavItem(
-                i,
-                iconsOutlined[i],
-                iconsFilled[i],
-                labels[i],
-              );
-            }),
+            child: Row(
+              children: List.generate(labels.length, (i) {
+                return _buildNavItem(
+                  i,
+                  iconsOutlined[i],
+                  iconsFilled[i],
+                  labels[i],
+                );
+              }),
+            ),
           ),
         ),
-      )),
+      ),
     );
   }
 
@@ -166,9 +156,6 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
     String label,
   ) {
     final isSelected = _currentIndex == index;
-    const selectedColor = MarketplaceColors.bluePrimary;
-    final unselectedColor = MarketplaceColors.textSecondaryFor(context);
-    final selectedLabelColor = MarketplaceColors.textPrimaryFor(context);
 
     return Expanded(
       child: Semantics(
@@ -183,64 +170,32 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
               ArthouseHaptics.select();
               setState(() => _currentIndex = index);
             },
-            borderRadius: BorderRadius.circular(12),
             child: ConstrainedBox(
               constraints: const BoxConstraints(minHeight: 48),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 6),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    TweenAnimationBuilder<double>(
-                      tween: Tween(begin: 1.0, end: isSelected ? 1.08 : 1.0),
-                      duration: const Duration(milliseconds: 220),
-                      curve: Curves.easeOutBack,
-                      builder: (context, scale, child) {
-                        return Transform.scale(scale: scale, child: child);
-                      },
-                      child: AnimatedContainer(
-                        duration: const Duration(milliseconds: 180),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 14,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: isSelected
-                              ? MarketplaceColors.bluePrimary.withOpacity(0.14)
-                              : Colors.transparent,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: AnimatedSwitcher(
-                          duration: const Duration(milliseconds: 180),
-                          transitionBuilder: (child, anim) => FadeTransition(
-                            opacity: anim,
-                            child: ScaleTransition(scale: anim, child: child),
-                          ),
-                          child: Icon(
-                            isSelected ? selectedIcon : icon,
-                            key: ValueKey<bool>(isSelected),
-                            color: isSelected ? selectedColor : unselectedColor,
-                            size: 24,
-                          ),
-                        ),
-                      ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    isSelected ? selectedIcon : icon,
+                    color: isSelected
+                        ? BrandColors.needles
+                        : BrandColors.inkFaint,
+                    size: 23,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    label,
+                    style: BrandUi.inter(
+                      fontSize: 10.5,
+                      fontWeight:
+                          isSelected ? FontWeight.w600 : FontWeight.w500,
+                      color: isSelected
+                          ? BrandColors.needlesDark
+                          : BrandColors.inkFaint,
                     ),
-                    const SizedBox(height: 4),
-                    Text(
-                      label,
-                      style: TextStyle(
-                        fontSize: 11,
-                        fontWeight: isSelected ? FontWeight.w800 : FontWeight.w500,
-                        fontFamily: AppTextStyle.fontFamily,
-                        height: AppTextStyle.defaultHeight,
-                        leadingDistribution:
-                            AppTextStyle.defaultLeadingDistribution,
-                        color: isSelected ? selectedLabelColor : unselectedColor,
-                      ),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),

@@ -1,59 +1,68 @@
 import 'package:flutter/material.dart';
+import 'brand_colors.dart';
 import 'text_theme.dart';
 
-/// Тема ARTkhaus — маркетплейс ремонта, спокойные натуральные тона
-/// Цветовая схема 60-30-10 (Кремовый + терракот):
-/// - 60% (#F7F3EC) - Кремовый фон, тёплый и домашний
-/// - 30% (#659171) - Шалфейно-зеленый, природа и уют
-/// - 10% (#D4956A) - Терракотовый акцент, земляное тепло
+/// Тема Приделе — брендбук «При деле» (60-30-10: холст / хвоя / глина).
 class AppTheme {
-  // === ОСНОВНАЯ ЦВЕТОВАЯ СХЕМА 60-30-10 ===
+  static const Color primaryDeep = BrandColors.needlesDeep;
+  static const Color primaryColor = BrandColors.needles;
+  static const Color primaryDark = primaryDeep;
+  static const Color primaryLight = BrandColors.needlesLight;
+  static const Color primaryPale = BrandColors.linen;
+
+  static const LinearGradient brandGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [primaryDeep, primaryColor],
+  );
+
+  static BoxDecoration brandGradientDecoration({
+    AlignmentGeometry begin = Alignment.topLeft,
+    AlignmentGeometry end = Alignment.bottomRight,
+  }) =>
+      BoxDecoration(
+        gradient: LinearGradient(
+          begin: begin,
+          end: end,
+          colors: const [primaryDeep, primaryColor],
+        ),
+      );
   
-  // 30% - Шалфейно-зеленый (Primary)
-  static const Color primaryColor = Color(0xFF659171);
-  static const Color primaryDark = Color(0xFF547A62);
-  static const Color primaryLight = Color(0xFF80B490);
-  static const Color primaryPale = Color(0xFFC6D9CE);
-  
-  // 60% - Кремовый фон (Background)
-  static const Color backgroundColor = Color(0xFFF7F3EC);
-  static const Color surfaceColor = Colors.white;
-  static const Color cardColor = Colors.white;
-  
-  // 10% - Терракотовый акцент (Accent/CTA)
-  static const Color accentColor = Color(0xFFD4956A);
-  static const Color accentDark = Color(0xFFB87848);
-  static const Color accentLight = Color(0xFFE4B594);
-  
-  // Вспомогательные цвета
-  static const Color secondaryColor = Color(0xFFEDE8E0);
+  static const Color backgroundColor = BrandColors.canvas;
+  static const Color surfaceColor = BrandColors.milk;
+  static const Color cardColor = BrandColors.milk;
+
+  /// Единственный clay-CTA на экране (отправка, 3D).
+  static const Color accentColor = BrandColors.clay;
+  static const Color accentDark = BrandColors.surik;
+  static const Color accentLight = BrandColors.dawn;
+
+  static const Color secondaryColor = BrandColors.linen;
   static const Color errorColor = Color(0xFFD32F2F);
-  static const Color successColor = Color(0xFF659171);
+  static const Color successColor = primaryColor;
   static const Color warningColor = Color(0xFFE8B931);
   static const Color streakColor = Color(0xFFFF6B35); // Для streak как в Duolingo
   
   // Нейтральные оттенки
-  static const Color warmGrey = Color(0xFF9AB09E);
-  static const Color lightGrey = Color(0xFFEDE8E0);
-  static const Color borderColor = Color(0xFFE8E2D8);
-  
-  // Цвета текста
-  static const Color textPrimary = Color(0xFF2A3A2C);
-  static const Color textSecondary = Color(0xFF506A58);
-  static const Color textHint = Color(0xFF80B490);
+  static const Color warmGrey = Color(0xFF6B7A72);
+  static const Color lightGrey = BrandColors.linen;
+  static const Color borderColor = BrandColors.borderSubtle;
+
+  static const Color textPrimary = BrandColors.tar;
+  static const Color textSecondary = Color(0xFF3D4A42);
+  static const Color textHint = Color(0xFF5C6B62);
   static const Color textOnPrimary = Colors.white;
 
-  /// Подписи на всех стандартных кнопках (Gropled, как у бренда).
+  /// Подписи кнопок и UI — Inter (Pochaevsk только display).
   static const TextStyle buttonLabelStyle = TextStyle(
-    fontFamily: AppTextStyle.fontFamily,
+    fontFamily: AppTextStyle.uiFontFamily,
     fontSize: 15,
     fontWeight: FontWeight.w600,
-    letterSpacing: 0.2,
-    height: AppTextStyle.defaultHeight,
-    leadingDistribution: AppTextStyle.defaultLeadingDistribution,
+    letterSpacing: 0.1,
+    height: 1.2,
   );
   
-  /// Светлая тема ARTkhaus
+  /// Светлая тема Приделе
   static ThemeData get lightTheme {
     return ThemeData(
       useMaterial3: true,
@@ -70,12 +79,12 @@ class AppTheme {
       ),
       splashFactory: InkSparkle.splashFactory,
       textTheme: TextTheme(
-            displayLarge: gropled(fontSize: 80, fontWeight: FontWeight.w700, letterSpacing: -1.5),
-            displayMedium: gropled(fontSize: 48, fontWeight: FontWeight.w700, letterSpacing: -1.2),
-            displaySmall: gropled(fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -1.0),
-            headlineLarge: gropled(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.8),
-            headlineMedium: gropled(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.6),
-            titleLarge: gropled(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.4),
+            displayLarge: pochaevsk(fontSize: 80, fontWeight: FontWeight.w400, letterSpacing: -1.5),
+            displayMedium: pochaevsk(fontSize: 48, fontWeight: FontWeight.w400, letterSpacing: -1.2),
+            displaySmall: pochaevsk(fontSize: 36, fontWeight: FontWeight.w400, letterSpacing: -1.0),
+            headlineLarge: pochaevsk(fontSize: 32, fontWeight: FontWeight.w400, letterSpacing: -0.8),
+            headlineMedium: pochaevsk(fontSize: 24, fontWeight: FontWeight.w400, letterSpacing: -0.6),
+            titleLarge: pochaevsk(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: -0.4),
           ),
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
@@ -90,14 +99,17 @@ class AppTheme {
       scaffoldBackgroundColor: backgroundColor,
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        centerTitle: true,
-        backgroundColor: primaryColor,
-        foregroundColor: textOnPrimary,
+        centerTitle: false,
+        backgroundColor: backgroundColor,
+        foregroundColor: textPrimary,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         titleTextStyle: TextStyle(
-          color: textOnPrimary,
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
+          fontFamily: 'Inter',
+          color: textPrimary,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.01 * 18,
         ),
       ),
       cardTheme: CardTheme(
@@ -113,22 +125,24 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: textOnPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(13),
           ),
           elevation: 0,
           textStyle: buttonLabelStyle,
         ),
       ),
-      // Кнопка акцента (CTA) - терракотовый
+      // Кнопка акцента (CTA) — глина, один на экран
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: accentColor,
           foregroundColor: textOnPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(13),
           ),
           textStyle: buttonLabelStyle,
         ),
@@ -136,11 +150,13 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: primaryColor,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          backgroundColor: BrandColors.milk,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(13),
           ),
-          side: const BorderSide(color: primaryColor, width: 1.5),
+          side: const BorderSide(color: borderColor, width: 1.5),
           textStyle: buttonLabelStyle,
         ),
       ),
@@ -178,9 +194,10 @@ class AppTheme {
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: accentColor,
         foregroundColor: Colors.white,
-        elevation: 2,
-        shape: const CircleBorder(),
+        elevation: 4,
+        shape: const StadiumBorder(),
         extendedTextStyle: buttonLabelStyle.copyWith(color: Colors.white),
+        extendedPadding: const EdgeInsets.symmetric(horizontal: 20),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surfaceColor,
@@ -218,7 +235,7 @@ class AppTheme {
         selectedColor: primaryColor.withOpacity(0.2),
         labelStyle: buttonLabelStyle.copyWith(color: textPrimary, fontSize: 13, fontWeight: FontWeight.w500),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(BrandColors.radiusChip),
         ),
       ),
       dividerTheme: DividerThemeData(
@@ -322,23 +339,23 @@ class AppTheme {
   }
 
   // ============================================================
-  // ТЁМНАЯ ТЕМА — «Уголь + шалфей»
-  // 60% #1C1E1C · 30% #659171 · 10% #D4956A
+  // ТЁМНАЯ ТЕМА — «Уголь + лес»
+  // 60% уголь · 30% хвоя · 10% глина
   // ============================================================
 
-  // Тёмная палитра — «Уголь» (нейтральный, без зелени) + шалфей как акцент
+  // Тёмная палитра — уголь + тёмно-зелёный акцент
   static const Color darkBackground = Color(0xFF1A1A1A);
   static const Color darkSurface    = Color(0xFF1E1E1E); // nav bg
   static const Color darkCard       = Color(0xFF252525);
   static const Color darkBorder     = Color(0xFF2E2E2E);
-  static const Color darkAccent     = Color(0xFFD4956A); // терракот — как в светлой
+  static const Color darkAccent     = BrandColors.clay;
   static const Color darkAccentDark = Color(0xFFB8784E);
   static const Color darkTextPrimary    = Color(0xFFEAE8E4);
   static const Color darkTextSecondary  = Color(0xFFADABA6);
   static const Color darkTextHint       = Color(0xFF787674);
   static const Color darkSecondary      = Color(0xFF222222);
 
-  /// Тёмная тема ARTkhaus
+  /// Тёмная тема Приделе
   static ThemeData get darkTheme {
     return ThemeData(
       useMaterial3: true,
@@ -353,12 +370,12 @@ class AppTheme {
       ),
       splashFactory: InkSparkle.splashFactory,
       textTheme: TextTheme(
-        displayLarge: gropled(fontSize: 80, fontWeight: FontWeight.w700, letterSpacing: -1.5, color: darkTextPrimary),
-        displayMedium: gropled(fontSize: 48, fontWeight: FontWeight.w700, letterSpacing: -1.2, color: darkTextPrimary),
-        displaySmall: gropled(fontSize: 36, fontWeight: FontWeight.w700, letterSpacing: -1.0, color: darkTextPrimary),
-        headlineLarge: gropled(fontSize: 32, fontWeight: FontWeight.w700, letterSpacing: -0.8, color: darkTextPrimary),
-        headlineMedium: gropled(fontSize: 24, fontWeight: FontWeight.w700, letterSpacing: -0.6, color: darkTextPrimary),
-        titleLarge: gropled(fontSize: 20, fontWeight: FontWeight.w700, letterSpacing: -0.4, color: darkTextPrimary),
+        displayLarge: pochaevsk(fontSize: 80, fontWeight: FontWeight.w400, letterSpacing: -1.5, color: darkTextPrimary),
+        displayMedium: pochaevsk(fontSize: 48, fontWeight: FontWeight.w400, letterSpacing: -1.2, color: darkTextPrimary),
+        displaySmall: pochaevsk(fontSize: 36, fontWeight: FontWeight.w400, letterSpacing: -1.0, color: darkTextPrimary),
+        headlineLarge: pochaevsk(fontSize: 32, fontWeight: FontWeight.w400, letterSpacing: -0.8, color: darkTextPrimary),
+        headlineMedium: pochaevsk(fontSize: 24, fontWeight: FontWeight.w400, letterSpacing: -0.6, color: darkTextPrimary),
+        titleLarge: pochaevsk(fontSize: 20, fontWeight: FontWeight.w400, letterSpacing: -0.4, color: darkTextPrimary),
       ),
       colorScheme: ColorScheme.fromSeed(
         seedColor: primaryColor,
@@ -373,14 +390,17 @@ class AppTheme {
       scaffoldBackgroundColor: darkBackground,
       appBarTheme: const AppBarTheme(
         elevation: 0,
-        centerTitle: true,
-        backgroundColor: Color(0xFF1E1E1E),
+        centerTitle: false,
+        backgroundColor: darkBackground,
         foregroundColor: darkTextPrimary,
+        surfaceTintColor: Colors.transparent,
+        shadowColor: Colors.transparent,
         titleTextStyle: TextStyle(
+          fontFamily: 'Inter',
           color: darkTextPrimary,
-          fontSize: 17,
-          fontWeight: FontWeight.w600,
-          letterSpacing: 0.3,
+          fontSize: 18,
+          fontWeight: FontWeight.w700,
+          letterSpacing: -0.01 * 18,
         ),
       ),
       cardTheme: CardTheme(
@@ -396,9 +416,10 @@ class AppTheme {
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryColor,
           foregroundColor: Colors.white,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(13),
           ),
           elevation: 0,
           textStyle: buttonLabelStyle,
@@ -407,10 +428,11 @@ class AppTheme {
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
           backgroundColor: darkAccent,
-          foregroundColor: darkBackground,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(13),
           ),
           textStyle: buttonLabelStyle,
         ),
@@ -418,11 +440,12 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           foregroundColor: darkTextPrimary,
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 14),
+          minimumSize: const Size(0, 52),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(100),
+            borderRadius: BorderRadius.circular(13),
           ),
-          side: BorderSide(color: darkTextPrimary.withOpacity(0.3), width: 1.5),
+          side: const BorderSide(color: darkBorder, width: 1.5),
           textStyle: buttonLabelStyle,
         ),
       ),
@@ -500,7 +523,7 @@ class AppTheme {
         selectedColor: primaryColor.withOpacity(0.3),
         labelStyle: buttonLabelStyle.copyWith(color: darkTextPrimary, fontSize: 13, fontWeight: FontWeight.w500),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(8),
+          borderRadius: BorderRadius.circular(BrandColors.radiusChip),
         ),
       ),
       dividerTheme: DividerThemeData(

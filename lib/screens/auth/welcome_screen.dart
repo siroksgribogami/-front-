@@ -2,16 +2,21 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/app_theme.dart';
-import '../../core/theme/app_text_style.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/brand_solid_background.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../providers/auth_provider.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({
     super.key,
     required this.onContinue,
+    this.onSkip,
   });
 
   final VoidCallback onContinue;
+  final VoidCallback? onSkip;
 
   @override
   State<WelcomeScreen> createState() => _WelcomeScreenState();
@@ -19,7 +24,6 @@ class WelcomeScreen extends StatefulWidget {
 
 class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
-
   late final AnimationController _ctrl;
   late final Animation<double> _fade;
   late final Animation<Offset> _slide;
@@ -49,12 +53,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       ),
     );
 
-    // Небольшая задержка чтобы экран успел появиться
     Future.delayed(const Duration(milliseconds: 120), () {
       if (mounted) _ctrl.forward();
     });
-
-    // Переход только по кнопке, чтобы пользователь успел прочитать текст.
   }
 
   @override
@@ -66,95 +67,96 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Future<void> _continueToSurvey() async {
     if (_didContinue || !mounted) return;
     _didContinue = true;
-
-    // Мягко растворяем экран перед переходом к опросу.
     await _ctrl.reverse();
     if (!mounted) return;
-
     widget.onContinue();
+  }
+
+  Future<void> _skip() async {
+    if (_didContinue || !mounted) return;
+    _didContinue = true;
+    await _ctrl.reverse();
+    if (!mounted) return;
+    (widget.onSkip ?? widget.onContinue)();
   }
 
   @override
   Widget build(BuildContext context) {
     final auth = context.watch<AuthProvider>();
-
-    // Имя пользователя — берём первое слово чтобы не было длинно
     final fullName = auth.user?.username ?? '';
     final firstName = fullName.split(' ').first;
 
     return Scaffold(
       backgroundColor: AppTheme.primaryColor,
-      body: SafeArea(
-        child: FadeTransition(
-          opacity: _fade,
-          child: SlideTransition(
-            position: _slide,
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 480),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 36),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-
-                      const Spacer(flex: 2),
-
-                      // Приветствие
-                      AppText(
-                        firstName.isNotEmpty
-                            ? 'Рады видеть вас,\n$firstName!'
-                            : 'Рады видеть вас!',
-                        style: AppTextStyle.gropled(
-                          fontSize: 38,
-                          fontWeight: FontWeight.w700,
-                          color: AppTheme.backgroundColor,
-                          height: 1.15,
+      body: BrandSolidBackground(
+        child: SafeArea(
+          child: FadeTransition(
+            opacity: _fade,
+            child: SlideTransition(
+              position: _slide,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(32, 36, 32, 44),
+                child: Column(
+                  children: [
+                    const Spacer(),
+                    const BrandCrest(size: 9),
+                    const SizedBox(height: 30),
+                    const BrandKicker('Аккаунт создан', onDark: true, fontSize: 10.5),
+                    const SizedBox(height: 16),
+                    RichText(
+                      textAlign: TextAlign.center,
+                      text: TextSpan(
+                        style: pochaevsk(
+                          fontSize: 52,
+                          color: BrandColors.onNeedles,
+                          height: 0.98,
                         ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const SizedBox(height: 16),
-
-                      // Подзаголовок
-                      AppText(
-                        'Пара вопросов — подстроим сценарий\nпод ваш объект и задачи.',
-                        style: AppTextStyle.gropled(
-                          fontSize: 18,
-                          color: AppTheme.backgroundColor.withOpacity(0.65),
-                          height: 1.5,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-
-                      const Spacer(flex: 2),
-
-                      // Кнопка
-                      GestureDetector(
-                        onTap: _continueToSurvey,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.symmetric(vertical: 18),
-                          decoration: BoxDecoration(
-                            color: AppTheme.backgroundColor,
-                            borderRadius: BorderRadius.circular(18),
-                          ),
-                          alignment: Alignment.center,
-                          child: AppText(
-                            'Продолжить →',
-                            style: AppTextStyle.gropled(
-                              fontSize: 18,
-                              fontWeight: FontWeight.w700,
-                              color: AppTheme.primaryColor,
+                        children: [
+                          const TextSpan(text: 'Добро\nпожаловать,\n'),
+                          TextSpan(
+                            text: firstName.isNotEmpty ? firstName : 'друг',
+                            style: pochaevsk(
+                              fontSize: 52,
+                              color: BrandColors.dawn,
+                              height: 0.98,
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 26),
+                    const SizedBox(
+                      width: 130,
+                      child: BrandLineDivider(margin: EdgeInsets.zero),
+                    ),
+                    const SizedBox(height: 26),
+                    Text(
+                      'Ответьте на пару вопросов — и мы соберём ленту мастеров и подсказок под ваш ремонт.',
+                      textAlign: TextAlign.center,
+                      style: BrandUi.inter(
+                        fontSize: 15,
+                        height: 1.55,
+                        color: BrandColors.onNeedles.withOpacity(0.82),
+                      ),
+                    ),
+                    const Spacer(flex: 2),
+                    BrandAccentButton(
+                      label: 'Пройти опрос · 1 минута',
+                      onPressed: _continueToSurvey,
+                    ),
+                    const SizedBox(height: 12),
+                    GestureDetector(
+                      onTap: _skip,
+                      child: Text(
+                        'Пропустить и войти',
+                        style: BrandUi.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w500,
+                          color: BrandColors.onNeedles.withOpacity(0.7),
                         ),
                       ),
-
-                      const SizedBox(height: 40),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),

@@ -6,14 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
-import '../../../config/app_theme.dart';
+import '../../../config/brand_colors.dart';
+import '../../../core/theme/brand_ui.dart';
+import '../../../config/text_theme.dart';
 import '../../../services/unity/hosted_unity_bridge.dart';
 
 /// Полноэкранный Unity WebGL внутри приложения (без внешнего браузера).
-///
-/// На Android: [AndroidWebViewControllerCreationParams], hybrid composition
-/// (стабильнее WebGL, чем текстура по умолчанию), отключён жест для воспроизведения медиа,
-/// системная кнопка «Назад» сначала откатывает историю WebView.
 class HostedUnityWebGlScreen extends StatefulWidget {
   const HostedUnityWebGlScreen({
     super.key,
@@ -21,17 +19,16 @@ class HostedUnityWebGlScreen extends StatefulWidget {
     this.initialMap,
     this.mapPatch,
     this.focusRoomId,
+    this.roomTitle = 'Кухня-гостиная',
+    this.roomSubtitle = '3 комнаты · 28.4 м² · после ремонта',
   });
 
   final Uri uri;
-
-  /// Текущая карта проекта — уходит в Unity через ReceiveInitialMapJson.
   final Map<String, dynamic>? initialMap;
-
-  /// Diff после ИИ (roomsUpsert, …); мержится перед отправкой в Unity.
   final Map<String, dynamic>? mapPatch;
-
   final String? focusRoomId;
+  final String roomTitle;
+  final String roomSubtitle;
 
   @override
   State<HostedUnityWebGlScreen> createState() => _HostedUnityWebGlScreenState();
@@ -42,6 +39,9 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
   var _pageLoading = true;
   var _progress = 0;
   String? _errorDescription;
+  int _activeTool = 0;
+
+  static const _tools = ['Поворот', 'Этажи', 'Замер', 'Свет'];
 
   static WebViewController _createWebViewController() {
     if (!kIsWeb && WebViewPlatform.instance is AndroidWebViewPlatform) {
@@ -59,13 +59,11 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
     super.initState();
     _controller = _createWebViewController()
       ..setJavaScriptMode(JavaScriptMode.unrestricted)
-      ..setBackgroundColor(const Color(0xFF1B1813))
+      ..setBackgroundColor(BrandColors.needlesDeep)
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (_) {
-            if (!mounted) {
-              return;
-            }
+            if (!mounted) return;
             setState(() {
               _pageLoading = true;
               _progress = 0;
@@ -73,15 +71,11 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
             });
           },
           onProgress: (int value) {
-            if (!mounted) {
-              return;
-            }
+            if (!mounted) return;
             setState(() => _progress = value.clamp(0, 100));
           },
           onPageFinished: (_) {
-            if (!mounted) {
-              return;
-            }
+            if (!mounted) return;
             setState(() {
               _pageLoading = false;
               _progress = 100;
@@ -89,9 +83,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
             unawaited(_pushMapToUnity());
           },
           onWebResourceError: (WebResourceError error) {
-            if (!mounted) {
-              return;
-            }
+            if (!mounted) return;
             setState(() {
               _pageLoading = false;
               _errorDescription =
@@ -114,9 +106,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
 
   Future<void> _pushMapToUnity() async {
     final map = widget.initialMap;
-    if (map == null || map.isEmpty) {
-      return;
-    }
+    if (map == null || map.isEmpty) return;
     final mapJson = jsonEncode(map);
     final script = buildHostedUnityInjectScript(
       mapJson: mapJson,
@@ -135,9 +125,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
       await _controller.goBack();
       return;
     }
-    if (!mounted) {
-      return;
-    }
+    if (!mounted) return;
     navigator.pop();
   }
 
@@ -158,62 +146,204 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final topPad = MediaQuery.paddingOf(context).top;
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (bool didPop, Object? result) async {
-        if (didPop) {
-          return;
-        }
-        final navigator = Navigator.of(context);
-        await _handleSystemBack(navigator);
+        if (didPop) return;
+        await _handleSystemBack(Navigator.of(context));
       },
       child: Scaffold(
-        backgroundColor: AppTheme.backgroundColor,
-        appBar: AppBar(
-          backgroundColor: AppTheme.backgroundColor,
-          elevation: 0,
-          title: const Text(
-            '3D-карта',
-            style: TextStyle(color: AppTheme.textPrimary),
-          ),
-          iconTheme: const IconThemeData(color: AppTheme.textPrimary),
-          leading: IconButton(
-            icon: const Icon(Icons.arrow_back_rounded),
-            onPressed: () async {
-              final navigator = Navigator.of(context);
-              if (await _controller.canGoBack()) {
-                await _controller.goBack();
-                return;
-              }
-              if (!mounted) {
-                return;
-              }
-              navigator.pop();
-            },
-          ),
-        ),
+        backgroundColor: BrandColors.needlesDeep,
         body: Stack(
           fit: StackFit.expand,
           children: [
             Positioned.fill(child: _webViewSurface(context)),
             if (_pageLoading && _progress < 100)
-              Align(
-                alignment: Alignment.topCenter,
+              Positioned(
+                top: topPad,
+                left: 0,
+                right: 0,
                 child: LinearProgressIndicator(
                   minHeight: 3,
                   value: _progress > 0 ? _progress / 100.0 : null,
+                  color: BrandColors.clay,
+                  backgroundColor: BrandColors.onNeedles.withOpacity(0.12),
                 ),
               ),
+            if (_pageLoading)
+              Positioned.fill(
+                child: ColoredBox(
+                  color: BrandColors.needlesDeep,
+                  child: Center(
+                    child: CircularProgressIndicator(
+                      color: BrandColors.clay,
+                      value: _progress > 0 ? _progress / 100.0 : null,
+                    ),
+                  ),
+                ),
+              ),
+            Positioned(
+              top: topPad + 12,
+              left: 16,
+              child: BrandIconButton(
+                onPressed: () => _handleSystemBack(Navigator.of(context)),
+                onDark: true,
+                size: 40,
+                icon: const Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  size: 16,
+                  color: BrandColors.onNeedles,
+                ),
+              ),
+            ),
+            Positioned(
+              top: topPad + 12,
+              right: 16,
+              child: BrandGlassPill(
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: BrandColors.needlesLight,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 7),
+                    Text(
+                      '100%',
+                      style: BrandUi.monoLabel(
+                        fontSize: 11,
+                        color: BrandColors.dawn.withOpacity(0.9),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            Positioned(
+              left: 16,
+              right: 16,
+              bottom: MediaQuery.paddingOf(context).bottom + 20,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: List.generate(_tools.length, (i) {
+                      final active = i == _activeTool;
+                      return GestureDetector(
+                        onTap: () => setState(() => _activeTool = i),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 15,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color: active
+                                ? BrandColors.clay
+                                : BrandColors.milk.withOpacity(0.92),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            _tools[i],
+                            style: BrandUi.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: active
+                                  ? BrandColors.onClay
+                                  : BrandColors.needles,
+                            ),
+                          ),
+                        ),
+                      );
+                    }),
+                  ),
+                  const SizedBox(height: 12),
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
+                    decoration: BoxDecoration(
+                      color: BrandColors.milk.withOpacity(0.95),
+                      borderRadius: BorderRadius.circular(18),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.view_in_ar_outlined,
+                          color: BrandColors.needles,
+                          size: 22,
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                widget.roomTitle,
+                                style: pochaevsk(
+                                  fontSize: 17,
+                                  color: BrandColors.tar,
+                                  height: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 3),
+                              Text(
+                                widget.roomSubtitle,
+                                style: BrandUi.inter(
+                                  fontSize: 12,
+                                  color: BrandColors.tar.withOpacity(0.55),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        FilledButton(
+                          onPressed: () {},
+                          style: FilledButton.styleFrom(
+                            backgroundColor: BrandColors.needles,
+                            foregroundColor: BrandColors.onNeedles,
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BrandUi.buttonRadius,
+                            ),
+                          ),
+                          child: Text(
+                            'Поделиться',
+                            style: BrandUi.inter(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: BrandColors.onNeedles,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
             if (_errorDescription != null)
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Material(
-                  color: Colors.black87,
+                  color: BrandColors.tar.withOpacity(0.9),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Text(
                       _errorDescription!,
-                      style: const TextStyle(color: Colors.white, fontSize: 13),
+                      style: BrandUi.inter(
+                        fontSize: 13,
+                        color: BrandColors.onNeedles,
+                      ),
                     ),
                   ),
                 ),

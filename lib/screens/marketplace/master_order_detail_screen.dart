@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../core/theme/app_text_style.dart';
-import '../../core/theme/marketplace_colors.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../models/marketplace_project.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/marketplace_local_store.dart';
@@ -30,99 +31,118 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
 
     try {
       await showModalBottomSheet<void>(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: MarketplaceColors.cardFor(context),
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      builder: (ctx) {
-        final pad = MediaQuery.viewInsetsOf(ctx).bottom;
-        final textPrimary = MarketplaceColors.textPrimaryFor(ctx);
-        final textMuted = MarketplaceColors.textMutedFor(ctx);
-        return Padding(
-          padding: EdgeInsets.only(left: 20, right: 20, top: 16, bottom: pad + 20),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Text(
-                  'Предложение по заказу',
-                  style: TextStyle(
-                    fontFamily: AppTextStyle.fontFamily,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w800,
-                    color: textPrimary,
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (ctx) {
+          final pad = MediaQuery.viewInsetsOf(ctx).bottom;
+          return Padding(
+            padding: EdgeInsets.only(bottom: pad),
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: BrandColors.milk,
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
+                boxShadow: [
+                  BoxShadow(
+                    color: BrandColors.tar.withOpacity(0.3),
+                    blurRadius: 30,
+                    offset: const Offset(0, -10),
+                    spreadRadius: -18,
                   ),
-                ),
-                const SizedBox(height: 14),
-                _sheetField(ctx, 'Сумма', priceCtrl),
-                const SizedBox(height: 10),
-                _sheetField(ctx, 'Срок', daysCtrl),
-                const SizedBox(height: 10),
-                TextField(
-                  controller: msgCtrl,
-                  maxLines: 4,
-                  style: TextStyle(color: textPrimary),
-                  decoration: InputDecoration(
-                    labelText: 'Сообщение заказчику',
-                    labelStyle: TextStyle(color: textMuted),
-                  ),
-                ),
-                const SizedBox(height: 18),
-                FilledButton(
-                  onPressed: () async {
-                    final priceOffer = priceCtrl.text.trim();
-                    final durationOffer = daysCtrl.text.trim();
-                    final message = msgCtrl.text.trim();
-                    Navigator.of(ctx).pop();
-
-                    final messenger = ScaffoldMessenger.maybeOf(context);
-                    final auth = context.read<AuthProvider>();
-                    final user = auth.user;
-                    final masterName = user?.visibleName.trim().isNotEmpty == true
-                        ? user!.visibleName
-                        : 'Исполнитель';
-
-                    await MarketplaceLocalStore.instance.ensureLoaded();
-                    await MarketplaceLocalStore.instance.submitMasterBid(
-                      orderId: item.id,
-                      bid: MasterBid(
-                        id: 'bid_${DateTime.now().millisecondsSinceEpoch}',
-                        masterId: user?.id.toString() ?? 'local',
-                        masterName: masterName,
-                        specialty: 'По заявке из ленты',
-                        rating: 5.0,
-                        completedJobs: 0,
-                        priceOffer: priceOffer,
-                        durationOffer: durationOffer,
-                        message: message,
-                      ),
-                      projectTitleForMyBids: item.workType,
-                    );
-
-                    if (!context.mounted) return;
-                    messenger?.showSnackBar(
-                      const SnackBar(
-                        content: Text(
-                          'Отклик сохранён. Заказчик увидит его в списке откликов на проект.',
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 30),
+                child: SingleChildScrollView(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Ваш отклик',
+                        style: pochaevsk(
+                          fontSize: 18,
+                          color: BrandColors.tar,
                         ),
                       ),
-                    );
-                  },
-                  style: FilledButton.styleFrom(
-                    backgroundColor: MarketplaceColors.bluePrimary,
-                    minimumSize: const Size.fromHeight(48),
+                      const SizedBox(height: 13),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: _sheetField(ctx, 'Цена, ₽', priceCtrl),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: _sheetField(ctx, 'Срок', daysCtrl),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 11),
+                      _sheetField(ctx, 'Сообщение', msgCtrl, maxLines: 3),
+                      const SizedBox(height: 14),
+                      SizedBox(
+                        width: double.infinity,
+                        child: FilledButton(
+                          onPressed: () async {
+                          final priceOffer = priceCtrl.text.trim();
+                          final durationOffer = daysCtrl.text.trim();
+                          final message = msgCtrl.text.trim();
+                          Navigator.of(ctx).pop();
+
+                          final messenger = ScaffoldMessenger.maybeOf(context);
+                          final auth = context.read<AuthProvider>();
+                          final user = auth.user;
+                          final masterName = user?.visibleName.trim().isNotEmpty == true
+                              ? user!.visibleName
+                              : 'Исполнитель';
+
+                          await MarketplaceLocalStore.instance.ensureLoaded();
+                          await MarketplaceLocalStore.instance.submitMasterBid(
+                            orderId: item.id,
+                            bid: MasterBid(
+                              id: 'bid_${DateTime.now().millisecondsSinceEpoch}',
+                              masterId: user?.id.toString() ?? 'local',
+                              masterName: masterName,
+                              specialty: 'По заявке из ленты',
+                              rating: 5.0,
+                              completedJobs: 0,
+                              priceOffer: priceOffer,
+                              durationOffer: durationOffer,
+                              message: message,
+                            ),
+                            projectTitleForMyBids: item.workType,
+                          );
+
+                          if (!context.mounted) return;
+                          messenger?.showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Отклик сохранён. Заказчик увидит его в списке откликов на проект.',
+                              ),
+                            ),
+                          );
+                        },
+                          style: FilledButton.styleFrom(
+                            backgroundColor: BrandColors.clay,
+                            foregroundColor: BrandColors.onClay,
+                            minimumSize: const Size(double.infinity, 48),
+                            shape: const RoundedRectangleBorder(
+                              borderRadius: BrandUi.buttonRadius,
+                            ),
+                            textStyle: BrandUi.inter(fontWeight: FontWeight.w600),
+                          ),
+                          child: const Text('Отправить отклик'),
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Text('Отправить предложение'),
                 ),
-              ],
+              ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
     } finally {
       priceCtrl.dispose();
       daysCtrl.dispose();
@@ -130,154 +150,289 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
     }
   }
 
-  Widget _sheetField(BuildContext context, String label, TextEditingController c) {
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textMuted = MarketplaceColors.textMutedFor(context);
-    return TextField(
-      controller: c,
-      style: TextStyle(color: textPrimary),
-      decoration: InputDecoration(
-        labelText: label,
-        labelStyle: TextStyle(color: textMuted),
-      ),
+  Widget _sheetField(
+    BuildContext context,
+    String label,
+    TextEditingController c, {
+    int maxLines = 1,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: BrandUi.inter(
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+            color: BrandColors.tar.withOpacity(0.55),
+          ),
+        ),
+        const SizedBox(height: 6),
+        TextField(
+          controller: c,
+          maxLines: maxLines,
+          style: BrandUi.inter(fontSize: 15),
+          decoration: BrandUi.inputDecoration(),
+        ),
+      ],
     );
+  }
+
+  String get _subtitle {
+    final district = item.district.replaceAll('Москва, ', '');
+    return '${item.workType} · $district';
+  }
+
+  List<String> get _specChips {
+    final chips = <String>[item.workType];
+    if (item.has3d) chips.add('3D-визуализация');
+    return chips;
   }
 
   @override
   Widget build(BuildContext context) {
-    final bg = MarketplaceColors.backgroundFor(context);
-    final card = MarketplaceColors.cardFor(context);
-    final textPrimary = MarketplaceColors.textPrimaryFor(context);
-    final textSecondary = MarketplaceColors.textSecondaryFor(context);
-    final horizontalPad = MarketplaceColors.horizontalPaddingFor(context);
+    final bidsCount =
+        MarketplaceLocalStore.instance.bidsForProject(item.id).length;
 
     return Scaffold(
-      backgroundColor: bg,
-      appBar: AppBar(
-        backgroundColor: card,
-        foregroundColor: textPrimary,
-        surfaceTintColor: Colors.transparent,
-        iconTheme: IconThemeData(color: textPrimary),
-        title: Text(
-          'Заказ',
-          style: TextStyle(
-            fontFamily: AppTextStyle.fontFamily,
-            fontWeight: FontWeight.w700,
-            color: textPrimary,
-          ),
-        ),
-      ),
+      backgroundColor: BrandColors.canvas,
       body: SafeArea(
-        child: ListView(
-          padding: EdgeInsets.fromLTRB(horizontalPad, 16, horizontalPad, 28),
+        child: Column(
           children: [
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: MarketplaceColors.bluePrimary.withOpacity(0.14),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                item.workType,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w800,
-                  color: MarketplaceColors.bluePrimary,
-                  fontSize: 14,
-                ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(6, 6, 6, 0),
+              child: BrandAppBar(
+                title: 'Заказ',
+                subtitle: _subtitle,
+                onBack: () => Navigator.of(context).pop(),
               ),
             ),
-            const SizedBox(height: 12),
-            Text(
-              item.budgetLabel,
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.w900,
-                color: textPrimary,
-              ),
-            ),
-            const SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Icon(Icons.place_outlined, size: 18, color: textSecondary),
-                const SizedBox(width: 6),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(BrandUi.pad, 0, BrandUi.pad, 16),
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: BrandColors.borderSubtle),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: BrandStripedPlaceholder(
+                        label: 'фото объекта · ${item.workType.toLowerCase()}',
+                        height: 130,
+                        radius: 0,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 13),
+                  Row(
                     children: [
-                      Text(
-                        item.district,
-                        style: TextStyle(
-                          fontSize: 15,
-                          fontWeight: FontWeight.w600,
-                          color: textPrimary,
+                      const Expanded(
+                        child: _DetailStatTile(
+                          label: 'Площадь',
+                          value: '—',
                         ),
                       ),
-                      const SizedBox(height: 2),
-                      Text(
-                        item.addressShort,
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: textSecondary,
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _DetailStatTile(
+                          label: 'Бюджет',
+                          value: item.budgetLabel,
+                          accent: true,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: _DetailStatTile(
+                          label: 'Срок',
+                          value: 'По ТЗ',
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Техническое задание',
-              style: TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                color: textPrimary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              item.fullSpec,
-              style: TextStyle(
-                fontSize: 14,
-                height: 1.45,
-                color: textSecondary,
-              ),
-            ),
-            if (item.has3d) ...[
-              const SizedBox(height: 16),
-              OutlinedButton.icon(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => BeforeAfterViewerScreen(
-                        title: '${item.workType} · визуализация',
-                      ),
+                  const SizedBox(height: 13),
+                  BrandCard(
+                    padding: const EdgeInsets.all(14),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const BrandKicker('Техзадание'),
+                        const SizedBox(height: 9),
+                        Text(
+                          item.fullSpec,
+                          style: BrandUi.inter(
+                            fontSize: 13.5,
+                            color: BrandColors.tar.withOpacity(0.65),
+                            height: 1.5,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: _specChips
+                              .map(
+                                (c) => Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 14,
+                                    vertical: 8,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: BrandColors.milk,
+                                    borderRadius: BrandUi.chipRadius,
+                                    border: Border.all(
+                                      color: BrandColors.chipBorder,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    c,
+                                    style: BrandUi.inter(
+                                      fontSize: 13,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ),
+                              )
+                              .toList(),
+                        ),
+                      ],
                     ),
-                  );
-                },
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: MarketplaceColors.bluePrimary,
-                  side: BorderSide(color: MarketplaceColors.bluePrimary.withOpacity(0.5)),
-                  minimumSize: const Size.fromHeight(44),
+                  ),
+                  const SizedBox(height: 13),
+                  Row(
+                    children: [
+                      const BrandAvatar(name: 'Заказчик', size: 40, radius: 12),
+                      const SizedBox(width: 11),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Заказчик',
+                              style: BrandUi.inter(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            Text(
+                              item.district,
+                              style: BrandUi.inter(
+                                fontSize: 12,
+                                color: BrandColors.tar.withOpacity(0.55),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        '$bidsCount ОТКЛИКОВ'.toUpperCase(),
+                        style: BrandUi.monoLabel(
+                          fontSize: 10,
+                          color: BrandColors.tar.withOpacity(0.35),
+                        ),
+                      ),
+                    ],
+                  ),
+                  if (item.has3d) ...[
+                    const SizedBox(height: 16),
+                    BrandGhostButton(
+                      label: 'Смотреть визуализацию',
+                      onPressed: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute<void>(
+                            builder: (_) => BeforeAfterViewerScreen(
+                              title: '${item.workType} · визуализация',
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            DecoratedBox(
+              decoration: BoxDecoration(
+                color: BrandColors.milk,
+                border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
+                borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                boxShadow: [
+                  BoxShadow(
+                    color: BrandColors.tar.withOpacity(0.3),
+                    blurRadius: 30,
+                    offset: const Offset(0, -10),
+                    spreadRadius: -18,
+                  ),
+                ],
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 20),
+                child: FilledButton(
+                  onPressed: () => _showRespondSheet(context),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: BrandColors.clay,
+                    foregroundColor: BrandColors.onClay,
+                    minimumSize: const Size(double.infinity, 48),
+                    shape: const RoundedRectangleBorder(
+                      borderRadius: BrandUi.buttonRadius,
+                    ),
+                    textStyle: BrandUi.inter(fontWeight: FontWeight.w600),
+                  ),
+                  child: const Text('Откликнуться'),
                 ),
-                icon: const Icon(Icons.view_in_ar_rounded, size: 20),
-                label: const Text('Смотреть визуализацию (До/После)'),
               ),
-            ],
-            const SizedBox(height: 24),
-            FilledButton(
-              onPressed: () => _showRespondSheet(context),
-              style: FilledButton.styleFrom(
-                backgroundColor: MarketplaceColors.ctaOrange,
-                foregroundColor: Colors.white,
-                minimumSize: const Size.fromHeight(52),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              ),
-              child: const Text('Откликнуться'),
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+class _DetailStatTile extends StatelessWidget {
+  const _DetailStatTile({
+    required this.label,
+    required this.value,
+    this.accent = false,
+  });
+
+  final String label;
+  final String value;
+  final bool accent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        color: BrandColors.milk,
+        borderRadius: BorderRadius.circular(13),
+        border: Border.all(color: BrandColors.borderSubtle),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label.toUpperCase(),
+            style: BrandUi.inter(
+              fontSize: 10.5,
+              color: BrandColors.tar.withOpacity(0.35),
+            ).copyWith(letterSpacing: 0.4),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            value,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: pochaevsk(
+              fontSize: 17,
+              color: accent ? BrandColors.needles : BrandColors.needles,
+              height: 1.1,
+            ),
+          ),
+        ],
       ),
     );
   }

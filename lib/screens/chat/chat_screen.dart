@@ -47,7 +47,7 @@ class _ChatScreenState extends State<ChatScreen> {
       id: 'bot',
       name: 'ИИ-ассистент',
       initials: '🤖',
-      avatarColor: Color(0xFF659171),
+      avatarColor: AppTheme.primaryColor,
       lastMessage: 'Чем я могу вам помочь?',
       lastTime: '10:00',
       isOnline: true,
@@ -58,7 +58,7 @@ class _ChatScreenState extends State<ChatScreen> {
       id: 'anna',
       name: 'Анна Смирнова',
       initials: 'АС',
-      avatarColor: Color(0xFFD4956A),
+      avatarColor: Color(0xFFBB5C45),
       lastMessage: 'Привет! Сантехник придёт завтра к 14:00',
       lastTime: '09:42',
       isOnline: true,
@@ -68,7 +68,7 @@ class _ChatScreenState extends State<ChatScreen> {
       id: 'dmitry',
       name: 'Дмитрий Козлов',
       initials: 'ДК',
-      avatarColor: Color(0xFF547A62),
+      avatarColor: AppTheme.primaryDeep,
       lastMessage: 'Ок, посмотрю фильтр вечером',
       lastTime: 'Вчера',
       isOnline: false,
@@ -140,7 +140,7 @@ class _ChatScreenState extends State<ChatScreen> {
 
   void _seedDefaultChats() {
     _chats['bot'] = [
-      {'isMe': false, 'text': 'Привет! Я AI-ассистент АРТхаус 🏠\n\nЯ помогу вам управлять домом, найти специалистов и ответить на вопросы о ремонте.', 'time': '10:00'},
+      {'isMe': false, 'text': 'Привет! Я AI-ассистент Приделе 🏠\n\nЯ помогу вам управлять домом, найти специалистов и ответить на вопросы о ремонте.', 'time': '10:00'},
       {'isMe': false, 'text': 'Чем я могу вам помочь сегодня?', 'time': '10:00'},
     ];
     _chats['anna'] = [
@@ -322,7 +322,7 @@ class _ChatScreenState extends State<ChatScreen> {
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
-                fontFamily: AppTextStyle.fontFamily,
+                fontFamily: AppTextStyle.uiFontFamily,
                 color: textMain,
                 height: AppTextStyle.defaultHeight,
                 leadingDistribution: AppTextStyle.defaultLeadingDistribution,
@@ -685,7 +685,7 @@ class _ChatScreenState extends State<ChatScreen> {
               style: TextStyle(
                 fontSize: 24,
                 fontWeight: FontWeight.w700,
-                fontFamily: AppTextStyle.fontFamily,
+                fontFamily: AppTextStyle.uiFontFamily,
                 color: Theme.of(context).brightness == Brightness.dark
                     ? AppTheme.darkTextPrimary
                     : AppTheme.textPrimary,

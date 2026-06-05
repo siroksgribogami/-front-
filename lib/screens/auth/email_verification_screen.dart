@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../../config/app_theme.dart';
-import '../../core/theme/app_text_style.dart';
+import '../../config/brand_colors.dart';
+import '../../config/text_theme.dart';
+import '../../core/theme/brand_ui.dart';
 import '../../providers/auth_provider.dart';
 
 /// Экран после регистрации: пользователь подтверждает email по ссылке из письма.
@@ -73,157 +74,167 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     final email = context.watch<AuthProvider>().user?.email ?? '';
 
     return Scaffold(
-      backgroundColor: AppTheme.primaryColor,
+      backgroundColor: BrandColors.canvas,
       body: SafeArea(
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 24),
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Icon(
-                    Icons.mark_email_unread_outlined,
-                    size: 56,
-                    color: Colors.white.withOpacity(0.95),
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Подтвердите email',
-                    style: TextStyle(
-                      fontSize: 26,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      fontFamily: AppTextStyle.fontFamily,
-                      height: AppTextStyle.defaultHeight,
-                      leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Мы отправили письмо со ссылкой для подтверждения на адрес:',
-                    style: TextStyle(
-                      fontSize: 14,
-                      height: 1.45,
-                      color: Colors.white.withOpacity(0.85),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.12),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: SelectableText(
-                      email.isEmpty ? '—' : email,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.w600,
-                        fontSize: 15,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Text(
-                    'Не получили письмо? Проверьте папку «Спам». Ниже можно запросить отправку ещё раз.',
-                    style: TextStyle(
-                      fontSize: 13,
-                      height: 1.45,
-                      color: Colors.white.withOpacity(0.72),
-                    ),
-                  ),
-                  if (_banner != null) ...[
-                    const SizedBox(height: 16),
+          padding: const EdgeInsets.fromLTRB(30, 48, 30, 40),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              SizedBox(
+                width: 96,
+                height: 96,
+                child: Stack(
+                  clipBehavior: Clip.none,
+                  children: [
                     Container(
-                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.12),
-                        borderRadius: BorderRadius.circular(12),
+                        color: BrandColors.milk,
+                        borderRadius: BorderRadius.circular(28),
+                        border: Border.all(color: BrandColors.borderSubtle),
                       ),
-                      child: Text(
-                        _banner!,
-                        style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
+                      child: const Stack(
+                        fit: StackFit.expand,
+                        children: [
+                          BrandCornerTicks(inset: 10, size: 14),
+                          Center(
+                            child: Icon(
+                              Icons.mail_outline_rounded,
+                              size: 44,
+                              color: BrandColors.clay,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Positioned(
+                      top: -8,
+                      right: -8,
+                      child: Container(
+                        width: 30,
+                        height: 30,
+                        decoration: BoxDecoration(
+                          color: BrandColors.needles,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: BrandColors.canvas, width: 3),
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          size: 16,
+                          color: BrandColors.onNeedles,
+                        ),
                       ),
                     ),
                   ],
-                  const SizedBox(height: 28),
-                  OutlinedButton(
-                    onPressed: _busy ? null : _resend,
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.white,
-                      side: BorderSide(color: Colors.white.withOpacity(0.55)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: AppTextStyle.fontFamily,
-                        height: AppTextStyle.defaultHeight,
-                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                      ),
-                    ),
-                    child: _busy
-                        ? const SizedBox(
-                            height: 20,
-                            width: 20,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Text('Отправить письмо ещё раз'),
-                  ),
-                  const SizedBox(height: 12),
-                  ElevatedButton(
-                    onPressed: _busy ? null : _checkAndContinue,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.white,
-                      foregroundColor: AppTheme.primaryColor,
-                      padding: const EdgeInsets.symmetric(vertical: 18),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      elevation: 0,
-                      textStyle: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w600,
-                        fontFamily: AppTextStyle.fontFamily,
-                        height: AppTextStyle.defaultHeight,
-                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                      ),
-                    ),
-                    child: const Text('Я подтвердил — продолжить'),
-                  ),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _busy ? null : _skipForNow,
-                    style: TextButton.styleFrom(
-                      foregroundColor: Colors.white.withOpacity(0.85),
-                      textStyle: TextStyle(
-                        fontWeight: FontWeight.w500,
-                        fontFamily: AppTextStyle.fontFamily,
-                        decoration: TextDecoration.underline,
-                        decorationColor: Colors.white.withOpacity(0.5),
-                        height: AppTextStyle.defaultHeight,
-                        leadingDistribution: AppTextStyle.defaultLeadingDistribution,
-                      ),
-                    ),
-                    child: const Text('Продолжить без проверки'),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Когда на сервере включат обязательное подтверждение, вход без верификации может быть ограничен.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 11,
-                      height: 1.35,
-                      color: Colors.white.withOpacity(0.5),
-                    ),
-                  ),
-                ],
+                ),
               ),
-            ),
+              const SizedBox(height: 32),
+              const BrandKicker('Почти готово', fontSize: 10.5),
+              const SizedBox(height: 12),
+              Text(
+                'Подтвердите почту',
+                textAlign: TextAlign.center,
+                style: pochaevsk(
+                  fontSize: 32,
+                  color: BrandColors.tar,
+                  height: 1.05,
+                ),
+              ),
+              const SizedBox(height: 14),
+              RichText(
+                textAlign: TextAlign.center,
+                text: TextSpan(
+                  style: BrandUi.inter(
+                    fontSize: 15,
+                    height: 1.55,
+                    color: BrandColors.tar.withOpacity(0.55),
+                  ),
+                  children: [
+                    const TextSpan(
+                      text: 'Мы отправили письмо на ',
+                    ),
+                    TextSpan(
+                      text: email.isEmpty ? 'ваш email' : email,
+                      style: BrandUi.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: BrandColors.tar,
+                      ),
+                    ),
+                    const TextSpan(
+                      text: '. Перейдите по ссылке, чтобы активировать аккаунт.',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 22),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: BrandColors.milk,
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: BrandColors.borderSubtle),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 7,
+                      height: 7,
+                      decoration: const BoxDecoration(
+                        color: BrandColors.gilded,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Письмо придёт в течение 2 минут',
+                      style: BrandUi.inter(
+                        fontSize: 13,
+                        color: BrandColors.tar.withOpacity(0.55),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (_banner != null) ...[
+                const SizedBox(height: 16),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: BrandColors.sandstone.withOpacity(0.35),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: BrandColors.borderSubtle),
+                  ),
+                  child: Text(
+                    _banner!,
+                    style: BrandUi.inter(fontSize: 13, height: 1.4),
+                  ),
+                ),
+              ],
+              const SizedBox(height: 48),
+              BrandPrimaryButton(
+                label: _busy ? 'Проверяем…' : 'Продолжить',
+                onPressed: _busy ? null : _checkAndContinue,
+              ),
+              const SizedBox(height: 12),
+              BrandGhostButton(
+                label: _busy ? 'Отправляем…' : 'Отправить снова',
+                onPressed: _busy ? null : _resend,
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: _busy ? null : _skipForNow,
+                child: Text(
+                  'Продолжить без проверки',
+                  style: BrandUi.inter(
+                    fontSize: 13,
+                    color: BrandColors.tar.withOpacity(0.45),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
       ),
