@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/brand_colors.dart';
@@ -72,9 +73,9 @@ class _MasterOrdersFeedScreenState extends State<MasterOrdersFeedScreen> {
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const ColoredBox(
-        color: BrandColors.canvas,
-        child: Center(child: CircularProgressIndicator()),
+      return ColoredBox(
+        color: BrandRuntime.canvas,
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -87,7 +88,7 @@ class _MasterOrdersFeedScreenState extends State<MasterOrdersFeedScreen> {
         : 'Мастер';
 
     return ColoredBox(
-      color: BrandColors.canvas,
+      color: BrandRuntime.canvas,
       child: SafeArea(
         child: RefreshIndicator(
           onRefresh: _reload,
@@ -103,7 +104,7 @@ class _MasterOrdersFeedScreenState extends State<MasterOrdersFeedScreen> {
                   icon: Icon(
                     Icons.tune_rounded,
                     size: 20,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.ink.withOpacity(0.55),
                   ),
                 ),
               ),
@@ -150,7 +151,7 @@ class _MasterOrdersFeedScreenState extends State<MasterOrdersFeedScreen> {
                     child: Text(
                       'Нет заявок по выбранным фильтрам',
                       style: BrandUi.inter(
-                        color: BrandColors.tar.withOpacity(0.45),
+                        color: BrandRuntime.ink.withOpacity(0.45),
                       ),
                     ),
                   ),
@@ -192,7 +193,7 @@ class _FeedCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.milk,
+      color: BrandRuntime.card,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: onRespond,
@@ -200,7 +201,7 @@ class _FeedCard extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: BrandColors.borderSubtle),
+            border: Border.all(color: BrandRuntime.border),
           ),
           child: Padding(
             padding: const EdgeInsets.all(15),
@@ -218,7 +219,7 @@ class _FeedCard extends StatelessWidget {
                             item.workType,
                             style: pochaevsk(
                               fontSize: 19,
-                              color: BrandColors.tar,
+                              color: BrandRuntime.ink,
                               height: 1,
                             ),
                           ),
@@ -228,7 +229,7 @@ class _FeedCard extends StatelessWidget {
                               Icon(
                                 Icons.place_outlined,
                                 size: 14,
-                                color: BrandColors.tar.withOpacity(0.35),
+                                color: BrandRuntime.ink.withOpacity(0.35),
                               ),
                               const SizedBox(width: 5),
                               Expanded(
@@ -236,7 +237,7 @@ class _FeedCard extends StatelessWidget {
                                   _areaLabel,
                                   style: BrandUi.inter(
                                     fontSize: 13,
-                                    color: BrandColors.tar.withOpacity(0.55),
+                                    color: BrandRuntime.ink.withOpacity(0.55),
                                   ),
                                 ),
                               ),
@@ -252,7 +253,7 @@ class _FeedCard extends StatelessWidget {
                         'недавно',
                         style: BrandUi.inter(
                           fontSize: 12,
-                          color: BrandColors.tar.withOpacity(0.35),
+                          color: BrandRuntime.ink.withOpacity(0.35),
                         ),
                       ),
                   ],
@@ -261,7 +262,7 @@ class _FeedCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
                   decoration: BoxDecoration(
-                    color: BrandColors.linen,
+                    color: BrandRuntime.surface,
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Text(
@@ -269,16 +270,16 @@ class _FeedCard extends StatelessWidget {
                     style: BrandUi.inter(
                       fontSize: 12.5,
                       fontWeight: FontWeight.w500,
-                      color: BrandColors.needles,
+                      color: BrandRuntime.needles,
                     ),
                   ),
                 ),
                 const SizedBox(height: 13),
                 Container(
                   padding: const EdgeInsets.only(top: 13),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     border: Border(
-                      top: BorderSide(color: BrandColors.borderSubtle),
+                      top: BorderSide(color: BrandRuntime.border),
                     ),
                   ),
                   child: Row(
@@ -291,7 +292,7 @@ class _FeedCard extends StatelessWidget {
                               'БЮДЖЕТ',
                               style: BrandUi.inter(
                                 fontSize: 10.5,
-                                color: BrandColors.tar.withOpacity(0.35),
+                                color: BrandRuntime.ink.withOpacity(0.35),
                               ).copyWith(letterSpacing: 0.4),
                             ),
                             const SizedBox(height: 2),
@@ -299,7 +300,7 @@ class _FeedCard extends StatelessWidget {
                               item.budgetLabel,
                               style: pochaevsk(
                                 fontSize: 19,
-                                color: BrandColors.needles,
+                                color: BrandRuntime.needles,
                                 height: 1,
                               ),
                             ),
@@ -309,7 +310,7 @@ class _FeedCard extends StatelessWidget {
                       Container(
                         width: 1,
                         height: 36,
-                        color: BrandColors.borderSubtle,
+                        color: BrandRuntime.border,
                         margin: const EdgeInsets.symmetric(horizontal: 14),
                       ),
                       Column(
@@ -319,7 +320,7 @@ class _FeedCard extends StatelessWidget {
                             'СРОК',
                             style: BrandUi.inter(
                               fontSize: 10.5,
-                              color: BrandColors.tar.withOpacity(0.35),
+                              color: BrandRuntime.ink.withOpacity(0.35),
                             ).copyWith(letterSpacing: 0.4),
                           ),
                           const SizedBox(height: 2),
@@ -327,7 +328,7 @@ class _FeedCard extends StatelessWidget {
                             'По ТЗ',
                             style: pochaevsk(
                               fontSize: 19,
-                              color: BrandColors.tar,
+                              color: BrandRuntime.ink,
                               height: 1,
                             ),
                           ),

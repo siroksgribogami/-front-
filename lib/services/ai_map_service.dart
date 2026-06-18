@@ -1,13 +1,13 @@
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import 'package:http/http.dart' as http;
 
-import '../core/config/api_config.dart';
+import '../config/api_config.dart';
 import 'ai_vision_service.dart';
 import 'api_service.dart';
 import 'local_ai_map_engine.dart';
-import 'secure_storage_service.dart';
 
 export 'local_ai_map_engine.dart' show AiMapApplyResult;
 
@@ -27,16 +27,16 @@ class AiMapService {
   AiMapService({
     ApiService? api,
     LocalAiMapEngine? local,
-    SecureStorageService? storage,
+    FlutterSecureStorage? storage,
     http.Client? client,
   })  : _api = api ?? ApiService(),
         _local = local ?? LocalAiMapEngine(),
-        _storage = storage ?? SecureStorageService(),
+        _storage = storage ?? const FlutterSecureStorage(),
         _client = client ?? http.Client();
 
   final ApiService _api;
   final LocalAiMapEngine _local;
-  final SecureStorageService _storage;
+  final FlutterSecureStorage _storage;
   final http.Client _client;
 
   Future<AiMapApplyResult> apply({
@@ -215,7 +215,7 @@ class AiMapService {
       // offline — два шага локально через vision + place (как раньше)
     }
 
-    final vision = AiVisionService(storage: _storage, client: _client);
+    final vision = AiVisionService(client: _client);
     final detection = await vision.detectFromFile(
       imageFile,
       roomHint: roomHint,

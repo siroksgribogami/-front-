@@ -103,25 +103,30 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     const SizedBox(height: 30),
                     const BrandKicker('Аккаунт создан', onDark: true, fontSize: 10.5),
                     const SizedBox(height: 16),
-                    RichText(
+                    Text(
+                      'Добро\nпожаловать,',
                       textAlign: TextAlign.center,
-                      text: TextSpan(
-                        style: pochaevsk(
-                          fontSize: 52,
-                          color: BrandColors.onNeedles,
-                          height: 0.98,
-                        ),
-                        children: [
-                          const TextSpan(text: 'Добро\nпожаловать,\n'),
-                          TextSpan(
-                            text: firstName.isNotEmpty ? firstName : 'друг',
-                            style: pochaevsk(
-                              fontSize: 52,
-                              color: BrandColors.dawn,
-                              height: 0.98,
-                            ),
+                      style: pochaevsk(
+                        fontSize: 52,
+                        color: BrandColors.onNeedles,
+                        height: 0.98,
+                      ),
+                    ),
+                    // Имя может быть длинным — масштабируем под ширину экрана.
+                    SizedBox(
+                      width: double.infinity,
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        alignment: Alignment.center,
+                        child: Text(
+                          firstName.isNotEmpty ? firstName : 'друг',
+                          maxLines: 1,
+                          style: pochaevsk(
+                            fontSize: 52,
+                            color: BrandColors.dawn,
+                            height: 0.98,
                           ),
-                        ],
+                        ),
                       ),
                     ),
                     const SizedBox(height: 26),

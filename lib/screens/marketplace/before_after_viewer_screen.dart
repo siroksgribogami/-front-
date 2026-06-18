@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 
 import '../../config/brand_colors.dart';
 import '../../core/theme/brand_ui.dart';
@@ -22,7 +23,7 @@ class _BeforeAfterViewerScreenState extends State<BeforeAfterViewerScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BrandColors.tar,
+      backgroundColor: BrandRuntime.ink,
       body: Stack(
         fit: StackFit.expand,
         children: [
@@ -56,7 +57,7 @@ class _BeforeAfterViewerScreenState extends State<BeforeAfterViewerScreen> {
             child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 7),
               decoration: BoxDecoration(
-                color: BrandColors.needles,
+                color: BrandRuntime.needlesFill,
                 borderRadius: BorderRadius.circular(999),
               ),
               child: Text(
@@ -129,7 +130,7 @@ class _BeforeAfterViewerScreenState extends State<BeforeAfterViewerScreen> {
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
               colors: [
-                BrandColors.needles.withOpacity(0.25),
+                BrandRuntime.needles.withOpacity(0.25),
                 BrandColors.needlesDeep.withOpacity(0.45),
               ],
             ),
@@ -161,7 +162,7 @@ class _BeforeAfterViewerScreenState extends State<BeforeAfterViewerScreen> {
               bottom: 0,
               child: Container(
                 width: 2.5,
-                color: BrandColors.milk,
+                color: BrandRuntime.card,
                 child: Align(
                   alignment: Alignment.center,
                   child: GestureDetector(
@@ -176,11 +177,11 @@ class _BeforeAfterViewerScreenState extends State<BeforeAfterViewerScreen> {
                       width: 46,
                       height: 46,
                       decoration: BoxDecoration(
-                        color: BrandColors.milk,
+                        color: BrandRuntime.card,
                         shape: BoxShape.circle,
                         boxShadow: [
                           BoxShadow(
-                            color: BrandColors.tar.withOpacity(0.3),
+                            color: BrandRuntime.ink.withOpacity(0.3),
                             blurRadius: 16,
                             offset: const Offset(0, 6),
                           ),
@@ -188,7 +189,7 @@ class _BeforeAfterViewerScreenState extends State<BeforeAfterViewerScreen> {
                       ),
                       child: Icon(
                         Icons.compare_arrows_rounded,
-                        color: BrandColors.needles,
+                        color: BrandRuntime.needles,
                         size: 22,
                       ),
                     ),

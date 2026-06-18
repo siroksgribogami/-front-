@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 
 import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
@@ -135,7 +136,7 @@ class _MasterSuppliesCatalogScreenState
     }
 
     return ColoredBox(
-      color: BrandColors.canvas,
+      color: BrandRuntime.canvas,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -149,7 +150,7 @@ class _MasterSuppliesCatalogScreenState
                   icon: Icon(
                     Icons.search_rounded,
                     size: 20,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.ink.withOpacity(0.55),
                   ),
                   onPressed: () {
                     showDialog<void>(
@@ -180,7 +181,7 @@ class _MasterSuppliesCatalogScreenState
                   'Поиск: «${_searchController.text}»',
                   style: BrandUi.inter(
                     fontSize: 12.5,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.ink.withOpacity(0.55),
                   ),
                 ),
               ),
@@ -223,7 +224,7 @@ class _MasterSuppliesCatalogScreenState
                           'Ничего не нашли. Попробуйте другой запрос.',
                           textAlign: TextAlign.center,
                           style: BrandUi.inter(
-                            color: BrandColors.tar.withOpacity(0.55),
+                            color: BrandRuntime.ink.withOpacity(0.55),
                           ),
                         ),
                       ),
@@ -321,7 +322,7 @@ class _CatalogRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.milk,
+      color: BrandRuntime.card,
       borderRadius: BorderRadius.circular(16),
       child: InkWell(
         onTap: () {
@@ -333,7 +334,7 @@ class _CatalogRow extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: BrandColors.borderSubtle),
+            border: Border.all(color: BrandRuntime.border),
           ),
           child: Padding(
             padding: const EdgeInsets.all(12),
@@ -361,7 +362,7 @@ class _CatalogRow extends StatelessWidget {
                         decoration: BoxDecoration(
                           color: isRental
                               ? BrandColors.sandstone
-                              : BrandColors.linen,
+                              : BrandRuntime.surface,
                           borderRadius: BorderRadius.circular(999),
                         ),
                         child: Text(
@@ -371,7 +372,7 @@ class _CatalogRow extends StatelessWidget {
                             fontWeight: FontWeight.w600,
                             color: isRental
                                 ? BrandColors.surik
-                                : BrandColors.needles,
+                                : BrandRuntime.needles,
                           ),
                         ),
                       ),
@@ -388,7 +389,7 @@ class _CatalogRow extends StatelessWidget {
                         price,
                         style: pochaevsk(
                           fontSize: 17,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                           height: 1,
                         ),
                       ),
@@ -398,7 +399,7 @@ class _CatalogRow extends StatelessWidget {
                           subtitle!,
                           style: BrandUi.inter(
                             fontSize: 11.5,
-                            color: BrandColors.tar.withOpacity(0.45),
+                            color: BrandRuntime.ink.withOpacity(0.45),
                           ),
                         ),
                       ],
@@ -409,13 +410,13 @@ class _CatalogRow extends StatelessWidget {
                   width: 36,
                   height: 36,
                   decoration: BoxDecoration(
-                    color: BrandColors.linen,
+                    color: BrandRuntime.surface,
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: Icon(
                     Icons.add_rounded,
                     size: 20,
-                    color: BrandColors.needles,
+                    color: BrandRuntime.needles,
                   ),
                 ),
               ],

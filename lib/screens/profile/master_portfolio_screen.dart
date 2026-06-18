@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 
 import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
@@ -109,7 +110,7 @@ class MasterPortfolioScreen extends StatelessWidget {
                               vertical: 6,
                             ),
                             decoration: BoxDecoration(
-                              color: BrandColors.tar.withOpacity(0.4),
+                              color: BrandRuntime.ink.withOpacity(0.4),
                               borderRadius: BorderRadius.circular(999),
                             ),
                             child: Row(

@@ -201,7 +201,9 @@ abstract final class MapFloorPlanHelper {
       return floorsCount.clamp(1, 10);
     }
     if (houseFloors != null && houseFloors.isNotEmpty) {
-      final n = int.tryParse(houseFloors);
+      // Учитываем варианты вида «4+» — берём первое число.
+      final digits = houseFloors.replaceAll(RegExp(r'[^0-9]'), '');
+      final n = int.tryParse(digits);
       if (n != null && n > 0) return n.clamp(1, 10);
     }
     switch (premiseType) {

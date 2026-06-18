@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 
 import '../../config/brand_colors.dart';
 
-const _kPochaevskFontFamily = 'Pochaevsk';
-
-// Display-шрифт Pochaevsk (OFL, Slavonic Computing Initiative).
+// Display-шрифт бренда. Раньше был Pochaevsk (церковнославянский), но в нём нет
+// буквы «я» и ряда гражданских букв. Заменён на Ruslan Display (OFL, полная
+// кириллица, тот же традиционный «старорусский» характер). Логотип — отдельный
+// SVG (picture/brand/logo_pri_dele.svg), его смена шрифта не затрагивает.
+// Имя помощника pochaevsk() сохранено ради совместимости с существующим кодом.
+const _kPochaevskFontFamily = 'RuslanDisplay';
 const kAppTextHeightBehavior = TextHeightBehavior(
   applyHeightToFirstAscent: true,
   applyHeightToLastDescent: true,
@@ -32,6 +35,7 @@ class AppTextStyle {
   }) {
     return TextStyle(
       fontFamily: fontFamily,
+      fontFamilyFallback: const [uiFontFamily, 'Roboto', 'sans-serif'],
       fontSize: fontSize,
       fontWeight: fontWeight,
       color: color,

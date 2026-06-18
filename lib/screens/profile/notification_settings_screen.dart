@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
-import '../../config/brand_colors.dart';
 import '../../core/theme/brand_ui.dart';
 
 class NotificationSettingsScreen extends StatefulWidget {
@@ -46,10 +46,10 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: BrandColors.linen.withOpacity(0.7),
+        color: BrandRuntime.surface.withOpacity(0.7),
         borderRadius: BorderRadius.circular(9),
       ),
-      child: Icon(icon, size: 17, color: BrandColors.needles),
+      child: Icon(icon, size: 17, color: BrandRuntime.needles),
     );
   }
 
@@ -65,8 +65,8 @@ class _NotificationSettingsScreenState extends State<NotificationSettingsScreen>
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: BrandColors.canvas,
-        foregroundColor: BrandColors.tar,
+        backgroundColor: BrandRuntime.canvas,
+        foregroundColor: BrandRuntime.ink,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),

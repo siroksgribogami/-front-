@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../../config/brand_colors.dart';
@@ -288,7 +289,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
     final rooms = provider.rooms;
 
     return Scaffold(
-      backgroundColor: BrandColors.milk,
+      backgroundColor: BrandRuntime.card,
       body: Column(
         children: [
           _buildHeader(provider),
@@ -303,7 +304,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                           Positioned.fill(
                             child: CustomPaint(
                               painter: _DesktopGridPainter(),
-                              child: Container(color: BrandColors.milk),
+                              child: Container(color: BrandRuntime.card),
                             ),
                           ),
                           Positioned(
@@ -315,15 +316,15 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                                 vertical: 7,
                               ),
                               decoration: BoxDecoration(
-                                color: BrandColors.canvas,
+                                color: BrandRuntime.canvas,
                                 borderRadius: BorderRadius.circular(999),
-                                border: Border.all(color: BrandColors.borderSubtle),
+                                border: Border.all(color: BrandRuntime.border),
                               ),
                               child: Text(
                                 'ПЛАН СВЕРХУ · М 1:50',
                                 style: BrandUi.monoLabel(
                                   fontSize: 10,
-                                  color: BrandColors.tar.withOpacity(0.55),
+                                  color: BrandRuntime.ink.withOpacity(0.55),
                                 ),
                               ),
                             ),
@@ -339,9 +340,9 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                                   height: 32,
                                   padding: const EdgeInsets.symmetric(horizontal: 10),
                                   decoration: BoxDecoration(
-                                    color: BrandColors.canvas,
+                                    color: BrandRuntime.canvas,
                                     borderRadius: BorderRadius.circular(9),
-                                    border: Border.all(color: BrandColors.borderSubtle),
+                                    border: Border.all(color: BrandRuntime.border),
                                   ),
                                   alignment: Alignment.center,
                                   child: Text(
@@ -349,7 +350,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                                     style: BrandUi.inter(
                                       fontSize: 13,
                                       fontWeight: FontWeight.w600,
-                                      color: BrandColors.needles,
+                                      color: BrandRuntime.needles,
                                     ),
                                   ),
                                 );
@@ -401,14 +402,14 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
       height: 60,
       padding: const EdgeInsets.symmetric(horizontal: 22),
       decoration: BoxDecoration(
-        color: BrandColors.canvas,
-        border: Border(bottom: BorderSide(color: BrandColors.borderSubtle)),
+        color: BrandRuntime.canvas,
+        border: Border(bottom: BorderSide(color: BrandRuntime.border)),
       ),
       child: Row(
         children: [
           RichText(
             text: TextSpan(
-              style: pochaevsk(fontSize: 22, color: BrandColors.needles),
+              style: pochaevsk(fontSize: 22, color: BrandRuntime.needles),
               children: [
                 const TextSpan(text: 'При'),
                 TextSpan(
@@ -422,7 +423,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
             width: 1,
             height: 26,
             margin: const EdgeInsets.symmetric(horizontal: 16),
-            color: BrandColors.borderSubtle,
+            color: BrandRuntime.border,
           ),
           Expanded(
             child: Column(
@@ -431,13 +432,13 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
               children: [
                 Text(
                   activeName,
-                  style: pochaevsk(fontSize: 17, color: BrandColors.tar, height: 1),
+                  style: pochaevsk(fontSize: 17, color: BrandRuntime.ink, height: 1),
                 ),
                 Text(
                   'Хамовники · план объекта · сохранено',
                   style: BrandUi.inter(
                     fontSize: 12,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.ink.withOpacity(0.55),
                   ),
                 ),
               ],
@@ -485,16 +486,16 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 8),
         decoration: BoxDecoration(
-          color: filled ? BrandColors.needles : Colors.transparent,
+          color: filled ? BrandRuntime.needles : Colors.transparent,
           borderRadius: BorderRadius.circular(10),
-          border: filled ? null : Border.all(color: BrandColors.borderSubtle, width: 1.5),
+          border: filled ? null : Border.all(color: BrandRuntime.border, width: 1.5),
         ),
         child: Text(
           label,
           style: BrandUi.inter(
             fontSize: 13.5,
             fontWeight: FontWeight.w600,
-            color: filled ? BrandColors.onNeedles : BrandColors.needles,
+            color: filled ? BrandColors.onNeedles : BrandRuntime.needles,
           ),
         ),
       ),
@@ -528,10 +529,10 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
               decoration: BoxDecoration(
                 color: isActive
                     ? BrandColors.clay.withOpacity(0.12)
-                    : BrandColors.milk,
+                    : BrandRuntime.card,
                 borderRadius: BorderRadius.circular(12),
                 border: Border.all(
-                  color: isActive ? BrandColors.clay : BrandColors.borderSubtle,
+                  color: isActive ? BrandColors.clay : BrandRuntime.border,
                   width: isActive ? 2.5 : 1.6,
                 ),
               ),
@@ -542,14 +543,14 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                     room.name,
                     style: pochaevsk(
                       fontSize: 14,
-                      color: BrandColors.needles,
+                      color: BrandRuntime.needles,
                     ),
                   ),
                   Text(
                     '24.0 м²',
                     style: BrandUi.monoLabel(
                       fontSize: 10,
-                      color: BrandColors.tar.withOpacity(0.55),
+                      color: BrandRuntime.ink.withOpacity(0.55),
                     ),
                   ),
                 ],
@@ -853,9 +854,9 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
 
     return Container(
       decoration: BoxDecoration(
-        color: BrandColors.canvas,
+        color: BrandRuntime.canvas,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: BrandColors.borderSubtle),
+        border: Border.all(color: BrandRuntime.border),
         boxShadow: [
           BoxShadow(
             color: BrandColors.needlesDeep.withOpacity(0.12),
@@ -893,8 +894,8 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                             fontSize: 14,
                             fontWeight: FontWeight.w600,
                             color: _statsTab == i
-                                ? BrandColors.tar
-                                : BrandColors.tar.withOpacity(0.55),
+                                ? BrandRuntime.ink
+                                : BrandRuntime.ink.withOpacity(0.55),
                           ),
                         ),
                         if (i == 2) ...[
@@ -931,10 +932,10 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                       width: 26,
                       height: 26,
                       decoration: BoxDecoration(
-                        color: BrandColors.linen,
+                        color: BrandRuntime.surface,
                         borderRadius: BorderRadius.circular(8),
                       ),
-                      child: Icon(Icons.support_agent, size: 16, color: BrandColors.needles),
+                      child: Icon(Icons.support_agent, size: 16, color: BrandRuntime.needles),
                     ),
                     const SizedBox(width: 7),
                     Text(
@@ -942,7 +943,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                       style: BrandUi.inter(
                         fontSize: 12.5,
                         fontWeight: FontWeight.w600,
-                        color: BrandColors.needles,
+                        color: BrandRuntime.needles,
                       ),
                     ),
                   ],
@@ -950,7 +951,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
               ),
             ],
           ),
-          Divider(height: 1, color: BrandColors.borderSubtle),
+          Divider(height: 1, color: BrandRuntime.border),
           Padding(
             padding: const EdgeInsets.fromLTRB(22, 16, 22, 16),
             child: Row(
@@ -961,7 +962,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                       width: 1,
                       height: 42,
                       margin: const EdgeInsets.symmetric(horizontal: 14),
-                      color: BrandColors.borderSubtle,
+                      color: BrandRuntime.border,
                     ),
                   Expanded(
                     child: Column(
@@ -971,7 +972,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                           stats[i].$1.toUpperCase(),
                           style: BrandUi.inter(
                             fontSize: 11,
-                            color: BrandColors.tar.withOpacity(0.4),
+                            color: BrandRuntime.ink.withOpacity(0.4),
                           ).copyWith(letterSpacing: 0.5),
                         ),
                         const SizedBox(height: 4),
@@ -979,7 +980,7 @@ class _ApartmentEditorScreenState extends State<ApartmentEditorScreen>
                           stats[i].$2,
                           style: pochaevsk(
                             fontSize: 22,
-                            color: i == 5 ? BrandColors.clay : BrandColors.needles,
+                            color: i == 5 ? BrandColors.clay : BrandRuntime.needles,
                             height: 1,
                           ),
                         ),
@@ -1413,7 +1414,7 @@ class _DesktopGridPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     const step = 31.0;
-    final paint = Paint()..color = BrandColors.needles.withOpacity(0.045);
+    final paint = Paint()..color = BrandRuntime.needles.withOpacity(0.045);
     for (var y = step; y < size.height; y += step) {
       canvas.drawLine(Offset(0, y), Offset(size.width, y), paint);
     }

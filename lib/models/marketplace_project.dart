@@ -10,6 +10,11 @@ class ProjectSummary {
   final String address;
   final String spec;
 
+  /// Кто выбран по проекту (заполняется при закрытии сделки).
+  /// BACKEND: приходит из проекта (`selected_master_id` / имя исполнителя).
+  final String? selectedMasterId;
+  final String? selectedMasterName;
+
   const ProjectSummary({
     required this.id,
     required this.title,
@@ -21,6 +26,8 @@ class ProjectSummary {
     this.budget = '',
     this.address = '',
     this.spec = '',
+    this.selectedMasterId,
+    this.selectedMasterName,
   });
 
   bool get hasBrief =>
@@ -46,6 +53,8 @@ class ProjectSummary {
         'budget': budget,
         'address': address,
         'spec': spec,
+        'selected_master_id': selectedMasterId,
+        'selected_master_name': selectedMasterName,
       };
 
   factory ProjectSummary.fromJson(Map<String, dynamic> j) {
@@ -61,6 +70,13 @@ class ProjectSummary {
       budget: j['budget']?.toString() ?? '',
       address: j['address']?.toString() ?? '',
       spec: j['spec']?.toString() ?? '',
+      selectedMasterId: (j['selected_master_id']?.toString().isNotEmpty ?? false)
+          ? j['selected_master_id'].toString()
+          : null,
+      selectedMasterName:
+          (j['selected_master_name']?.toString().isNotEmpty ?? false)
+              ? j['selected_master_name'].toString()
+              : null,
     );
   }
 
@@ -75,6 +91,8 @@ class ProjectSummary {
     String? budget,
     String? address,
     String? spec,
+    String? selectedMasterId,
+    String? selectedMasterName,
   }) {
     return ProjectSummary(
       id: id ?? this.id,
@@ -87,6 +105,8 @@ class ProjectSummary {
       budget: budget ?? this.budget,
       address: address ?? this.address,
       spec: spec ?? this.spec,
+      selectedMasterId: selectedMasterId ?? this.selectedMasterId,
+      selectedMasterName: selectedMasterName ?? this.selectedMasterName,
     );
   }
 }
@@ -150,6 +170,10 @@ class MasterBid {
   final String durationOffer;
   final String message;
 
+  /// Статус отклика: `sent` · `selected` · `declined`.
+  /// Меняется заказчиком при выборе мастера; обе стороны читают одно значение.
+  final String status;
+
   const MasterBid({
     required this.id,
     required this.masterId,
@@ -160,7 +184,11 @@ class MasterBid {
     required this.priceOffer,
     required this.durationOffer,
     required this.message,
+    this.status = 'sent',
   });
+
+  bool get isSelected => status == 'selected';
+  bool get isDeclined => status == 'declined';
 
   Map<String, dynamic> toJson() => {
         'id': id,
@@ -172,6 +200,7 @@ class MasterBid {
         'price_offer': priceOffer,
         'duration_offer': durationOffer,
         'message': message,
+        'status': status,
       };
 
   factory MasterBid.fromJson(Map<String, dynamic> j) {
@@ -185,6 +214,22 @@ class MasterBid {
       priceOffer: j['price_offer']?.toString() ?? '',
       durationOffer: j['duration_offer']?.toString() ?? '',
       message: j['message']?.toString() ?? '',
+      status: j['status']?.toString() ?? 'sent',
+    );
+  }
+
+  MasterBid copyWith({String? status}) {
+    return MasterBid(
+      id: id,
+      masterId: masterId,
+      masterName: masterName,
+      specialty: specialty,
+      rating: rating,
+      completedJobs: completedJobs,
+      priceOffer: priceOffer,
+      durationOffer: durationOffer,
+      message: message,
+      status: status ?? this.status,
     );
   }
 }
@@ -291,6 +336,9 @@ class DirectChatThread {
   final DateTime updatedAt;
   final String projectTitle;
 
+  /// Привязка диалога к проекту заказчика (если есть).
+  final String? projectId;
+
   const DirectChatThread({
     required this.id,
     required this.peerName,
@@ -298,6 +346,7 @@ class DirectChatThread {
     required this.lastMessagePreview,
     required this.updatedAt,
     required this.projectTitle,
+    this.projectId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -307,6 +356,7 @@ class DirectChatThread {
         'last_message_preview': lastMessagePreview,
         'updated_at': updatedAt.toIso8601String(),
         'project_title': projectTitle,
+        'project_id': projectId,
       };
 
   factory DirectChatThread.fromJson(Map<String, dynamic> j) {
@@ -318,6 +368,24 @@ class DirectChatThread {
       updatedAt: DateTime.tryParse(j['updated_at']?.toString() ?? '') ??
           DateTime.now(),
       projectTitle: j['project_title']?.toString() ?? '',
+      projectId: (j['project_id']?.toString().isNotEmpty ?? false)
+          ? j['project_id'].toString()
+          : null,
+    );
+  }
+
+  DirectChatThread copyWith({
+    String? lastMessagePreview,
+    DateTime? updatedAt,
+  }) {
+    return DirectChatThread(
+      id: id,
+      peerName: peerName,
+      masterId: masterId,
+      lastMessagePreview: lastMessagePreview ?? this.lastMessagePreview,
+      updatedAt: updatedAt ?? this.updatedAt,
+      projectTitle: projectTitle,
+      projectId: projectId,
     );
   }
 }
@@ -329,11 +397,15 @@ class MasterMyBidRecord {
   final String state;
   final String price;
 
+  /// Проект, на который отправлен отклик (для смены статуса при выборе).
+  final String? projectId;
+
   const MasterMyBidRecord({
     required this.id,
     required this.projectTitle,
     required this.state,
     required this.price,
+    this.projectId,
   });
 
   Map<String, dynamic> toJson() => {
@@ -341,6 +413,7 @@ class MasterMyBidRecord {
         'project_title': projectTitle,
         'state': state,
         'price': price,
+        'project_id': projectId,
       };
 
   factory MasterMyBidRecord.fromJson(Map<String, dynamic> j) {
@@ -349,6 +422,61 @@ class MasterMyBidRecord {
       projectTitle: j['project_title']?.toString() ?? '',
       state: j['state']?.toString() ?? '',
       price: j['price']?.toString() ?? '',
+      projectId: (j['project_id']?.toString().isNotEmpty ?? false)
+          ? j['project_id'].toString()
+          : null,
+    );
+  }
+
+  MasterMyBidRecord copyWith({String? state}) {
+    return MasterMyBidRecord(
+      id: id,
+      projectTitle: projectTitle,
+      state: state ?? this.state,
+      price: price,
+      projectId: projectId,
+    );
+  }
+}
+
+/// Одно сообщение в переписке заказчик ↔ мастер (сохраняется на устройстве).
+/// BACKEND: GET/POST `/chats/{threadId}/messages`.
+class ChatMessage {
+  final String id;
+  final String text;
+
+  /// `true` — сообщение текущего пользователя (исходящее).
+  final bool mine;
+  final DateTime at;
+
+  /// Путь к прикреплённому изображению, если есть.
+  final String? imagePath;
+
+  const ChatMessage({
+    required this.id,
+    required this.text,
+    required this.mine,
+    required this.at,
+    this.imagePath,
+  });
+
+  Map<String, dynamic> toJson() => {
+        'id': id,
+        'text': text,
+        'mine': mine,
+        'at': at.toIso8601String(),
+        'image_path': imagePath,
+      };
+
+  factory ChatMessage.fromJson(Map<String, dynamic> j) {
+    return ChatMessage(
+      id: j['id']?.toString() ?? '',
+      text: j['text']?.toString() ?? '',
+      mine: j['mine'] as bool? ?? false,
+      at: DateTime.tryParse(j['at']?.toString() ?? '') ?? DateTime.now(),
+      imagePath: (j['image_path']?.toString().isNotEmpty ?? false)
+          ? j['image_path'].toString()
+          : null,
     );
   }
 }

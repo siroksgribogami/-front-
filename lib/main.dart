@@ -7,6 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 import 'config/api_config.dart';
 import 'config/api_config_platform_stub.dart' if (dart.library.io) 'config/api_config_platform_io.dart' as api_platform;
 import 'config/app_theme.dart';
+import 'core/theme/brand_runtime.dart';
 import 'config/webview_web_register.dart';
 import 'core/arthouse_scroll_behavior.dart';
 import 'core/bar_loader.dart';
@@ -82,6 +83,7 @@ class PridelApp extends StatelessWidget {
             ThemeMode.system => platformBrightness,
           };
           _applySystemUIOverlay(effectiveBrightness);
+          BrandRuntime.isDark = effectiveBrightness == Brightness.dark;
 
           return MediaQuery(
             data: MediaQuery.of(context).copyWith(

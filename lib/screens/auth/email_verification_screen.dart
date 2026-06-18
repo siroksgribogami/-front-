@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/brand_colors.dart';
@@ -74,7 +75,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
     final email = context.watch<AuthProvider>().user?.email ?? '';
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.fromLTRB(30, 48, 30, 40),
@@ -89,9 +90,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   children: [
                     Container(
                       decoration: BoxDecoration(
-                        color: BrandColors.milk,
+                        color: BrandRuntime.card,
                         borderRadius: BorderRadius.circular(28),
-                        border: Border.all(color: BrandColors.borderSubtle),
+                        border: Border.all(color: BrandRuntime.border),
                       ),
                       child: const Stack(
                         fit: StackFit.expand,
@@ -114,9 +115,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needlesFill,
                           shape: BoxShape.circle,
-                          border: Border.all(color: BrandColors.canvas, width: 3),
+                          border: Border.all(color: BrandRuntime.canvas, width: 3),
                         ),
                         child: const Icon(
                           Icons.check_rounded,
@@ -136,7 +137,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                 textAlign: TextAlign.center,
                 style: pochaevsk(
                   fontSize: 32,
-                  color: BrandColors.tar,
+                  color: BrandRuntime.ink,
                   height: 1.05,
                 ),
               ),
@@ -147,7 +148,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   style: BrandUi.inter(
                     fontSize: 15,
                     height: 1.55,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.ink.withOpacity(0.55),
                   ),
                   children: [
                     const TextSpan(
@@ -158,7 +159,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       style: BrandUi.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: BrandColors.tar,
+                        color: BrandRuntime.ink,
                       ),
                     ),
                     const TextSpan(
@@ -171,9 +172,9 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  color: BrandColors.milk,
+                  color: BrandRuntime.card,
                   borderRadius: BorderRadius.circular(999),
-                  border: Border.all(color: BrandColors.borderSubtle),
+                  border: Border.all(color: BrandRuntime.border),
                 ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
@@ -191,7 +192,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                       'Письмо придёт в течение 2 минут',
                       style: BrandUi.inter(
                         fontSize: 13,
-                        color: BrandColors.tar.withOpacity(0.55),
+                        color: BrandRuntime.ink.withOpacity(0.55),
                       ),
                     ),
                   ],
@@ -205,7 +206,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   decoration: BoxDecoration(
                     color: BrandColors.sandstone.withOpacity(0.35),
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: BrandColors.borderSubtle),
+                    border: Border.all(color: BrandRuntime.border),
                   ),
                   child: Text(
                     _banner!,
@@ -230,7 +231,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
                   'Продолжить без проверки',
                   style: BrandUi.inter(
                     fontSize: 13,
-                    color: BrandColors.tar.withOpacity(0.45),
+                    color: BrandRuntime.ink.withOpacity(0.45),
                   ),
                 ),
               ),

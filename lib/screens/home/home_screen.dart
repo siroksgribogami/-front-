@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/brand_colors.dart';
@@ -105,7 +106,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final roles = context.watch<RoleProvider>();
     _syncRoleTab(roles.activeRole);
     final navItems = _itemsForRole(roles.activeRole);
-    final bg = BrandColors.canvas;
+    final bg = BrandRuntime.canvas;
 
     final sidebarWidth =
         _sidebarExpanded ? _expandedSidebarWidth : _collapsedSidebarWidth;
@@ -147,15 +148,15 @@ class _HomeScreenState extends State<HomeScreen> {
     required double sidebarWidth,
     required bool showLabels,
   }) {
-    const sidebarBg = BrandColors.milk;
-    const borderC = BrandColors.borderSubtle;
-    const textMainC = BrandColors.tar;
+    final sidebarBg = BrandRuntime.card;
+    final borderC = BrandRuntime.border;
+    final textMainC = BrandRuntime.ink;
 
     return Container(
       width: sidebarWidth,
       decoration: BoxDecoration(
         color: sidebarBg,
-        border: const Border(
+        border: Border(
           right: BorderSide(color: borderC, width: 1),
         ),
       ),
@@ -202,7 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           const SizedBox(height: 12),
-          const Divider(color: borderC, height: 1),
+          Divider(color: borderC, height: 1),
           const SizedBox(height: 12),
           Expanded(
             child: SingleChildScrollView(
@@ -230,7 +231,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 final username = auth.user?.visibleName ?? '';
                 return Column(
                   children: [
-                    const Divider(color: borderC, height: 1),
+                    Divider(color: borderC, height: 1),
                     const SizedBox(height: 14),
                     InkWell(
                       borderRadius: BorderRadius.circular(10),
@@ -246,7 +247,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             width: 34,
                             height: 34,
                             decoration: BoxDecoration(
-                              color: BrandColors.needles,
+                              color: BrandRuntime.needlesFill,
                               borderRadius: BorderRadius.circular(10),
                             ),
                             child: Center(
@@ -307,7 +308,7 @@ class _HomeScreenState extends State<HomeScreen> {
               vertical: 10,
             ),
             decoration: BoxDecoration(
-              color: isSelected ? BrandColors.linen : Colors.transparent,
+              color: isSelected ? BrandRuntime.surface : Colors.transparent,
               borderRadius: BorderRadius.circular(12),
             ),
             child: Tooltip(
@@ -321,8 +322,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   Icon(
                     isSelected ? item.selectedIcon : item.icon,
                     color: isSelected
-                        ? BrandColors.needles
-                        : BrandColors.inkFaint,
+                        ? BrandRuntime.needles
+                        : BrandRuntime.inkFaint,
                     size: 19,
                   ),
                   if (showLabels) ...[
@@ -335,7 +336,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             isSelected ? FontWeight.w700 : FontWeight.w500,
                         color: isSelected
                             ? BrandColors.needlesDark
-                            : BrandColors.inkFaint,
+                            : BrandRuntime.inkFaint,
                       ),
                     ),
                   ],

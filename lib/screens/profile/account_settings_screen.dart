@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -160,7 +161,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                                     color: BrandColors.clay,
                                     shape: BoxShape.circle,
                                     border: Border.all(
-                                      color: BrandColors.canvas,
+                                      color: BrandRuntime.canvas,
                                       width: 3,
                                     ),
                                   ),
@@ -191,7 +192,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                     label: 'Имя и фамилия',
                     value: user.visibleName,
                     icon: Icon(Icons.person_outline,
-                        size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                        size: 17, color: BrandRuntime.ink.withOpacity(0.55)),
                     onTap: () => _editDisplayName(user.visibleName),
                   ),
                   const SizedBox(height: 14),
@@ -201,7 +202,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                         ? phone
                         : 'Не указан',
                     icon: Icon(Icons.phone_outlined,
-                        size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                        size: 17, color: BrandRuntime.ink.withOpacity(0.55)),
                     onTap: () => _editPhone(
                       user.phone ??
                           user.displayPhone?.replaceAll(RegExp(r'[^\d+]'), ''),
@@ -213,13 +214,13 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                       label: 'Электронная почта',
                       value: email,
                       icon: Icon(Icons.mail_outline,
-                          size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                          size: 17, color: BrandRuntime.ink.withOpacity(0.55)),
                       trailing: Text(
                         'Подтв.',
                         style: BrandUi.inter(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                         ),
                       ),
                     ),
@@ -229,7 +230,7 @@ class _AccountSettingsScreenState extends State<AccountSettingsScreen> {
                     label: 'Город',
                     value: 'Москва',
                     icon: Icon(Icons.location_on_outlined,
-                        size: 17, color: BrandColors.tar.withOpacity(0.55)),
+                        size: 17, color: BrandRuntime.ink.withOpacity(0.55)),
                   ),
                   const SizedBox(height: 24),
                   BrandPrimaryButton(

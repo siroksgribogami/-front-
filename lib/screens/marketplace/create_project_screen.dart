@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 
 import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
@@ -140,7 +141,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
     final bottom = MediaQuery.paddingOf(context).bottom;
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -187,9 +188,9 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
   Widget _buildBottomBar(double bottomInset) {
     return Container(
       padding: EdgeInsets.fromLTRB(16, 14, 16, bottomInset + 14),
-      decoration: const BoxDecoration(
-        color: BrandColors.canvas,
-        border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
+      decoration: BoxDecoration(
+        color: BrandRuntime.canvas,
+        border: Border(top: BorderSide(color: BrandRuntime.border)),
       ),
       child: Row(
         children: [
@@ -268,7 +269,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           style: BrandUi.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 9),
@@ -324,7 +325,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   style: BrandUi.inter(
                     fontSize: 12.5,
                     fontWeight: FontWeight.w600,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.ink.withOpacity(0.55),
                   ),
                 ),
                 const Spacer(),
@@ -332,7 +333,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                   '$specLen / $_specMaxLen',
                   style: BrandUi.inter(
                     fontSize: 12,
-                    color: BrandColors.tar.withOpacity(0.45),
+                    color: BrandRuntime.ink.withOpacity(0.45),
                   ),
                 ),
               ],
@@ -357,7 +358,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           style: BrandUi.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 9),
@@ -372,7 +373,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           style: BrandUi.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 10),
@@ -407,7 +408,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
           style: BrandUi.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 9),
@@ -433,7 +434,7 @@ class _AiPathCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.needles,
+      color: BrandRuntime.needles,
       borderRadius: BorderRadius.circular(16),
       elevation: selected ? 2 : 0,
       child: InkWell(
@@ -479,7 +480,7 @@ class _AiPathCard extends StatelessWidget {
                     'ИИ-прораб',
                     style: pochaevsk(
                       fontSize: 19,
-                      color: BrandColors.milk,
+                      color: BrandRuntime.card,
                       height: 1,
                     ),
                   ),
@@ -504,7 +505,7 @@ class _AiPathCard extends StatelessWidget {
                       style: BrandUi.inter(
                         fontSize: 11.5,
                         fontWeight: FontWeight.w600,
-                        color: BrandColors.milk,
+                        color: BrandRuntime.card,
                       ),
                     ),
                   ),
@@ -530,7 +531,7 @@ class _ManualPathCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.milk,
+      color: BrandRuntime.card,
       borderRadius: BorderRadius.circular(16),
       elevation: selected ? 1 : 0,
       child: InkWell(
@@ -541,7 +542,7 @@ class _ManualPathCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: selected ? BrandColors.needles : BrandColors.borderSubtle,
+              color: selected ? BrandRuntime.needles : BrandRuntime.border,
               width: selected ? 2 : 1.5,
             ),
           ),
@@ -552,12 +553,12 @@ class _ManualPathCard extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: BrandColors.linen,
+                  color: BrandRuntime.surface,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Icon(
                   Icons.edit_outlined,
-                  color: BrandColors.needles,
+                  color: BrandRuntime.needles,
                   size: 20,
                 ),
               ),
@@ -566,7 +567,7 @@ class _ManualPathCard extends StatelessWidget {
                 'Вручную',
                 style: pochaevsk(
                   fontSize: 19,
-                  color: BrandColors.tar,
+                  color: BrandRuntime.ink,
                   height: 1,
                 ),
               ),
@@ -575,7 +576,7 @@ class _ManualPathCard extends StatelessWidget {
                 'Заполнить поля самостоятельно',
                 style: BrandUi.inter(
                   fontSize: 12,
-                  color: BrandColors.tar.withOpacity(0.55),
+                  color: BrandRuntime.ink.withOpacity(0.55),
                   height: 1.4,
                 ),
               ),
@@ -603,7 +604,7 @@ class _VisibilityCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: selected ? BrandColors.sandstone.withOpacity(0.35) : BrandColors.milk,
+      color: selected ? BrandColors.sandstone.withOpacity(0.35) : BrandRuntime.card,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -613,7 +614,7 @@ class _VisibilityCard extends StatelessWidget {
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(12),
             border: Border.all(
-              color: selected ? BrandColors.clay : BrandColors.borderSubtle,
+              color: selected ? BrandColors.clay : BrandRuntime.border,
               width: selected ? 1.5 : 1,
             ),
           ),
@@ -622,7 +623,7 @@ class _VisibilityCard extends StatelessWidget {
             children: [
               Icon(
                 selected ? Icons.radio_button_checked : Icons.radio_button_off,
-                color: selected ? BrandColors.clay : BrandColors.tar.withOpacity(0.45),
+                color: selected ? BrandColors.clay : BrandRuntime.ink.withOpacity(0.45),
                 size: 22,
               ),
               const SizedBox(width: 10),
@@ -642,7 +643,7 @@ class _VisibilityCard extends StatelessWidget {
                       subtitle,
                       style: BrandUi.inter(
                         fontSize: 13,
-                        color: BrandColors.tar.withOpacity(0.55),
+                        color: BrandRuntime.ink.withOpacity(0.55),
                         height: 1.35,
                       ),
                     ),

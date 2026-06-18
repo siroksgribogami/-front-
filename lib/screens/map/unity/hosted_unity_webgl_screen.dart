@@ -3,6 +3,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../../core/theme/brand_runtime.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 
@@ -248,7 +249,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
                           decoration: BoxDecoration(
                             color: active
                                 ? BrandColors.clay
-                                : BrandColors.milk.withOpacity(0.92),
+                                : BrandRuntime.card.withOpacity(0.92),
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
@@ -258,7 +259,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
                               fontWeight: FontWeight.w600,
                               color: active
                                   ? BrandColors.onClay
-                                  : BrandColors.needles,
+                                  : BrandRuntime.needles,
                             ),
                           ),
                         ),
@@ -269,14 +270,14 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
                   Container(
                     padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
                     decoration: BoxDecoration(
-                      color: BrandColors.milk.withOpacity(0.95),
+                      color: BrandRuntime.card.withOpacity(0.95),
                       borderRadius: BorderRadius.circular(18),
                     ),
                     child: Row(
                       children: [
                         Icon(
                           Icons.view_in_ar_outlined,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                           size: 22,
                         ),
                         const SizedBox(width: 12),
@@ -288,7 +289,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
                                 widget.roomTitle,
                                 style: pochaevsk(
                                   fontSize: 17,
-                                  color: BrandColors.tar,
+                                  color: BrandRuntime.ink,
                                   height: 1,
                                 ),
                               ),
@@ -297,7 +298,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
                                 widget.roomSubtitle,
                                 style: BrandUi.inter(
                                   fontSize: 12,
-                                  color: BrandColors.tar.withOpacity(0.55),
+                                  color: BrandRuntime.ink.withOpacity(0.55),
                                 ),
                               ),
                             ],
@@ -306,7 +307,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
                         FilledButton(
                           onPressed: () {},
                           style: FilledButton.styleFrom(
-                            backgroundColor: BrandColors.needles,
+                            backgroundColor: BrandRuntime.needles,
                             foregroundColor: BrandColors.onNeedles,
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
@@ -335,7 +336,7 @@ class _HostedUnityWebGlScreenState extends State<HostedUnityWebGlScreen> {
               Align(
                 alignment: Alignment.bottomCenter,
                 child: Material(
-                  color: BrandColors.tar.withOpacity(0.9),
+                  color: BrandRuntime.ink.withOpacity(0.9),
                   child: Padding(
                     padding: const EdgeInsets.all(12),
                     child: Text(

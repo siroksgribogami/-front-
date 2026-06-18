@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:intl/intl.dart';
+import 'package:image_picker/image_picker.dart';
 
 import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
 import '../../core/theme/brand_ui.dart';
 import '../../models/marketplace_project.dart';
 import '../../services/marketplace_local_store.dart';
+import '../../widgets/marketplace_image_attachments.dart';
 import 'master_public_profile_screen.dart';
 
 /// Переписка заказчик ↔ мастер.
@@ -26,24 +29,46 @@ class DirectChatScreen extends StatefulWidget {
 class _DirectChatScreenState extends State<DirectChatScreen> {
   final _controller = TextEditingController();
   final _scroll = ScrollController();
-  final List<_Line> _lines = [];
+  final _picker = ImagePicker();
+  List<ChatMessage> _messages = [];
+  bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _lines.addAll([
-      _Line(
-        text:
-            'Добрый день! Уточните, пожалуйста, по объекту «${widget.thread.projectTitle}».',
-        incoming: true,
-        at: DateTime(2026, 4, 20, 10, 0),
-      ),
-      _Line(
-        text: widget.thread.lastMessagePreview,
-        incoming: false,
-        at: widget.thread.updatedAt,
-      ),
-    ]);
+    _loadMessages();
+  }
+
+  Future<void> _loadMessages() async {
+    final store = MarketplaceLocalStore.instance;
+    await store.ensureLoaded();
+    var msgs = store.messagesForThread(widget.thread.id);
+    if (msgs.isEmpty) {
+      // Демо-диалог без истории — засеваем первые реплики (один раз) и сохраняем.
+      msgs = [
+        ChatMessage(
+          id: 'seed_in_${widget.thread.id}',
+          text:
+              'Добрый день! Уточните, пожалуйста, по объекту «${widget.thread.projectTitle}».',
+          mine: false,
+          at: DateTime(2026, 4, 20, 10, 0),
+        ),
+        if (widget.thread.lastMessagePreview.trim().isNotEmpty)
+          ChatMessage(
+            id: 'seed_out_${widget.thread.id}',
+            text: widget.thread.lastMessagePreview,
+            mine: true,
+            at: widget.thread.updatedAt,
+          ),
+      ];
+      await store.seedThreadMessages(widget.thread.id, msgs);
+    }
+    if (!mounted) return;
+    setState(() {
+      _messages = msgs;
+      _loading = false;
+    });
+    _scrollToBottom();
   }
 
   @override
@@ -53,18 +78,43 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     super.dispose();
   }
 
-  void _send() {
-    final t = _controller.text.trim();
-    if (t.isEmpty) return;
-    setState(() {
-      _lines.add(_Line(text: t, incoming: false, at: DateTime.now()));
-    });
-    _controller.clear();
+  void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 50), () {
       if (_scroll.hasClients) {
         _scroll.jumpTo(_scroll.position.maxScrollExtent);
       }
     });
+  }
+
+  Future<void> _send() async {
+    final t = _controller.text.trim();
+    if (t.isEmpty) return;
+    final msg = ChatMessage(
+      id: 'm_${DateTime.now().millisecondsSinceEpoch}',
+      text: t,
+      mine: true,
+      at: DateTime.now(),
+    );
+    setState(() => _messages = [..._messages, msg]);
+    _controller.clear();
+    await MarketplaceLocalStore.instance.appendMessage(widget.thread.id, msg);
+    _scrollToBottom();
+  }
+
+  Future<void> _attachPhoto() async {
+    final image =
+        await _picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (image == null) return;
+    final msg = ChatMessage(
+      id: 'm_${DateTime.now().millisecondsSinceEpoch}',
+      text: '',
+      mine: true,
+      at: DateTime.now(),
+      imagePath: image.path,
+    );
+    setState(() => _messages = [..._messages, msg]);
+    await MarketplaceLocalStore.instance.appendMessage(widget.thread.id, msg);
+    _scrollToBottom();
   }
 
   MasterProfile? get _masterProfile {
@@ -84,15 +134,17 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
       children: [
         if (!widget.embedded) _buildHeader(context, rating, specialty),
         Expanded(
-          child: ListView.builder(
-            controller: _scroll,
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-            itemCount: _lines.length + 1,
-            itemBuilder: (_, i) {
-              if (i == 0) return _projectContextChip();
-              return _bubble(_lines[i - 1], timeFmt);
-            },
-          ),
+          child: _loading
+              ? const Center(child: CircularProgressIndicator())
+              : ListView.builder(
+                  controller: _scroll,
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                  itemCount: _messages.length + 1,
+                  itemBuilder: (_, i) {
+                    if (i == 0) return _projectContextChip();
+                    return _bubble(_messages[i - 1], timeFmt);
+                  },
+                ),
         ),
         _buildInputBar(context),
       ],
@@ -100,13 +152,13 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
 
     if (widget.embedded) {
       return ColoredBox(
-        color: BrandColors.canvas,
+        color: BrandRuntime.canvas,
         child: SafeArea(top: false, child: body),
       );
     }
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(child: body),
     );
   }
@@ -114,9 +166,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   Widget _buildHeader(BuildContext context, double rating, String specialty) {
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      decoration: const BoxDecoration(
-        color: BrandColors.milk,
-        border: Border(bottom: BorderSide(color: BrandColors.borderSubtle)),
+      decoration: BoxDecoration(
+        color: BrandRuntime.card,
+        border: Border(bottom: BorderSide(color: BrandRuntime.border)),
       ),
       child: Row(
         children: [
@@ -142,7 +194,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                         widget.thread.peerName,
                         style: pochaevsk(
                           fontSize: 17,
-                          color: BrandColors.tar,
+                          color: BrandRuntime.ink,
                         ),
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -164,7 +216,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           ),
           if (widget.thread.masterId != null)
             BrandIconButton(
-              icon: Icon(Icons.phone_outlined, size: 18, color: BrandColors.needles),
+              icon: Icon(Icons.phone_outlined, size: 18, color: BrandRuntime.needles),
               onPressed: () {
                 Navigator.of(context).push(
                   MaterialPageRoute<void>(
@@ -188,7 +240,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 10),
           decoration: BoxDecoration(
-            color: BrandColors.linen.withOpacity(0.55),
+            color: BrandRuntime.surface.withOpacity(0.55),
             borderRadius: BorderRadius.circular(13),
           ),
           child: Row(
@@ -211,14 +263,14 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     style: BrandUi.inter(
                       fontSize: 13,
                       fontWeight: FontWeight.w600,
-                      color: BrandColors.needles,
+                      color: BrandRuntime.needles,
                     ),
                   ),
                   Text(
                     'Отклик · диалог по объекту',
                     style: BrandUi.inter(
                       fontSize: 11.5,
-                      color: BrandColors.tar.withOpacity(0.55),
+                      color: BrandRuntime.ink.withOpacity(0.55),
                     ),
                   ),
                 ],
@@ -230,8 +282,10 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     );
   }
 
-  Widget _bubble(_Line line, DateFormat timeFmt) {
-    final mine = !line.incoming;
+  Widget _bubble(ChatMessage line, DateFormat timeFmt) {
+    final mine = line.mine;
+    final hasImage = line.imagePath != null && line.imagePath!.isNotEmpty;
+    final hasText = line.text.trim().isNotEmpty;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 11),
@@ -243,7 +297,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
           ),
           padding: const EdgeInsets.fromLTRB(14, 11, 14, 9),
           decoration: BoxDecoration(
-            color: mine ? BrandColors.needles : BrandColors.milk,
+            color: mine ? BrandRuntime.needles : BrandRuntime.card,
             borderRadius: BorderRadius.only(
               topLeft: const Radius.circular(16),
               topRight: const Radius.circular(16),
@@ -252,19 +306,33 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
             ),
             border: mine
                 ? null
-                : Border.all(color: BrandColors.borderSubtle),
+                : Border.all(color: BrandRuntime.border),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                line.text,
-                style: BrandUi.inter(
-                  fontSize: 14.5,
-                  height: 1.45,
-                  color: mine ? BrandColors.onNeedles : BrandColors.tar,
+              if (hasImage) ...[
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(
+                      maxWidth: 220,
+                      maxHeight: 220,
+                    ),
+                    child: MarketplaceAttachmentImage(path: line.imagePath!),
+                  ),
                 ),
-              ),
+                if (hasText) const SizedBox(height: 7),
+              ],
+              if (hasText)
+                Text(
+                  line.text,
+                  style: BrandUi.inter(
+                    fontSize: 14.5,
+                    height: 1.45,
+                    color: mine ? BrandColors.onNeedles : BrandRuntime.ink,
+                  ),
+                ),
               const SizedBox(height: 5),
               Align(
                 alignment: Alignment.centerRight,
@@ -274,7 +342,7 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
                     fontSize: 10.5,
                     color: mine
                         ? BrandColors.onNeedles.withOpacity(0.6)
-                        : BrandColors.tar.withOpacity(0.4),
+                        : BrandRuntime.ink.withOpacity(0.4),
                   ),
                 ),
               ),
@@ -289,20 +357,29 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
     final bottom = MediaQuery.paddingOf(context).bottom;
     return Container(
       padding: EdgeInsets.fromLTRB(16, 12, 16, bottom + 16),
-      decoration: const BoxDecoration(
-        color: BrandColors.canvas,
-        border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
+      decoration: BoxDecoration(
+        color: BrandRuntime.canvas,
+        border: Border(top: BorderSide(color: BrandRuntime.border)),
       ),
       child: Row(
         children: [
-          Container(
-            width: 42,
-            height: 42,
-            decoration: BoxDecoration(
+          Material(
+            color: Colors.transparent,
+            borderRadius: BorderRadius.circular(12),
+            child: InkWell(
+              onTap: _attachPhoto,
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: BrandColors.chipBorder, width: 1.5),
+              child: Container(
+                width: 42,
+                height: 42,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(12),
+                  border:
+                      Border.all(color: BrandRuntime.borderStrong, width: 1.5),
+                ),
+                child: Icon(Icons.add, size: 20, color: BrandRuntime.needles),
+              ),
             ),
-            child: Icon(Icons.add, size: 20, color: BrandColors.needles),
           ),
           const SizedBox(width: 10),
           Expanded(
@@ -311,28 +388,28 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
               style: BrandUi.inter(fontSize: 15),
               decoration: InputDecoration(
                 filled: true,
-                fillColor: BrandColors.milk,
+                fillColor: BrandRuntime.card,
                 hintText: 'Сообщение ${widget.thread.peerName.split(' ').first}…',
                 hintStyle: BrandUi.inter(
                   fontSize: 15,
-                  color: BrandColors.tar.withOpacity(0.45),
+                  color: BrandRuntime.ink.withOpacity(0.45),
                 ),
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 16, vertical: 13),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(13),
                   borderSide:
-                      const BorderSide(color: BrandColors.chipBorder, width: 1.5),
+                      BorderSide(color: BrandRuntime.borderStrong, width: 1.5),
                 ),
                 enabledBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(13),
                   borderSide:
-                      const BorderSide(color: BrandColors.chipBorder, width: 1.5),
+                      BorderSide(color: BrandRuntime.borderStrong, width: 1.5),
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(13),
                   borderSide:
-                      const BorderSide(color: BrandColors.needles, width: 1.5),
+                      BorderSide(color: BrandRuntime.needles, width: 1.5),
                 ),
                 isDense: true,
               ),
@@ -375,10 +452,3 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   }
 }
 
-class _Line {
-  final String text;
-  final bool incoming;
-  final DateTime at;
-
-  _Line({required this.text, required this.incoming, required this.at});
-}

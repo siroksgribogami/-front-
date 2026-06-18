@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../../core/theme/brand_runtime.dart';
 
 import '../../../config/brand_colors.dart';
 /// Зелёная «сцена» — чертёж, сетка, wireframe, метрики (режим A брендбука).
@@ -19,7 +20,7 @@ class ForemanSceneWorkspace extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: BrandColors.needles,
+      color: BrandRuntime.needles,
       child: Stack(
         fit: StackFit.expand,
         children: [
@@ -256,7 +257,7 @@ class ForemanSplitAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BrandColors.milk,
+      color: BrandRuntime.card,
       child: SafeArea(
         bottom: false,
         child: Padding(
@@ -267,7 +268,7 @@ class ForemanSplitAppBar extends StatelessWidget {
                 width: 36,
                 height: 36,
                 decoration: BoxDecoration(
-                  color: BrandColors.needles,
+                  color: BrandRuntime.needlesFill,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: const Icon(Icons.home_work_outlined,
@@ -284,7 +285,7 @@ class ForemanSplitAppBar extends StatelessWidget {
                           fontFamily: 'Inter',
                           fontSize: 16,
                           fontWeight: FontWeight.w800,
-                          color: BrandColors.tar,
+                          color: BrandRuntime.ink,
                           height: 1.2,
                         ),
                         children: const [
@@ -301,7 +302,7 @@ class ForemanSplitAppBar extends StatelessWidget {
                       style: TextStyle(
                         fontFamily: 'Inter',
                         fontSize: 11,
-                        color: BrandColors.tar.withOpacity(0.55),
+                        color: BrandRuntime.ink.withOpacity(0.55),
                       ),
                     ),
                   ],
@@ -320,13 +321,13 @@ class ForemanSplitAppBar extends StatelessWidget {
   Widget _outlineChip(String label) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
-          border: Border.all(color: BrandColors.needles.withOpacity(0.35)),
+          border: Border.all(color: BrandRuntime.needles.withOpacity(0.35)),
           borderRadius: BorderRadius.circular(6),
         ),
         child: Text(
           label,
           style: _monoStyle(9).copyWith(
-            color: BrandColors.needles,
+            color: BrandRuntime.needles,
             letterSpacing: 0.8,
           ),
         ),

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +12,7 @@ import '../../services/marketplace_local_store.dart';
 import '../../services/project_service.dart';
 import 'create_project_screen.dart';
 import 'customer_project_detail_screen.dart';
+import 'foreman_intro_screen.dart';
 
 class CustomerProjectsScreen extends StatefulWidget {
   final VoidCallback? onPublishedNavigateToMasters;
@@ -77,6 +79,10 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
     );
   }
 
+  void _openForemanIntro() {
+    ForemanIntroScreen.open(context);
+  }
+
   Future<void> _createProject() async {
     final draft = await Navigator.of(context).push<Map<String, String>>(
       MaterialPageRoute(builder: (_) => const CreateProjectScreen()),
@@ -114,7 +120,7 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
   Widget build(BuildContext context) {
     if (_loading) {
       return ColoredBox(
-        color: BrandColors.canvas,
+        color: BrandRuntime.canvas,
         child: const Center(child: CircularProgressIndicator()),
       );
     }
@@ -126,11 +132,14 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
         _projects.fold<int>(0, (sum, p) => sum + p.responsesCount);
     final onMarket = _projects.where((p) {
       final s = p.status.toLowerCase();
-      return s.contains('бирж') || s.contains('market');
+      // Статус публикации — «Опубликован»; учитываем и устаревшие варианты.
+      return s.contains('опубликован') ||
+          s.contains('бирж') ||
+          s.contains('market');
     }).length;
 
     return ColoredBox(
-      color: BrandColors.canvas,
+      color: BrandRuntime.canvas,
       child: Stack(
         children: [
           ListView(
@@ -147,7 +156,7 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
                       icon: Icon(
                         Icons.search_rounded,
                         size: 20,
-                        color: BrandColors.tar.withOpacity(0.55),
+                        color: BrandRuntime.ink.withOpacity(0.55),
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -182,6 +191,8 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
                 ],
               ),
               const SizedBox(height: 13),
+              _ForemanHeroBanner(onTap: _openForemanIntro),
+              const SizedBox(height: 13),
               if (_projects.isEmpty)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 32),
@@ -190,7 +201,7 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
                       Icon(
                         Icons.folder_open_outlined,
                         size: 48,
-                        color: BrandColors.tar.withOpacity(0.35),
+                        color: BrandRuntime.ink.withOpacity(0.35),
                       ),
                       const SizedBox(height: 12),
                       Text(
@@ -206,7 +217,7 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
                         textAlign: TextAlign.center,
                         style: BrandUi.inter(
                           fontSize: 13,
-                          color: BrandColors.tar.withOpacity(0.55),
+                          color: BrandRuntime.ink.withOpacity(0.55),
                         ),
                       ),
                     ],
@@ -231,6 +242,95 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
             child: BrandAccentFabExtended(onPressed: _createProject),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// Приветственный баннер: за 2 секунды объясняет, зачем ИИ, и ведёт в чат.
+class _ForemanHeroBanner extends StatelessWidget {
+  const _ForemanHeroBanner({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: BrandRuntime.needles,
+      borderRadius: BorderRadius.circular(18),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(18),
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(18),
+                  gradient: RadialGradient(
+                    center: Alignment.topRight,
+                    radius: 1.3,
+                    colors: [
+                      BrandColors.needlesLight.withOpacity(0.55),
+                      Colors.transparent,
+                    ],
+                  ),
+                ),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Row(
+                children: [
+                  Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.16),
+                      borderRadius: BorderRadius.circular(13),
+                    ),
+                    child: const Icon(
+                      Icons.engineering_rounded,
+                      color: BrandColors.dawn,
+                      size: 24,
+                    ),
+                  ),
+                  const SizedBox(width: 13),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Соберите проект с ИИ-прорабом',
+                          style: pochaevsk(
+                            fontSize: 18,
+                            color: BrandRuntime.card,
+                            height: 1.05,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Подскажет, соберёт ТЗ, смету и карточку для биржи',
+                          style: BrandUi.inter(
+                            fontSize: 12.5,
+                            height: 1.35,
+                            color: BrandColors.dawn.withOpacity(0.82),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Icon(
+                    Icons.arrow_forward_rounded,
+                    color: BrandRuntime.card,
+                    size: 22,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -261,7 +361,7 @@ class _ProjectCard extends StatelessWidget {
         : 'Ещё не опубликован';
 
     return Material(
-      color: BrandColors.milk,
+      color: BrandRuntime.card,
       borderRadius: BorderRadius.circular(18),
       child: InkWell(
         onTap: onTap,
@@ -269,7 +369,7 @@ class _ProjectCard extends StatelessWidget {
         child: DecoratedBox(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(18),
-            border: Border.all(color: BrandColors.borderSubtle),
+            border: Border.all(color: BrandRuntime.border),
           ),
           child: Column(
             children: [
@@ -299,7 +399,7 @@ class _ProjectCard extends StatelessWidget {
                                   project.title,
                                   style: pochaevsk(
                                     fontSize: 19,
-                                    color: BrandColors.tar,
+                                    color: BrandRuntime.ink,
                                     height: 1,
                                   ),
                                 ),
@@ -314,7 +414,7 @@ class _ProjectCard extends StatelessWidget {
                                 Icon(
                                   Icons.place_outlined,
                                   size: 14,
-                                  color: BrandColors.tar.withOpacity(0.35),
+                                  color: BrandRuntime.ink.withOpacity(0.35),
                                 ),
                                 const SizedBox(width: 4),
                                 Expanded(
@@ -324,7 +424,7 @@ class _ProjectCard extends StatelessWidget {
                                     overflow: TextOverflow.ellipsis,
                                     style: BrandUi.inter(
                                       fontSize: 12.5,
-                                      color: BrandColors.tar.withOpacity(0.55),
+                                      color: BrandRuntime.ink.withOpacity(0.55),
                                     ),
                                   ),
                                 ),
@@ -338,7 +438,7 @@ class _ProjectCard extends StatelessWidget {
                                 : dateFmt.format(project.updatedAt),
                             style: BrandUi.inter(
                               fontSize: 12.5,
-                              color: BrandColors.tar.withOpacity(0.55),
+                              color: BrandRuntime.ink.withOpacity(0.55),
                             ),
                           ),
                         ],
@@ -350,9 +450,9 @@ class _ProjectCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.fromLTRB(14, 10, 14, 10),
                 decoration: BoxDecoration(
-                  color: BrandColors.canvas,
+                  color: BrandRuntime.canvas,
                   border: Border(
-                    top: BorderSide(color: BrandColors.borderSubtle),
+                    top: BorderSide(color: BrandRuntime.border),
                   ),
                   borderRadius: const BorderRadius.vertical(
                     bottom: Radius.circular(18),
@@ -365,7 +465,7 @@ class _ProjectCard extends StatelessWidget {
                         footer,
                         style: BrandUi.inter(
                           fontSize: 12.5,
-                          color: BrandColors.tar.withOpacity(0.55),
+                          color: BrandRuntime.ink.withOpacity(0.55),
                         ),
                       ),
                     ),

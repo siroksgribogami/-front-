@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:intl/intl.dart';
 
 import '../../config/brand_colors.dart';
@@ -126,7 +127,7 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
                 icon: Icon(
                   Icons.search_rounded,
                   size: 20,
-                  color: BrandColors.tar.withOpacity(0.55),
+                  color: BrandRuntime.ink.withOpacity(0.55),
                 ),
               ),
             ),
@@ -158,7 +159,7 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
                           style: BrandUi.inter(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: BrandColors.tar.withOpacity(0.4),
+                            color: BrandRuntime.ink.withOpacity(0.4),
                           ).copyWith(letterSpacing: 0.5),
                         ),
                       );
@@ -266,11 +267,11 @@ class _PinnedAiTile extends StatelessWidget {
         child: Ink(
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
-            color: BrandColors.needles,
+            color: BrandRuntime.needles,
             boxShadow: selected
                 ? [
                     BoxShadow(
-                      color: BrandColors.needles.withOpacity(0.35),
+                      color: BrandRuntime.needles.withOpacity(0.35),
                       blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
@@ -398,15 +399,15 @@ class _ThreadTile extends StatelessWidget {
     final timeLabel = _formatTime(thread.updatedAt, dateFmt);
 
     return Material(
-      color: selected ? BrandColors.linen.withOpacity(0.45) : Colors.transparent,
+      color: selected ? BrandRuntime.surface.withOpacity(0.45) : Colors.transparent,
       child: InkWell(
         onTap: onTap,
         child: DecoratedBox(
           decoration: BoxDecoration(
             border: isLast
                 ? null
-                : const Border(
-                    bottom: BorderSide(color: BrandColors.borderSubtle),
+                : Border(
+                    bottom: BorderSide(color: BrandRuntime.border),
                   ),
           ),
           child: Padding(
@@ -433,7 +434,7 @@ class _ThreadTile extends StatelessWidget {
                             color: BrandColors.gilded,
                             shape: BoxShape.circle,
                             border: Border.all(
-                              color: BrandColors.canvas,
+                              color: BrandRuntime.canvas,
                               width: 2,
                             ),
                           ),
@@ -459,7 +460,7 @@ class _ThreadTile extends StatelessWidget {
                               style: BrandUi.inter(
                                 fontSize: 15,
                                 fontWeight: FontWeight.w600,
-                                color: BrandColors.tar,
+                                color: BrandRuntime.ink,
                               ),
                             ),
                           ),
@@ -467,7 +468,7 @@ class _ThreadTile extends StatelessWidget {
                             timeLabel,
                             style: BrandUi.inter(
                               fontSize: 11.5,
-                              color: BrandColors.tar.withOpacity(0.4),
+                              color: BrandRuntime.ink.withOpacity(0.4),
                             ),
                           ),
                         ],
@@ -490,7 +491,7 @@ class _ThreadTile extends StatelessWidget {
                               overflow: TextOverflow.ellipsis,
                               style: BrandUi.inter(
                                 fontSize: 13,
-                                color: BrandColors.tar.withOpacity(0.65),
+                                color: BrandRuntime.ink.withOpacity(0.65),
                               ),
                             ),
                           ),

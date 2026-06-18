@@ -7,6 +7,7 @@ import '../models/map_floor_plan.dart';
 import '../models/marketplace_project.dart';
 import '../models/onboarding_survey.dart';
 import '../models/user.dart';
+import '../config/api_config.dart';
 import '../services/auth_service.dart';
 import '../services/api_service.dart';
 import '../services/project_service.dart';
@@ -163,10 +164,16 @@ class AuthProvider with ChangeNotifier {
       _setState(AuthState.authenticated);
       return true;
     } on ApiException catch (e) {
+      debugPrint(
+        'register API error (${ApiConfig.apiBaseUrl}${ApiConfig.authRegister}): '
+        '${e.statusCode} ${e.message}',
+      );
       _setError(RegisterApiErrorLocalizer.localize(e));
       return false;
     } catch (e, st) {
-      debugPrint('register error: $e\n$st');
+      debugPrint(
+        'register error (${ApiConfig.apiBaseUrl}${ApiConfig.authRegister}): $e\n$st',
+      );
       final msg = e.toString().toLowerCase();
       if (msg.contains('timeout')) {
         _setError(
@@ -394,7 +401,9 @@ class AuthProvider with ChangeNotifier {
       case 'area_m':
         return 85;
       case 'area_l':
-        return 120;
+        return 110;
+      case 'area_xl':
+        return 160;
       default:
         return 55;
     }
@@ -468,8 +477,7 @@ class AuthProvider with ChangeNotifier {
           'start_timeline': startTimelineId,
           if (roomsDetail != null && roomsDetail.isNotEmpty)
             'rooms_detail': roomsDetail,
-          if (houseFloors != null && premiseKind == 'house')
-            'house_floors': houseFloors,
+          if (houseFloors != null) 'house_floors': houseFloors,
           if (city != null && city.trim().isNotEmpty) 'city': city.trim(),
         },
         if (!isCustomer) ...{
@@ -508,7 +516,7 @@ class AuthProvider with ChangeNotifier {
           'ceiling_height': wallHeight / 100.0,
           'floors_count': floorsCount,
           'rooms_count': roomsCount,
-          if (houseFloors != null && premiseType == 'house') 'house_floors': houseFloors,
+          if (houseFloors != null) 'house_floors': houseFloors,
           'additional_info': additional,
           'map_data': <String, dynamic>{
             'before': <String, dynamic>{},
@@ -550,7 +558,7 @@ class AuthProvider with ChangeNotifier {
       } else {
         await prefs.remove('arthouse_start_timeline');
       }
-      if (isCustomer && houseFloors != null && premiseKind == 'house') {
+      if (isCustomer && houseFloors != null) {
         await prefs.setString('arthouse_house_floors', houseFloors);
       } else {
         await prefs.remove('arthouse_house_floors');
@@ -660,7 +668,7 @@ class AuthProvider with ChangeNotifier {
     final parts = <String>[
       'Тип: $premiseType',
       'Площадь: ${totalArea.toStringAsFixed(0)} м²',
-      if (houseFloors != null && premiseType == 'house') 'Этажей: $houseFloors',
+      if (houseFloors != null && houseFloors != '1') 'Этажей: $houseFloors',
       if (workCategoryId != null) 'Категория: $workCategoryId',
       if (startTimelineId != null) 'Старт: $startTimelineId',
     ];

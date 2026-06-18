@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 
@@ -151,6 +152,20 @@ class _RegisterScreenState extends State<RegisterScreen>
       role: _selectedRole,
     );
 
+    if (!success && mounted) {
+      final message = authProvider.error ?? 'Не удалось зарегистрироваться';
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(
+          SnackBar(
+            content: Text(message),
+            backgroundColor: BrandColors.surik,
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 6),
+          ),
+        );
+    }
+
     if (success && mounted) {
       // Перечитываем роль маркетплейса из prefs (она сохранена в AuthProvider.register)
       // — чтобы экран профиля/нижние вкладки сразу увидели «мастер» вместо дефолтного «заказчик».
@@ -178,17 +193,17 @@ class _RegisterScreenState extends State<RegisterScreen>
       child: SlideTransition(
         position: _slideAnim,
         child: AnnotatedRegion<SystemUiOverlayStyle>(
-          value: const SystemUiOverlayStyle(
+          value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
             statusBarIconBrightness: Brightness.dark,
             statusBarBrightness: Brightness.light,
-            systemNavigationBarColor: BrandColors.canvas,
+            systemNavigationBarColor: BrandRuntime.canvas,
             systemNavigationBarIconBrightness: Brightness.dark,
             systemNavigationBarContrastEnforced: false,
           ),
           child: Scaffold(
             resizeToAvoidBottomInset: true,
-            backgroundColor: BrandColors.canvas,
+            backgroundColor: BrandRuntime.canvas,
             body: Column(
               children: [
                 Expanded(
@@ -207,8 +222,6 @@ class _RegisterScreenState extends State<RegisterScreen>
                                 _buildStepHeader(),
                                 const SizedBox(height: 26),
                                 ..._buildStepContent(),
-                                const SizedBox(height: 16),
-                                _buildErrorBanner(),
                               ],
                             ),
                           ),
@@ -224,6 +237,10 @@ class _RegisterScreenState extends State<RegisterScreen>
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(22, 0, 22, 8),
+                        child: _buildErrorBanner(),
+                      ),
                       _buildBottomNav(),
                       if (_step == _RegisterStep.name) ...[
                         const SizedBox(height: 4),
@@ -256,7 +273,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           style: BrandUi.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
       ],
@@ -277,7 +294,7 @@ class _RegisterScreenState extends State<RegisterScreen>
           title,
           style: pochaevsk(
             fontSize: _step == _RegisterStep.role ? 34 : 30,
-            color: BrandColors.tar,
+            color: BrandRuntime.ink,
             height: 1.02,
           ),
         ),
@@ -287,7 +304,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             subtitle,
             style: BrandUi.inter(
               fontSize: 14,
-              color: BrandColors.tar.withOpacity(0.55),
+              color: BrandRuntime.ink.withOpacity(0.55),
               height: 1.5,
             ),
           ),
@@ -364,7 +381,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             _obscurePassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: BrandColors.tar.withOpacity(0.45),
+            color: BrandRuntime.ink.withOpacity(0.45),
           ),
           onPressed: () => setState(() => _obscurePassword = !_obscurePassword),
         ),
@@ -393,7 +410,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             _obscureConfirmPassword
                 ? Icons.visibility_outlined
                 : Icons.visibility_off_outlined,
-            color: BrandColors.tar.withOpacity(0.45),
+            color: BrandRuntime.ink.withOpacity(0.45),
           ),
           onPressed: () =>
               setState(() => _obscureConfirmPassword = !_obscureConfirmPassword),
@@ -443,17 +460,17 @@ class _RegisterScreenState extends State<RegisterScreen>
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
           color: selected
-              ? BrandColors.linen.withOpacity(0.85)
-              : BrandColors.milk,
+              ? BrandRuntime.surface.withOpacity(0.85)
+              : BrandRuntime.card,
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: selected ? BrandColors.needles : BrandColors.borderSubtle,
+            color: selected ? BrandRuntime.needles : BrandRuntime.border,
             width: 1.5,
           ),
           boxShadow: selected
               ? [
                   BoxShadow(
-                    color: BrandColors.needles.withOpacity(0.25),
+                    color: BrandRuntime.needles.withOpacity(0.25),
                     blurRadius: 30,
                     offset: const Offset(0, 14),
                   ),
@@ -466,11 +483,11 @@ class _RegisterScreenState extends State<RegisterScreen>
               width: 52,
               height: 52,
               decoration: BoxDecoration(
-                color: isCustomer ? BrandColors.needles : BrandColors.linen,
+                color: isCustomer ? BrandRuntime.needles : BrandRuntime.surface,
                 borderRadius: BorderRadius.circular(14),
                 border: isCustomer
                     ? null
-                    : Border.all(color: BrandColors.borderSubtle),
+                    : Border.all(color: BrandRuntime.border),
               ),
               alignment: Alignment.center,
               child: isCustomer
@@ -495,7 +512,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     title,
                     style: pochaevsk(
                       fontSize: 22,
-                      color: BrandColors.tar,
+                      color: BrandRuntime.ink,
                       height: 1,
                     ),
                   ),
@@ -504,7 +521,7 @@ class _RegisterScreenState extends State<RegisterScreen>
                     subtitle,
                     style: BrandUi.inter(
                       fontSize: 13,
-                      color: BrandColors.tar.withOpacity(0.55),
+                      color: BrandRuntime.ink.withOpacity(0.55),
                       height: 1.4,
                     ),
                   ),
@@ -517,9 +534,9 @@ class _RegisterScreenState extends State<RegisterScreen>
               height: 24,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: selected ? BrandColors.needles : Colors.transparent,
+                color: selected ? BrandRuntime.needles : Colors.transparent,
                 border: Border.all(
-                  color: selected ? BrandColors.needles : BrandColors.chipBorder,
+                  color: selected ? BrandRuntime.needles : BrandRuntime.borderStrong,
                   width: 2,
                 ),
               ),
@@ -621,7 +638,7 @@ class _RegisterScreenState extends State<RegisterScreen>
         Text(
           'Уже есть аккаунт?',
           style: BrandUi.inter(
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
             fontSize: 14,
           ),
         ),
@@ -631,7 +648,7 @@ class _RegisterScreenState extends State<RegisterScreen>
             'Войти',
             style: BrandUi.inter(
               fontWeight: FontWeight.w600,
-              color: BrandColors.tar,
+              color: BrandRuntime.ink,
               fontSize: 14,
             ),
           ),
@@ -656,8 +673,8 @@ class _RegisterScreenState extends State<RegisterScreen>
       obscureText: obscureText,
       textAlign: textAlign,
       onChanged: onChanged,
-      style: BrandUi.inter(fontSize: 15, color: BrandColors.tar),
-      cursorColor: BrandColors.needles,
+      style: BrandUi.inter(fontSize: 15, color: BrandRuntime.ink),
+      cursorColor: BrandRuntime.needles,
       decoration: BrandUi.inputDecoration(
         hint: label,
         suffix: suffixIcon,
@@ -708,7 +725,7 @@ class _PasswordStrengthPanel extends StatelessWidget {
           child: LinearProgressIndicator(
             value: filled.clamp(0.0, 1.0),
             minHeight: 5,
-            backgroundColor: BrandColors.borderSubtle,
+            backgroundColor: BrandRuntime.border,
             color: color,
           ),
         ),
@@ -735,7 +752,7 @@ class _PasswordStrengthPanel extends StatelessWidget {
                   size: 18,
                   color: r.satisfied
                       ? BrandColors.needlesLight
-                      : BrandColors.tar.withOpacity(0.35),
+                      : BrandRuntime.ink.withOpacity(0.35),
                 ),
                 const SizedBox(width: 8),
                 Expanded(
@@ -745,8 +762,8 @@ class _PasswordStrengthPanel extends StatelessWidget {
                       fontSize: 12,
                       height: 1.3,
                       color: r.satisfied
-                          ? BrandColors.tar
-                          : BrandColors.tar.withOpacity(0.55),
+                          ? BrandRuntime.ink
+                          : BrandRuntime.ink.withOpacity(0.55),
                     ),
                   ),
                 ),

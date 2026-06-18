@@ -5,7 +5,8 @@ class ApiConfig {
   static const String _defaultBaseUrl = 'http://localhost:8000';
 
   /// Базовый URL без `/api/v1`. На Android-эмуляторе задаётся в [api_config_platform_io].
-  /// Сборка: `--dart-define=API_BASE_URL=http://192.168.0.5:8000`
+  /// Сборка: `--dart-define=API_BASE_URL=http://192.168.0.13:8000`
+  /// Телефон по USB: `adb reverse tcp:8000 tcp:8000` и `API_BASE_URL=http://127.0.0.1:8000`
   static String? baseUrlOverride;
 
   static String get baseUrl => baseUrlOverride ?? _defaultBaseUrl;

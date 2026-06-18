@@ -1,6 +1,8 @@
 import 'dart:math' as math;
 import 'dart:ui';
 
+import 'sketch_geometry.dart';
+
 /// Один свободный мазок пользователя — массив точек в координатах canvas (px).
 class SketchStroke {
   SketchStroke({List<Offset>? points}) : points = points ?? <Offset>[];
@@ -20,7 +22,6 @@ class SketchStroke {
     return Rect.fromLTRB(minX, minY, maxX, maxY);
   }
 
-  /// Длина обводки (px) — отсекаем «точки» и слишком короткие штрихи.
   double get pathLength {
     if (points.length < 2) return 0;
     var total = 0.0;
@@ -29,46 +30,89 @@ class SketchStroke {
     }
     return total;
   }
-
-  /// Замкнут ли штрих: расстояние от конца до начала < 25% от диагонали bbox.
-  bool get isClosed {
-    if (points.length < 4) return false;
-    final b = bounds;
-    final diag = math.sqrt(b.width * b.width + b.height * b.height);
-    if (diag < 24) return false;
-    final endToStart = (points.first - points.last).distance;
-    return endToStart < diag * 0.30;
-  }
 }
 
-/// Прямоугольная комната — результат «спрямления» свободного штриха.
-class RectifiedRoom {
-  RectifiedRoom({
-    required this.rect,
+var _roomCounter = 0;
+
+/// Комната как полигон вершин (px на canvas). Может быть прямоугольной,
+/// Г-образной или со срезанными (диагональными) углами.
+class SketchRoom {
+  SketchRoom({
+    required this.polygon,
     this.name = 'Комната',
-  });
+    String? id,
+  }) : id = id ?? 'room_${_roomCounter++}';
 
-  final Rect rect;
+  /// Замкнутый контур без повторения первой точки в конце.
+  List<Offset> polygon;
   String name;
+  final String id;
 
-  RectifiedRoom copyWith({Rect? rect, String? name}) =>
-      RectifiedRoom(rect: rect ?? this.rect, name: name ?? this.name);
+  Rect get bounds => SketchGeometry.bounds(polygon);
+  double get areaPx => SketchGeometry.area(polygon);
+  Offset get centroid => SketchGeometry.centroid(polygon);
+
+  /// Совместимость со старым кодом: прямоугольник = bbox.
+  Rect get rect => bounds;
+
+  bool get isRect => polygon.length == 4;
+
+  SketchRoom copyWith({List<Offset>? polygon, String? name}) => SketchRoom(
+        polygon: polygon ?? List.of(this.polygon),
+        name: name ?? this.name,
+        id: id,
+      );
+
+  SketchRoom translated(Offset delta) => copyWith(
+        polygon: polygon.map((p) => p + delta).toList(),
+      );
 }
 
-/// Результат «выпрямления» эскиза.
+/// План этажа — набор полигональных комнат.
 class SketchPlan {
   SketchPlan({required this.rooms, required this.canvasSize});
 
-  final List<RectifiedRoom> rooms;
+  final List<SketchRoom> rooms;
   final Size canvasSize;
 
-  /// Общий bbox всех комнат в координатах canvas.
   Rect get bounds {
     if (rooms.isEmpty) return Rect.zero;
-    var r = rooms.first.rect;
+    var r = rooms.first.bounds;
     for (final room in rooms.skip(1)) {
-      r = r.expandToInclude(room.rect);
+      r = r.expandToInclude(room.bounds);
     }
     return r;
   }
+
+  static String autoName(int index) {
+    const names = [
+      'Гостиная',
+      'Кухня',
+      'Спальня',
+      'Ванная',
+      'Прихожая',
+      'Кабинет',
+      'Детская',
+      'Балкон',
+    ];
+    if (index < names.length) return names[index];
+    return 'Комната ${index + 1}';
+  }
+}
+
+/// Прямоугольная комната — оставлено для обратной совместимости.
+class RectifiedRoom {
+  RectifiedRoom({required this.rect, this.name = 'Комната'});
+  final Rect rect;
+  String name;
+
+  List<Offset> get polygon => [
+        rect.topLeft,
+        rect.topRight,
+        rect.bottomRight,
+        rect.bottomLeft,
+      ];
+
+  double get diagonal =>
+      math.sqrt(rect.width * rect.width + rect.height * rect.height);
 }

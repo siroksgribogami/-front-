@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
-import '../../../config/brand_colors.dart';
 import '../../../config/brand_assets.dart';
 import '../../../core/theme/app_text_style.dart';
+import '../../../core/theme/brand_runtime.dart';
 
 /// Рамка с логотипом и кнопками «Вход» / «Регистрация» внутри.
 /// По нажатию кнопки — увеличение и растворение, затем действие.
@@ -74,16 +74,29 @@ class _BrandFrameSplashState extends State<BrandFrameSplash>
       },
       child: LayoutBuilder(
         builder: (context, constraints) {
-          final maxH = constraints.maxHeight.isFinite
+          final screen = MediaQuery.sizeOf(context);
+          final availableH = constraints.maxHeight.isFinite
               ? constraints.maxHeight
-              : MediaQuery.sizeOf(context).height * 0.82;
-          final frameHeight = maxH.clamp(320.0, 580.0);
-          final innerH = frameHeight * 0.52;
+              : screen.height * 0.92;
+          final availableW = constraints.maxWidth.isFinite
+              ? constraints.maxWidth
+              : screen.width - 16;
+
+          // Реальные пропорции `обычная.png`: 764×1527.
+          const frameAspect = 764 / 1527;
+
+          var frameHeight = availableH * 0.97;
+          var frameWidth = frameHeight * frameAspect;
+          if (frameWidth > availableW) {
+            frameWidth = availableW;
+            frameHeight = frameWidth / frameAspect;
+          }
 
           return SizedBox(
             height: frameHeight,
-            width: innerH,
+            width: frameWidth,
             child: Stack(
+              fit: StackFit.expand,
               alignment: Alignment.center,
               children: [
                 Image.asset(
@@ -93,24 +106,35 @@ class _BrandFrameSplashState extends State<BrandFrameSplash>
                 ),
                 Padding(
                   padding: EdgeInsets.fromLTRB(
-                    frameHeight * 0.13,
-                    frameHeight * 0.22,
-                    frameHeight * 0.13,
+                    frameWidth * 0.18,
+                    frameHeight * 0.26,
+                    frameWidth * 0.18,
                     frameHeight * 0.20,
                   ),
                   child: Column(
                     children: [
                       Expanded(
-                        flex: 5,
-                        child: SvgPicture.asset(
-                          BrandAssets.logoPriDele,
-                          fit: BoxFit.contain,
-                          alignment: Alignment.center,
+                        flex: 4,
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: Transform.translate(
+                            offset: Offset(0, -frameHeight * 0.055),
+                            child: Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: frameWidth * 0.02,
+                              ),
+                              child: SvgPicture.asset(
+                                BrandAssets.logoPriDeleStack,
+                                fit: BoxFit.contain,
+                                alignment: Alignment.topCenter,
+                              ),
+                            ),
+                          ),
                         ),
                       ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 4),
                       Expanded(
-                        flex: 3,
+                        flex: 5,
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.end,
                           children: [
@@ -162,7 +186,8 @@ class _FramePillButton extends StatelessWidget {
         onTap: enabled ? onTap : null,
         child: Container(
           width: double.infinity,
-          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+          constraints: const BoxConstraints(minHeight: 48),
+          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
           decoration: BoxDecoration(
             color: outlined ? Colors.transparent : Colors.white,
             borderRadius: BorderRadius.circular(100),
@@ -184,8 +209,8 @@ class _FramePillButton extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 14,
-              fontWeight: FontWeight.w700,
-              color: outlined ? Colors.white : BrandColors.needles,
+              fontWeight: FontWeight.w800,
+              color: outlined ? Colors.white : BrandRuntime.needles,
               fontFamily: AppTextStyle.uiFontFamily,
               letterSpacing: 0.3,
               height: 1.1,

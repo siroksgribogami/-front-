@@ -1,3 +1,4 @@
+import '../config/api_config.dart';
 import '../services/api_service.dart';
 
 /// Перевод типичных ответов FastAPI / Pydantic и текстов бэкенда на понятный русский.
@@ -21,8 +22,16 @@ abstract final class RegisterApiErrorLocalizer {
       return 'Сервер не ответил вовремя.';
     }
 
+    if (e.statusCode == 0 || combined.contains('сервер недоступен')) {
+      return 'Сервер недоступен по адресу ${ApiConfig.baseUrl}. '
+          'Проверьте, что бэкенд запущен (run.py, порт 8000), '
+          'и что в flutter run указан тот же порт: '
+          '--dart-define=API_BASE_URL=http://IP_ПК:8000';
+    }
+
     if (e.statusCode >= 500) {
-      return 'Ошибка сервера при регистрации.';
+      return 'Ошибка сервера при регистрации (${ApiConfig.baseUrl}). '
+          'Проверьте логи бэкенда и подключение к PostgreSQL.';
     }
 
     final fromDetailList = _fromFastApiDetailList(e);

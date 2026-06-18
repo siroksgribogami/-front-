@@ -115,7 +115,7 @@ class _LoginScreenState extends State<LoginScreen>
         child: SafeArea(
           child: Center(
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 8),
               child: BrandFrameSplash(
                 key: ValueKey('brand_frame_$_showForm'),
                 onLogin: _afterFrameExitOpenLogin,

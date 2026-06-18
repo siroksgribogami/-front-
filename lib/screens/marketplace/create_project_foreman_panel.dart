@@ -25,7 +25,7 @@ class _CreateProjectForemanPanelState extends State<CreateProjectForemanPanel>
   late final AnimationController _anim;
   late final Animation<double> _heightFactor;
 
-  static const _headerHeight = 52.0;
+  static const _headerHeight = 60.0;
   static const _collapsedBody = 6.0;
 
   @override

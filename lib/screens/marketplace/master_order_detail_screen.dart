@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/brand_colors.dart';
@@ -40,12 +41,12 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
             padding: EdgeInsets.only(bottom: pad),
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: BrandColors.milk,
+                color: BrandRuntime.card,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
+                border: Border(top: BorderSide(color: BrandRuntime.border)),
                 boxShadow: [
                   BoxShadow(
-                    color: BrandColors.tar.withOpacity(0.3),
+                    color: BrandRuntime.ink.withOpacity(0.3),
                     blurRadius: 30,
                     offset: const Offset(0, -10),
                     spreadRadius: -18,
@@ -63,7 +64,7 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
                         'Ваш отклик',
                         style: pochaevsk(
                           fontSize: 18,
-                          color: BrandColors.tar,
+                          color: BrandRuntime.ink,
                         ),
                       ),
                       const SizedBox(height: 13),
@@ -164,7 +165,7 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
           style: BrandUi.inter(
             fontSize: 12,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 6),
@@ -195,7 +196,7 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
         MarketplaceLocalStore.instance.bidsForProject(item.id).length;
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(
         child: Column(
           children: [
@@ -215,7 +216,7 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
                     borderRadius: BorderRadius.circular(16),
                     child: DecoratedBox(
                       decoration: BoxDecoration(
-                        border: Border.all(color: BrandColors.borderSubtle),
+                        border: Border.all(color: BrandRuntime.border),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: BrandStripedPlaceholder(
@@ -263,7 +264,7 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
                           item.fullSpec,
                           style: BrandUi.inter(
                             fontSize: 13.5,
-                            color: BrandColors.tar.withOpacity(0.65),
+                            color: BrandRuntime.ink.withOpacity(0.65),
                             height: 1.5,
                           ),
                         ),
@@ -279,10 +280,10 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
                                     vertical: 8,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: BrandColors.milk,
+                                    color: BrandRuntime.card,
                                     borderRadius: BrandUi.chipRadius,
                                     border: Border.all(
-                                      color: BrandColors.chipBorder,
+                                      color: BrandRuntime.borderStrong,
                                       width: 1.5,
                                     ),
                                   ),
@@ -320,7 +321,7 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
                               item.district,
                               style: BrandUi.inter(
                                 fontSize: 12,
-                                color: BrandColors.tar.withOpacity(0.55),
+                                color: BrandRuntime.ink.withOpacity(0.55),
                               ),
                             ),
                           ],
@@ -330,7 +331,7 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
                         '$bidsCount ОТКЛИКОВ'.toUpperCase(),
                         style: BrandUi.monoLabel(
                           fontSize: 10,
-                          color: BrandColors.tar.withOpacity(0.35),
+                          color: BrandRuntime.ink.withOpacity(0.35),
                         ),
                       ),
                     ],
@@ -355,12 +356,12 @@ class _MasterOrderDetailScreenState extends State<MasterOrderDetailScreen> {
             ),
             DecoratedBox(
               decoration: BoxDecoration(
-                color: BrandColors.milk,
-                border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
+                color: BrandRuntime.card,
+                border: Border(top: BorderSide(color: BrandRuntime.border)),
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
                 boxShadow: [
                   BoxShadow(
-                    color: BrandColors.tar.withOpacity(0.3),
+                    color: BrandRuntime.ink.withOpacity(0.3),
                     blurRadius: 30,
                     offset: const Offset(0, -10),
                     spreadRadius: -18,
@@ -407,9 +408,9 @@ class _DetailStatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
       decoration: BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(13),
-        border: Border.all(color: BrandColors.borderSubtle),
+        border: Border.all(color: BrandRuntime.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -418,7 +419,7 @@ class _DetailStatTile extends StatelessWidget {
             label.toUpperCase(),
             style: BrandUi.inter(
               fontSize: 10.5,
-              color: BrandColors.tar.withOpacity(0.35),
+              color: BrandRuntime.ink.withOpacity(0.35),
             ).copyWith(letterSpacing: 0.4),
           ),
           const SizedBox(height: 3),
@@ -428,7 +429,7 @@ class _DetailStatTile extends StatelessWidget {
             overflow: TextOverflow.ellipsis,
             style: pochaevsk(
               fontSize: 17,
-              color: accent ? BrandColors.needles : BrandColors.needles,
+              color: accent ? BrandRuntime.needles : BrandRuntime.needles,
               height: 1.1,
             ),
           ),

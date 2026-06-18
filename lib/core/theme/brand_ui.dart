@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
+import 'brand_runtime.dart';
 
 /// Переиспользуемые элементы брендбука «При деле».
 abstract final class BrandUi {
@@ -24,7 +25,7 @@ abstract final class BrandUi {
         fontFamily: 'Inter',
         fontSize: fontSize,
         fontWeight: fontWeight,
-        color: color ?? BrandColors.tar,
+        color: color ?? BrandRuntime.ink,
         height: height ?? 1.35,
         fontFeatures: fontFeatures,
       );
@@ -38,22 +39,26 @@ abstract final class BrandUi {
         fontSize: fontSize,
         fontWeight: FontWeight.w500,
         letterSpacing: 0.8,
-        color: color ?? BrandColors.tar.withOpacity(0.5),
+        color: color ?? BrandRuntime.inkFaint,
       );
 
   static TextStyle displayTitle({
     double fontSize = 28,
-    Color color = BrandColors.needles,
+    Color? color,
   }) =>
-      pochaevsk(fontSize: fontSize, color: color, height: 1.1);
+      pochaevsk(
+        fontSize: fontSize,
+        color: color ?? (BrandRuntime.isDark ? BrandRuntime.ink : BrandColors.needles),
+        height: 1.1,
+      );
 
   static BoxDecoration cardDecoration({Color? color}) => BoxDecoration(
-        color: color ?? BrandColors.milk,
+        color: color ?? BrandRuntime.card,
         borderRadius: cardRadius,
-        border: Border.all(color: BrandColors.borderSubtle.withOpacity(0.6)),
+        border: Border.all(color: BrandRuntime.border.withOpacity(0.6)),
         boxShadow: [
           BoxShadow(
-            color: BrandColors.tar.withOpacity(0.04),
+            color: Colors.black.withOpacity(BrandRuntime.isDark ? 0.18 : 0.04),
             blurRadius: 12,
             offset: const Offset(0, 2),
           ),
@@ -61,7 +66,7 @@ abstract final class BrandUi {
       );
 
   static BoxDecoration foremanBubbleDecoration() => BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(BrandColors.radiusCard),
         border: const Border(
           left: BorderSide(color: BrandColors.clay, width: 3),
@@ -75,23 +80,23 @@ abstract final class BrandUi {
   }) =>
       InputDecoration(
         filled: true,
-        fillColor: BrandColors.milk,
+        fillColor: BrandRuntime.card,
         hintText: hint,
-        hintStyle: inter(fontSize: 15, color: BrandColors.tar.withOpacity(0.45)),
+        hintStyle: inter(fontSize: 15, color: BrandRuntime.inkFaint),
         prefixIcon: prefix,
         suffixIcon: suffix,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: buttonRadius,
-          borderSide: const BorderSide(color: BrandColors.chipBorder),
+          borderSide: BorderSide(color: BrandRuntime.borderStrong),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: buttonRadius,
-          borderSide: const BorderSide(color: BrandColors.chipBorder),
+          borderSide: BorderSide(color: BrandRuntime.borderStrong),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: buttonRadius,
-          borderSide: const BorderSide(color: BrandColors.needles, width: 2),
+          borderSide: BorderSide(color: BrandRuntime.needles, width: 2),
         ),
       );
 }
@@ -203,10 +208,10 @@ class BrandGhostButton extends StatelessWidget {
     return OutlinedButton(
       onPressed: onPressed,
       style: OutlinedButton.styleFrom(
-        foregroundColor: BrandColors.tar,
-        backgroundColor: BrandColors.milk,
+        foregroundColor: BrandRuntime.ink,
+        backgroundColor: BrandRuntime.card,
         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-        side: const BorderSide(color: BrandColors.chipBorder, width: 1.5),
+        side: BorderSide(color: BrandRuntime.borderStrong, width: 1.5),
         shape: const RoundedRectangleBorder(borderRadius: BrandUi.buttonRadius),
         textStyle: BrandUi.inter(fontWeight: FontWeight.w600),
       ),
@@ -236,10 +241,10 @@ class BrandChip extends StatelessWidget {
         duration: const Duration(milliseconds: 160),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
         decoration: BoxDecoration(
-          color: selected ? BrandColors.needles : BrandColors.milk,
+          color: selected ? BrandColors.needles : BrandRuntime.card,
           borderRadius: BrandUi.chipRadius,
           border: Border.all(
-            color: selected ? BrandColors.needles : BrandColors.chipBorder,
+            color: selected ? BrandColors.needles : BrandRuntime.borderStrong,
             width: 1.5,
           ),
         ),
@@ -248,7 +253,7 @@ class BrandChip extends StatelessWidget {
           style: BrandUi.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: selected ? BrandColors.onNeedles : BrandColors.tar,
+            color: selected ? BrandColors.onNeedles : BrandRuntime.ink,
           ),
         ),
       ),
@@ -269,7 +274,7 @@ class BrandLineDivider extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Container(height: 1, color: BrandColors.borderSubtle),
+            child: Container(height: 1, color: BrandRuntime.border),
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
@@ -283,7 +288,7 @@ class BrandLineDivider extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Container(height: 1, color: BrandColors.borderSubtle),
+            child: Container(height: 1, color: BrandRuntime.border),
           ),
         ],
       ),
@@ -338,8 +343,8 @@ class BrandMarketplaceAppBar extends StatelessWidget implements PreferredSizeWid
     return AppBar(
       elevation: 0,
       scrolledUnderElevation: 0,
-      backgroundColor: BrandColors.milk,
-      foregroundColor: BrandColors.tar,
+      backgroundColor: BrandRuntime.card,
+      foregroundColor: BrandRuntime.ink,
       leading: leading,
       actions: actions,
       title: displayPrefix != null
@@ -355,7 +360,7 @@ class BrandMarketplaceAppBar extends StatelessWidget implements PreferredSizeWid
                   style: BrandUi.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: BrandColors.tar.withOpacity(0.6),
+                    color: BrandRuntime.inkSoft,
                   ),
                 ),
               ],
@@ -415,12 +420,12 @@ class BrandScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       appBar: appBar,
       floatingActionButton: floatingActionButton,
       bottomNavigationBar: bottomNavigationBar,
       body: ColoredBox(
-        color: BrandColors.canvas,
+        color: BrandRuntime.canvas,
         child: padding != null
             ? Padding(padding: padding!, child: body)
             : body,
@@ -442,7 +447,7 @@ class BrandProgressBar extends StatelessWidget {
       child: LinearProgressIndicator(
         value: value.clamp(0, 1),
         minHeight: 4,
-        backgroundColor: BrandColors.linen,
+        backgroundColor: BrandRuntime.surface,
         valueColor: const AlwaysStoppedAnimation(BrandColors.clay),
       ),
     );
@@ -453,9 +458,9 @@ class BrandProgressBar extends StatelessWidget {
 class BrandChipTheme {
   static ChipThemeData of(BuildContext context) {
     return ChipThemeData(
-      backgroundColor: BrandColors.milk,
+      backgroundColor: BrandRuntime.card,
       selectedColor: BrandColors.needles,
-      disabledColor: BrandColors.linen,
+      disabledColor: BrandRuntime.surface,
       labelStyle: BrandUi.inter(fontSize: 13, fontWeight: FontWeight.w600),
       secondaryLabelStyle: BrandUi.inter(
         fontSize: 13,
@@ -465,7 +470,7 @@ class BrandChipTheme {
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 0),
       shape: RoundedRectangleBorder(
         borderRadius: BrandUi.chipRadius,
-        side: const BorderSide(color: BrandColors.chipBorder, width: 1.5),
+        side: BorderSide(color: BrandRuntime.borderStrong, width: 1.5),
       ),
       showCheckmark: false,
     );
@@ -531,7 +536,7 @@ class BrandSearchField extends StatelessWidget {
         prefix: Icon(
           Icons.search_rounded,
           size: 18,
-          color: BrandColors.inkSoft,
+          color: BrandRuntime.inkSoft,
         ),
       ),
     );
@@ -556,7 +561,7 @@ class BrandSegmentedControl extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: BrandColors.linen,
+        color: BrandRuntime.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -569,12 +574,12 @@ class BrandSegmentedControl extends StatelessWidget {
                   duration: const Duration(milliseconds: 160),
                   padding: const EdgeInsets.symmetric(vertical: 9),
                   decoration: BoxDecoration(
-                    color: index == i ? BrandColors.milk : Colors.transparent,
+                    color: index == i ? BrandRuntime.card : Colors.transparent,
                     borderRadius: BorderRadius.circular(9),
                     boxShadow: index == i
                         ? [
                             BoxShadow(
-                              color: BrandColors.tar.withOpacity(0.08),
+                              color: Colors.black.withOpacity(BrandRuntime.isDark ? 0.25 : 0.08),
                               blurRadius: 3,
                               offset: const Offset(0, 1),
                             ),
@@ -588,8 +593,8 @@ class BrandSegmentedControl extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: index == i
-                          ? BrandColors.needlesDark
-                          : BrandColors.inkSoft,
+                          ? (BrandRuntime.isDark ? BrandRuntime.ink : BrandColors.needlesDark)
+                          : BrandRuntime.inkSoft,
                     ),
                   ),
                 ),
@@ -664,12 +669,12 @@ class BrandStatus extends StatelessWidget {
   Widget build(BuildContext context) {
     final (bg, fg, dot) = switch (kind) {
       BrandStatusKind.draft => (
-          BrandColors.linen,
-          BrandColors.tar.withOpacity(0.55),
-          BrandColors.tar.withOpacity(0.35),
+          BrandRuntime.surface,
+          BrandRuntime.inkSoft,
+          BrandRuntime.inkFaint,
         ),
       BrandStatusKind.active => (
-          BrandColors.linen.withOpacity(0.6),
+          BrandRuntime.surface.withOpacity(0.6),
           BrandColors.needles,
           BrandColors.needlesLight,
         ),
@@ -679,7 +684,7 @@ class BrandStatus extends StatelessWidget {
           BrandColors.clay,
         ),
       BrandStatusKind.done => (
-          BrandColors.linen.withOpacity(0.6),
+          BrandRuntime.surface.withOpacity(0.6),
           BrandColors.needles,
           BrandColors.needles,
         ),
@@ -732,10 +737,10 @@ class BrandBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final fg = onDark ? BrandColors.onNeedles : BrandColors.tar;
+    final fg = onDark ? BrandColors.onNeedles : BrandRuntime.ink;
     final border = onDark
         ? BrandColors.onNeedles.withOpacity(0.25)
-        : BrandColors.borderSubtle;
+        : BrandRuntime.border;
 
     return Material(
       color: Colors.transparent,
@@ -779,12 +784,12 @@ class BrandIconButton extends StatelessWidget {
         ? BrandColors.clay
         : (onDark
             ? BrandColors.onNeedles.withOpacity(0.1)
-            : BrandColors.milk);
+            : BrandRuntime.card);
     final border = accent
         ? Colors.transparent
         : (onDark
             ? BrandColors.onNeedles.withOpacity(0.2)
-            : BrandColors.borderSubtle);
+            : BrandRuntime.border);
 
     return Material(
       color: bg,
@@ -836,8 +841,8 @@ class BrandAvatar extends StatelessWidget {
 
     final bg = switch (tone) {
       BrandAvatarTone.clay => BrandColors.sandstone,
-      BrandAvatarTone.sand => BrandColors.linen,
-      BrandAvatarTone.green => BrandColors.linen.withOpacity(0.85),
+      BrandAvatarTone.sand => BrandRuntime.surface,
+      BrandAvatarTone.green => BrandRuntime.surface.withOpacity(0.85),
     };
     final fg = tone == BrandAvatarTone.clay
         ? BrandColors.surik
@@ -849,7 +854,7 @@ class BrandAvatar extends StatelessWidget {
       decoration: BoxDecoration(
         color: bg,
         borderRadius: BorderRadius.circular(radius),
-        border: Border.all(color: BrandColors.borderSubtle),
+        border: Border.all(color: BrandRuntime.border),
         image: image != null
             ? DecorationImage(image: image!, fit: BoxFit.cover)
             : null,
@@ -908,13 +913,13 @@ class BrandAppBar extends StatelessWidget {
                   style: big
                       ? pochaevsk(
                           fontSize: 26,
-                          color: BrandColors.tar,
+                          color: BrandRuntime.ink,
                           height: 1.05,
                         )
                       : BrandUi.inter(
                           fontSize: 18,
                           fontWeight: FontWeight.w700,
-                          color: BrandColors.tar,
+                          color: BrandRuntime.ink,
                         ),
                 ),
                 if (subtitle != null) ...[
@@ -923,7 +928,7 @@ class BrandAppBar extends StatelessWidget {
                     subtitle!,
                     style: BrandUi.inter(
                       fontSize: 12.5,
-                      color: BrandColors.tar.withOpacity(0.55),
+                      color: BrandRuntime.inkSoft,
                     ),
                   ),
                 ],
@@ -967,7 +972,7 @@ class BrandSteps extends StatelessWidget {
                   ? (onDark ? BrandColors.dawn : BrandColors.clay)
                   : (onDark
                       ? BrandColors.onNeedles.withOpacity(0.2)
-                      : BrandColors.borderSubtle),
+                      : BrandRuntime.border),
             ),
           ),
         );
@@ -1005,7 +1010,7 @@ class BrandStripedPlaceholder extends StatelessWidget {
             border: Border.all(
               color: dark
                   ? BrandColors.onNeedles.withOpacity(0.1)
-                  : BrandColors.borderSubtle,
+                  : BrandRuntime.border,
             ),
           ),
           child: Text(
@@ -1014,7 +1019,7 @@ class BrandStripedPlaceholder extends StatelessWidget {
               fontSize: 10,
               color: dark
                   ? BrandColors.onNeedles.withOpacity(0.55)
-                  : BrandColors.tar.withOpacity(0.35),
+                  : BrandRuntime.inkFaint,
             ),
           ),
         ),
@@ -1030,7 +1035,7 @@ class _StripePainter extends CustomPainter {
 
   @override
   void paint(Canvas canvas, Size size) {
-    final base = dark ? BrandColors.needlesDeep : BrandColors.linen;
+    final base = dark ? BrandColors.needlesDeep : BrandRuntime.surface;
     final stripe = dark
         ? BrandColors.onNeedles.withOpacity(0.05)
         : BrandColors.needles.withOpacity(0.05);
@@ -1071,9 +1076,9 @@ class BrandStatTile extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
       decoration: BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: BrandColors.borderSubtle),
+        border: Border.all(color: BrandRuntime.border),
       ),
       child: Column(
         crossAxisAlignment:
@@ -1094,7 +1099,7 @@ class BrandStatTile extends StatelessWidget {
             textAlign: centered ? TextAlign.center : null,
             style: BrandUi.inter(
               fontSize: 11.5,
-              color: BrandColors.tar.withOpacity(0.55),
+              color: BrandRuntime.inkSoft,
             ),
           ),
         ],
@@ -1176,16 +1181,16 @@ class BrandSettingsGroup extends StatelessWidget {
               style: BrandUi.inter(
                 fontSize: 11.5,
                 fontWeight: FontWeight.w600,
-                color: BrandColors.tar.withOpacity(0.4),
+                color: BrandRuntime.inkFaint,
               ).copyWith(letterSpacing: 0.6),
             ),
           ),
         ],
         Container(
           decoration: BoxDecoration(
-            color: BrandColors.milk,
+            color: BrandRuntime.card,
             borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: BrandColors.borderSubtle),
+            border: Border.all(color: BrandRuntime.border),
           ),
           clipBehavior: Clip.antiAlias,
           child: Column(children: children),
@@ -1220,8 +1225,8 @@ class BrandToggle extends StatelessWidget {
           color: value
               ? BrandColors.needles
               : (enabled
-                  ? BrandColors.chipBorder
-                  : BrandColors.chipBorder.withOpacity(0.6)),
+                  ? BrandRuntime.borderStrong
+                  : BrandRuntime.borderStrong.withOpacity(0.6)),
         ),
         child: AnimatedAlign(
           duration: const Duration(milliseconds: 150),
@@ -1232,10 +1237,10 @@ class BrandToggle extends StatelessWidget {
             margin: const EdgeInsets.symmetric(horizontal: 3),
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color: BrandColors.milk,
+              color: BrandRuntime.card,
               boxShadow: [
                 BoxShadow(
-                  color: BrandColors.tar.withOpacity(0.2),
+                  color: Colors.black.withOpacity(0.2),
                   blurRadius: 3,
                   offset: const Offset(0, 1),
                 ),
@@ -1271,9 +1276,9 @@ class BrandLabeledField extends StatelessWidget {
       height: 52,
       padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BrandUi.buttonRadius,
-        border: Border.all(color: BrandColors.chipBorder, width: 1.5),
+        border: Border.all(color: BrandRuntime.borderStrong, width: 1.5),
       ),
       child: Row(
         children: [
@@ -1284,8 +1289,8 @@ class BrandLabeledField extends StatelessWidget {
               style: BrandUi.inter(
                 fontSize: 15,
                 color: value.isEmpty
-                    ? BrandColors.tar.withOpacity(0.45)
-                    : BrandColors.tar,
+                    ? BrandRuntime.inkFaint
+                    : BrandRuntime.ink,
               ),
               overflow: TextOverflow.ellipsis,
             ),
@@ -1303,7 +1308,7 @@ class BrandLabeledField extends StatelessWidget {
           style: BrandUi.inter(
             fontSize: 12.5,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.inkSoft,
           ),
         ),
         const SizedBox(height: 6),
@@ -1351,7 +1356,7 @@ class BrandSettingsRow extends StatelessWidget {
               style: BrandUi.inter(
                 fontSize: 15,
                 fontWeight: FontWeight.w500,
-                color: danger ? BrandColors.surik : BrandColors.tar,
+                color: danger ? BrandColors.surik : BrandRuntime.ink,
               ),
             ),
           ),
@@ -1360,7 +1365,7 @@ class BrandSettingsRow extends StatelessWidget {
               value!,
               style: BrandUi.inter(
                 fontSize: 14,
-                color: BrandColors.tar.withOpacity(0.55),
+                color: BrandRuntime.inkSoft,
               ),
             ),
           if (trailing != null) trailing!
@@ -1368,7 +1373,7 @@ class BrandSettingsRow extends StatelessWidget {
             Icon(
               Icons.chevron_right_rounded,
               size: 20,
-              color: BrandColors.tar.withOpacity(0.35),
+              color: BrandRuntime.inkFaint,
             ),
         ],
       ),
@@ -1383,7 +1388,7 @@ class BrandSettingsRow extends StatelessWidget {
             border: last
                 ? null
                 : Border(
-                    bottom: BorderSide(color: BrandColors.borderSubtle),
+                    bottom: BorderSide(color: BrandRuntime.border),
                   ),
           ),
           child: content,
@@ -1681,7 +1686,7 @@ class BrandFloorStage extends StatelessWidget {
           value,
           style: BrandUi.monoLabel(
             fontSize: 15,
-            color: BrandColors.milk,
+            color: BrandRuntime.card,
           ),
         ),
       ],
@@ -1761,7 +1766,7 @@ class BrandBeforeAfterSegment extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: BrandColors.linen,
+        color: BrandRuntime.surface,
         borderRadius: BorderRadius.circular(12),
       ),
       child: Row(
@@ -1774,12 +1779,12 @@ class BrandBeforeAfterSegment extends StatelessWidget {
                   duration: const Duration(milliseconds: 160),
                   padding: const EdgeInsets.symmetric(vertical: 8),
                   decoration: BoxDecoration(
-                    color: selectedIndex == i ? BrandColors.milk : Colors.transparent,
+                    color: selectedIndex == i ? BrandRuntime.card : Colors.transparent,
                     borderRadius: BorderRadius.circular(9),
                     boxShadow: selectedIndex == i
                         ? [
                             BoxShadow(
-                              color: BrandColors.tar.withOpacity(0.08),
+                              color: Colors.black.withOpacity(0.08),
                               blurRadius: 3,
                               offset: const Offset(0, 1),
                             ),
@@ -1794,7 +1799,7 @@ class BrandBeforeAfterSegment extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                       color: selectedIndex == i
                           ? (i == 1 ? BrandColors.needles : BrandColors.surik)
-                          : BrandColors.tar.withOpacity(0.55),
+                          : BrandRuntime.inkSoft,
                     ),
                   ),
                 ),
@@ -1827,7 +1832,7 @@ class BrandMapActionCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return Expanded(
       child: Material(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -1837,7 +1842,7 @@ class BrandMapActionCard extends StatelessWidget {
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: accent ? BrandColors.clay : BrandColors.borderSubtle,
+                color: accent ? BrandColors.clay : BrandRuntime.border,
                 width: 1.5,
               ),
             ),
@@ -1848,7 +1853,7 @@ class BrandMapActionCard extends StatelessWidget {
                   width: 38,
                   height: 38,
                   decoration: BoxDecoration(
-                    color: accent ? BrandColors.clay : BrandColors.linen,
+                    color: accent ? BrandColors.clay : BrandRuntime.surface,
                     borderRadius: BorderRadius.circular(11),
                   ),
                   child: Icon(
@@ -1870,7 +1875,7 @@ class BrandMapActionCard extends StatelessWidget {
                   subtitle,
                   style: BrandUi.inter(
                     fontSize: 11.5,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.inkSoft,
                     height: 1.35,
                   ),
                 ),
@@ -1903,8 +1908,8 @@ class BrandGridCanvas extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(borderRadius),
-          border: Border.all(color: BrandColors.borderSubtle),
-          color: BrandColors.milk,
+          border: Border.all(color: BrandRuntime.border),
+          color: BrandRuntime.card,
         ),
         child: Stack(
           fit: StackFit.expand,
@@ -1997,7 +2002,7 @@ class BrandOverlayBottomCard extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: BrandColors.milk.withOpacity(0.96),
+        color: BrandRuntime.card.withOpacity(0.96),
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
           BoxShadow(
@@ -2020,7 +2025,7 @@ class BrandOverlayBottomCard extends StatelessWidget {
                       title,
                       style: pochaevsk(
                         fontSize: 20,
-                        color: BrandColors.tar,
+                        color: BrandRuntime.ink,
                         height: 1,
                       ),
                     ),
@@ -2029,7 +2034,7 @@ class BrandOverlayBottomCard extends StatelessWidget {
                       subtitle,
                       style: BrandUi.inter(
                         fontSize: 12.5,
-                        color: BrandColors.tar.withOpacity(0.55),
+                        color: BrandRuntime.inkSoft,
                       ),
                     ),
                   ],

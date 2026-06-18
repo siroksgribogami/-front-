@@ -1,16 +1,16 @@
 import 'dart:math' as math;
-import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
+import '../../../core/theme/brand_runtime.dart';
 
 import '../../../config/brand_colors.dart';
 import '../../../config/text_theme.dart';
 import '../../../core/arthouse_scroll_behavior.dart';
 import '../../../core/theme/brand_ui.dart';
 import '../../../models/map_floor_plan.dart';
-import 'sketch_canvas.dart';
+import 'sketch_editor_canvas.dart';
+import 'sketch_geometry.dart';
 import 'sketch_models.dart';
-import 'sketch_rectifier.dart';
 
 /// Результат мастера: один или несколько этажей.
 class SketchPlanResult {
@@ -26,19 +26,15 @@ class SketchPlanResult {
 }
 
 class _FloorSketch {
-  _FloorSketch({
-    required this.index,
-    required this.label,
-  });
+  _FloorSketch({required this.index, required this.label});
 
   int index;
   String label;
-  final List<SketchStroke> strokes = [];
-  SketchPlan? plan;
+  final List<SketchRoom> rooms = [];
   int areaSqM = 40;
 }
 
-/// Мастер «Свободное рисование» с поддержкой нескольких этажей.
+/// Мастер «Рисование плана» с поддержкой нескольких этажей.
 class SketchPlanWizard extends StatefulWidget {
   const SketchPlanWizard({
     super.key,
@@ -72,7 +68,8 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
       _floors = existing
           .map(
             (f) => _FloorSketch(index: f.index, label: f.label)
-              ..areaSqM = f.areaSqm ?? (widget.initialAreaSqM ~/ existing.length).clamp(18, 250),
+              ..areaSqM = f.areaSqm ??
+                  (widget.initialAreaSqM ~/ existing.length).clamp(18, 250),
           )
           .toList();
     } else {
@@ -88,37 +85,22 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
     }
   }
 
-  void _onStrokesChanged(List<SketchStroke> next) {
+  void _onRoomsChanged(List<SketchRoom> next) {
     setState(() {
-      _current.strokes
+      _current.rooms
         ..clear()
         ..addAll(next);
-      _current.plan = null;
     });
   }
 
   void _undo() {
-    if (_current.strokes.isEmpty) return;
-    setState(() {
-      _current.strokes.removeLast();
-      _current.plan = null;
-    });
+    if (_current.rooms.isEmpty) return;
+    setState(() => _current.rooms.removeLast());
   }
 
   void _clear() {
-    setState(() {
-      _current.strokes.clear();
-      _current.plan = null;
-    });
-  }
-
-  void _rectifyIfNeeded(Size canvasSize) {
-    if (_current.strokes.isEmpty) {
-      _current.plan = null;
-      return;
-    }
-    final plan = SketchRectifier.rectify(_current.strokes, canvasSize);
-    _current.plan = plan.rooms.isEmpty ? null : plan;
+    if (_current.rooms.isEmpty) return;
+    setState(() => _current.rooms.clear());
   }
 
   void _addFloor() {
@@ -126,10 +108,8 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
     setState(() {
       final idx = _floors.length;
       _floors.add(
-        _FloorSketch(
-          index: idx,
-          label: MapFloorPlanHelper.labelForIndex(idx),
-        )..areaSqM = 40,
+        _FloorSketch(index: idx, label: MapFloorPlanHelper.labelForIndex(idx))
+          ..areaSqM = 40,
       );
       _activeFloor = idx;
     });
@@ -147,31 +127,14 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
     });
   }
 
-  bool get _hasAnyRooms =>
-      _floors.any((f) => f.plan != null && f.plan!.rooms.isNotEmpty);
+  bool get _hasAnyRooms => _floors.any((f) => f.rooms.isNotEmpty);
 
-  void _next(Size canvasSize) {
+  void _next() {
     if (_step == 0) {
-      _rectifyIfNeeded(canvasSize);
-      for (final f in _floors) {
-        if (f.strokes.isNotEmpty && (f.plan == null || f.plan!.rooms.isEmpty)) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'На «${f.label}» нажмите «Выпрямить» или очистите этаж',
-              ),
-            ),
-          );
-          setState(() => _activeFloor = _floors.indexOf(f));
-          return;
-        }
-      }
       if (!_hasAnyRooms) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text(
-              'Нарисуйте хотя бы одну комнату на любом этаже',
-            ),
+            content: Text('Нарисуйте хотя бы одну комнату на любом этаже'),
           ),
         );
         return;
@@ -190,44 +153,63 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
     }
   }
 
-  List<Map<String, dynamic>> _roomsFromPlan(SketchPlan plan, int areaSqM, int floorIndex) {
-    final bbox = plan.bounds;
+  List<Map<String, dynamic>> _roomsFromFloor(
+    List<SketchRoom> rooms,
+    int areaSqM,
+    int floorIndex,
+  ) {
+    if (rooms.isEmpty) return [];
+
+    var bbox = rooms.first.bounds;
+    for (final r in rooms.skip(1)) {
+      bbox = bbox.expandToInclude(r.bounds);
+    }
     if (bbox.width <= 0 || bbox.height <= 0) return [];
 
-    final pxArea = bbox.width * bbox.height;
-    final scalePxToM = math.sqrt(areaSqM / pxArea);
+    final totalPolyArea =
+        rooms.fold<double>(0, (s, r) => s + r.areaPx).clamp(1, double.infinity);
+    final scalePxToM = math.sqrt(areaSqM / totalPolyArea);
 
-    final rooms = <Map<String, dynamic>>[];
-    for (var i = 0; i < plan.rooms.length; i++) {
-      final room = plan.rooms[i];
-      final widthM = room.rect.width * scalePxToM;
-      final heightM = room.rect.height * scalePxToM;
-      final area = (widthM * heightM).round();
-      rooms.add({
+    final out = <Map<String, dynamic>>[];
+    for (var i = 0; i < rooms.length; i++) {
+      final room = rooms[i];
+      final rb = room.bounds;
+      final widthM = rb.width * scalePxToM;
+      final heightM = rb.height * scalePxToM;
+      final areaM = (room.areaPx * scalePxToM * scalePxToM).round();
+      final polygonM = room.polygon
+          .map((p) => {
+                'x': double.parse(
+                    ((p.dx - bbox.left) * scalePxToM).toStringAsFixed(2)),
+                'y': double.parse(
+                    ((p.dy - bbox.top) * scalePxToM).toStringAsFixed(2)),
+              })
+          .toList();
+
+      out.add({
         'displayName': room.name,
         'name': room.name,
-        'area_sqm': area,
+        'area_sqm': areaM,
         'width_m': double.parse(widthM.toStringAsFixed(2)),
         'height_m': double.parse(heightM.toStringAsFixed(2)),
         'origin_x_m': double.parse(
-          ((room.rect.left - bbox.left) * scalePxToM).toStringAsFixed(2),
-        ),
+            ((rb.left - bbox.left) * scalePxToM).toStringAsFixed(2)),
         'origin_y_m': double.parse(
-          ((room.rect.top - bbox.top) * scalePxToM).toStringAsFixed(2),
-        ),
+            ((rb.top - bbox.top) * scalePxToM).toStringAsFixed(2)),
+        'polygon_m': polygonM,
+        'shape': room.isRect ? 'rect' : 'polygon',
         'room_id': 'sketch_f${floorIndex}_$i',
         'floor_index': floorIndex,
       });
     }
-    return rooms;
+    return out;
   }
 
   void _finish() {
     final resultFloors = <MapFloorData>[];
     for (final f in _floors) {
-      final plan = f.plan;
-      if (plan == null || plan.rooms.isEmpty) continue;
-      final rooms = _roomsFromPlan(plan, f.areaSqM, f.index);
+      if (f.rooms.isEmpty) continue;
+      final rooms = _roomsFromFloor(f.rooms, f.areaSqM, f.index);
       if (rooms.isEmpty) continue;
       resultFloors.add(
         MapFloorData(
@@ -253,24 +235,19 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(
         bottom: false,
         child: Column(
           children: [
             BrandAppBar(
-              title: 'Эскиз плана',
+              title: 'План этажа',
               subtitle: _step == 0
-                  ? 'Обведите контур комнаты пальцем'
+                  ? 'Рисуйте комнаты, затем двигайте и правьте'
                   : 'Укажите площадь по этажам',
               onBack: _back,
               actions: TextButton(
-                onPressed: _step == 0
-                    ? () => _next(Size(
-                          MediaQuery.sizeOf(context).width - 32,
-                          MediaQuery.sizeOf(context).height * 0.55,
-                        ))
-                    : _finish,
+                onPressed: _step == 0 ? _next : _finish,
                 child: Text(
                   _step == 0 ? 'Готово' : 'Сохранить',
                   style: BrandUi.inter(
@@ -281,12 +258,11 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
                 ),
               ),
             ),
-            if (_step == 0) ...[
+            if (_step == 0)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
                 child: _buildFloorTabs(),
               ),
-            ],
             Expanded(
               child: _step == 0 ? _buildDrawStep() : _buildSizeStep(),
             ),
@@ -309,16 +285,17 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
                 onTap: () => setState(() => _activeFloor = i),
                 child: AnimatedContainer(
                   duration: const Duration(milliseconds: 160),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
                     color: _activeFloor == i
-                        ? BrandColors.needles
+                        ? BrandRuntime.needlesFill
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(10),
                     border: Border.all(
                       color: _activeFloor == i
-                          ? BrandColors.needles
-                          : BrandColors.borderSubtle,
+                          ? BrandRuntime.needlesFill
+                          : BrandRuntime.border,
                       width: 1.5,
                     ),
                   ),
@@ -329,7 +306,7 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
                       fontWeight: FontWeight.w600,
                       color: _activeFloor == i
                           ? BrandColors.onNeedles
-                          : BrandColors.tar.withOpacity(0.55),
+                          : BrandRuntime.ink.withOpacity(0.55),
                     ),
                   ),
                 ),
@@ -342,14 +319,14 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
                 padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: BrandColors.borderSubtle, width: 1.5),
+                  border: Border.all(color: BrandRuntime.border, width: 1.5),
                 ),
                 child: Text(
                   '+ Этаж',
                   style: BrandUi.inter(
                     fontSize: 13,
                     fontWeight: FontWeight.w600,
-                    color: BrandColors.tar.withOpacity(0.55),
+                    color: BrandRuntime.ink.withOpacity(0.55),
                   ),
                 ),
               ),
@@ -360,9 +337,52 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
               onPressed: _removeActiveFloor,
               icon: Icon(
                 Icons.delete_outline,
-                color: BrandColors.tar.withOpacity(0.45),
+                color: BrandRuntime.ink.withOpacity(0.45),
               ),
             ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDrawStep() {
+    final cur = _current;
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: SketchEditorCanvas(
+              key: ValueKey('floor_${cur.index}'),
+              rooms: cur.rooms,
+              onChanged: _onRoomsChanged,
+            ),
+          ),
+          Positioned(
+            left: 0,
+            right: 0,
+            bottom: 12,
+            child: Center(
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: BrandRuntime.card.withOpacity(0.92),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(color: BrandRuntime.border),
+                ),
+                child: Text(
+                  cur.rooms.isEmpty
+                      ? 'РЕЖИМ КИСТИ · ОБВЕДИТЕ КОМНАТУ'
+                      : '${cur.rooms.length} КОМН. · ✎ двигайте и тяните углы',
+                  style: BrandUi.monoLabel(
+                    fontSize: 10,
+                    color: BrandRuntime.ink.withOpacity(0.6),
+                  ),
+                ),
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -373,73 +393,24 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
     return SafeArea(
       top: false,
       child: Padding(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 12),
-        child: Column(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+        child: Row(
           children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Площадь, м²',
-                        style: BrandUi.inter(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: BrandColors.tar.withOpacity(0.55),
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      TextFormField(
-                        initialValue: '${cur.areaSqM}.0',
-                        keyboardType: TextInputType.number,
-                        decoration: BrandUi.inputDecoration(),
-                        onChanged: (v) {
-                          final n = int.tryParse(v.split('.').first);
-                          if (n != null) cur.areaSqM = n.clamp(12, 400);
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 10),
-                BrandGhostButton(
-                  label: 'Выпрямить',
-                  onPressed: cur.strokes.isEmpty
-                      ? null
-                      : () {
-                          final size = MediaQuery.sizeOf(context);
-                          setState(
-                            () => _rectifyIfNeeded(
-                              Size(size.width - 32, size.height * 0.45),
-                            ),
-                          );
-                        },
-                ),
-              ],
+            BrandGhostButton(
+              label: 'Отменить',
+              onPressed: cur.rooms.isEmpty ? null : _undo,
             ),
-            const SizedBox(height: 12),
-            Row(
-              children: [
-                BrandGhostButton(
-                  label: 'Отменить',
-                  onPressed: cur.strokes.isEmpty ? null : _undo,
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: BrandAccentButton(
-                    label: 'Сохранить план',
-                    onPressed: () => _next(
-                      Size(
-                        MediaQuery.sizeOf(context).width - 32,
-                        MediaQuery.sizeOf(context).height * 0.55,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
+            const SizedBox(width: 10),
+            BrandGhostButton(
+              label: 'Очистить',
+              onPressed: cur.rooms.isEmpty ? null : _clear,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: BrandAccentButton(
+                label: 'Далее',
+                onPressed: _next,
+              ),
             ),
           ],
         ),
@@ -447,85 +418,18 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
     );
   }
 
-  Widget _buildDrawStep() {
-    final cur = _current;
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final size = Size(constraints.maxWidth, constraints.maxHeight);
-          return BrandGridCanvas(
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                SketchCanvas(
-                  strokes: cur.strokes,
-                  preview: cur.plan,
-                  onStrokesChanged: _onStrokesChanged,
-                ),
-                Positioned(
-                  left: 12,
-                  top: 12,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: BrandColors.milk,
-                      borderRadius: BorderRadius.circular(999),
-                      border: Border.all(color: BrandColors.borderSubtle),
-                    ),
-                    child: Text(
-                      cur.plan != null
-                          ? '${cur.plan!.rooms.length} КОМН. · ВЫПРЯМЛЕНО'
-                          : '${cur.strokes.length} МАЗКОВ · РИСУЙТЕ',
-                      style: BrandUi.monoLabel(
-                        fontSize: 10,
-                        color: BrandColors.tar.withOpacity(0.55),
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: 12,
-                  bottom: 12,
-                  child: _ActionDock(
-                    onUndo: cur.strokes.isEmpty ? null : _undo,
-                    onClear: cur.strokes.isEmpty ? null : _clear,
-                    onRectify: cur.strokes.isEmpty
-                        ? null
-                        : () {
-                            setState(() => _rectifyIfNeeded(size));
-                            if (cur.plan == null) {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                const SnackBar(
-                                  content: Text(
-                                    'Не получилось распознать комнаты — обведите крупнее и замкните линию',
-                                  ),
-                                ),
-                              );
-                            }
-                          },
-                  ),
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
   Widget _buildSizeStep() {
-    final withPlan = _floors.where((f) => f.plan != null && f.plan!.rooms.isNotEmpty).toList();
-    if (withPlan.isEmpty) {
+    final withRooms = _floors.where((f) => f.rooms.isNotEmpty).toList();
+    if (withRooms.isEmpty) {
       return Center(
         child: Text(
           'Сначала нарисуйте план этажа',
-          style: BrandUi.inter(color: BrandColors.tar.withOpacity(0.55)),
+          style: BrandUi.inter(color: BrandRuntime.ink.withOpacity(0.55)),
         ),
       );
     }
 
-    final totalArea = withPlan.fold<int>(0, (s, f) => s + f.areaSqM);
+    final totalArea = withRooms.fold<int>(0, (s, f) => s + f.areaSqM);
 
     return ScrollConfiguration(
       behavior: const ArthouseScrollBehavior(),
@@ -533,27 +437,22 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
         padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
         children: [
           Text(
-            'Всего: $totalArea м² · этажей: ${withPlan.length}',
-            style: BrandUi.inter(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-            ),
+            'Всего: $totalArea м² · этажей: ${withRooms.length}',
+            style: BrandUi.inter(fontSize: 15, fontWeight: FontWeight.w700),
           ),
           const SizedBox(height: 12),
-          for (final f in withPlan) ...[
+          for (final f in withRooms) ...[
             BrandCard(
               padding: const EdgeInsets.all(14),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Text(
-                    f.label,
-                    style: BrandUi.inter(fontWeight: FontWeight.w700),
-                  ),
+                  Text(f.label,
+                      style: BrandUi.inter(fontWeight: FontWeight.w700)),
                   const SizedBox(height: 8),
                   SizedBox(
                     height: 120,
-                    child: _PlanPreview(plan: f.plan!),
+                    child: _PlanPreview(rooms: f.rooms),
                   ),
                   const SizedBox(height: 8),
                   Row(
@@ -563,26 +462,23 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
                         '${f.areaSqM}',
                         style: pochaevsk(
                           fontSize: 26,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                           height: 1,
                         ),
                       ),
                       const SizedBox(width: 4),
                       Padding(
                         padding: const EdgeInsets.only(bottom: 4),
-                        child: Text(
-                          'м²',
-                          style: BrandUi.inter(
-                            color: BrandColors.tar.withOpacity(0.55),
-                          ),
-                        ),
+                        child: Text('м²',
+                            style: BrandUi.inter(
+                                color: BrandRuntime.ink.withOpacity(0.55))),
                       ),
                       const Spacer(),
                       Text(
-                        '${f.plan!.rooms.length} комн.',
+                        '${f.rooms.length} комн.',
                         style: BrandUi.inter(
                           fontSize: 12,
-                          color: BrandColors.tar.withOpacity(0.55),
+                          color: BrandRuntime.ink.withOpacity(0.55),
                         ),
                       ),
                     ],
@@ -610,105 +506,22 @@ class _SketchPlanWizardState extends State<SketchPlanWizard> {
       top: false,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-        child: BrandAccentButton(
-          label: 'Готово',
-          onPressed: _finish,
-        ),
-      ),
-    );
-  }
-}
-
-class _ActionDock extends StatelessWidget {
-  const _ActionDock({this.onUndo, this.onClear, this.onRectify});
-
-  final VoidCallback? onUndo;
-  final VoidCallback? onClear;
-  final VoidCallback? onRectify;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-      decoration: BoxDecoration(
-        color: BrandColors.milk.withOpacity(0.95),
-        borderRadius: BorderRadius.circular(28),
-        border: Border.all(color: BrandColors.borderSubtle),
-        boxShadow: [
-          BoxShadow(
-            color: BrandColors.tar.withOpacity(0.08),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          _DockButton(icon: Icons.undo, label: 'Отменить', onTap: onUndo),
-          _DockButton(icon: Icons.delete_outline, label: 'Очистить', onTap: onClear),
-          _DockButton(
-            icon: Icons.auto_fix_high,
-            label: 'Выпрямить',
-            highlighted: true,
-            onTap: onRectify,
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _DockButton extends StatelessWidget {
-  const _DockButton({
-    required this.icon,
-    required this.label,
-    this.onTap,
-    this.highlighted = false,
-  });
-
-  final IconData icon;
-  final String label;
-  final VoidCallback? onTap;
-  final bool highlighted;
-
-  @override
-  Widget build(BuildContext context) {
-    final enabled = onTap != null;
-    final fg = highlighted && enabled
-        ? BrandColors.clay
-        : BrandColors.tar.withOpacity(enabled ? 0.75 : 0.3);
-    return InkWell(
-      borderRadius: BorderRadius.circular(24),
-      onTap: onTap,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(icon, color: fg, size: 22),
-            const SizedBox(height: 2),
-            Text(label, style: BrandUi.inter(color: fg, fontSize: 10)),
-          ],
-        ),
+        child: BrandAccentButton(label: 'Готово', onPressed: _finish),
       ),
     );
   }
 }
 
 class _PlanPreview extends StatelessWidget {
-  const _PlanPreview({required this.plan});
-  final SketchPlan plan;
+  const _PlanPreview({required this.rooms});
+  final List<SketchRoom> rooms;
 
   @override
   Widget build(BuildContext context) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(16),
       child: CustomPaint(
-        painter: _PreviewPainter(
-          plan: plan,
-          accent: BrandColors.clay,
-        ),
+        painter: _PreviewPainter(rooms: rooms, accent: BrandColors.clay),
         child: const SizedBox.expand(),
       ),
     );
@@ -716,14 +529,19 @@ class _PlanPreview extends StatelessWidget {
 }
 
 class _PreviewPainter extends CustomPainter {
-  _PreviewPainter({required this.plan, required this.accent});
-  final SketchPlan plan;
+  _PreviewPainter({required this.rooms, required this.accent});
+  final List<SketchRoom> rooms;
   final Color accent;
 
   @override
   void paint(Canvas canvas, Size size) {
-    if (plan.rooms.isEmpty) return;
-    final bbox = plan.bounds;
+    if (rooms.isEmpty) return;
+    var bbox = rooms.first.bounds;
+    for (final r in rooms.skip(1)) {
+      bbox = bbox.expandToInclude(r.bounds);
+    }
+    if (bbox.width <= 0 || bbox.height <= 0) return;
+
     final scale = math.min(
       (size.width - 32) / bbox.width,
       (size.height - 32) / bbox.height,
@@ -732,42 +550,51 @@ class _PreviewPainter extends CustomPainter {
     final dy = (size.height - bbox.height * scale) / 2 - bbox.top * scale;
 
     final fill = Paint()
-      ..color = accent.withOpacity(0.18)
+      ..color = accent.withOpacity(0.16)
       ..style = PaintingStyle.fill;
     final wall = Paint()
       ..color = accent
-      ..strokeWidth = 2.4
-      ..style = PaintingStyle.stroke;
-    final label = ui.ParagraphStyle(
-      textAlign: TextAlign.center,
-      fontSize: 12,
-      fontWeight: FontWeight.w700,
-    );
+      ..strokeWidth = 2.2
+      ..style = PaintingStyle.stroke
+      ..strokeJoin = StrokeJoin.round;
 
-    for (final room in plan.rooms) {
-      final r = Rect.fromLTRB(
-        room.rect.left * scale + dx,
-        room.rect.top * scale + dy,
-        room.rect.right * scale + dx,
-        room.rect.bottom * scale + dy,
-      );
-      final rr = RRect.fromRectAndRadius(r, const Radius.circular(3));
-      canvas.drawRRect(rr, fill);
-      canvas.drawRRect(rr, wall);
+    for (final room in rooms) {
+      if (room.polygon.length < 3) continue;
+      final path = Path();
+      for (var i = 0; i < room.polygon.length; i++) {
+        final p = room.polygon[i];
+        final sp = Offset(p.dx * scale + dx, p.dy * scale + dy);
+        if (i == 0) {
+          path.moveTo(sp.dx, sp.dy);
+        } else {
+          path.lineTo(sp.dx, sp.dy);
+        }
+      }
+      path.close();
+      canvas.drawPath(path, fill);
+      canvas.drawPath(path, wall);
 
-      final paragraph = (ui.ParagraphBuilder(label)
-            ..pushStyle(ui.TextStyle(color: Colors.white))
-            ..addText(room.name))
-          .build()
-        ..layout(ui.ParagraphConstraints(width: r.width));
-      canvas.drawParagraph(
-        paragraph,
-        Offset(r.left, r.center.dy - paragraph.height / 2),
+      final c = SketchGeometry.centroid(room.polygon);
+      final tp = TextPainter(
+        text: TextSpan(
+          text: room.name,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      tp.paint(
+        canvas,
+        Offset(c.dx * scale + dx - tp.width / 2,
+            c.dy * scale + dy - tp.height / 2),
       );
     }
   }
 
   @override
   bool shouldRepaint(covariant _PreviewPainter old) =>
-      old.plan != plan || old.accent != accent;
+      old.rooms != rooms || old.accent != accent;
 }

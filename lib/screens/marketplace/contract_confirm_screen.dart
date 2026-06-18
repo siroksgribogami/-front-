@@ -1,14 +1,28 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:intl/intl.dart';
 
 import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
 import '../../core/theme/brand_ui.dart';
+import '../../models/marketplace_project.dart';
+import '../../services/marketplace_local_store.dart';
 
-/// Подтверждение выбора мастера и создание договора (локально в приложении).
+/// Подтверждение выбора мастера и закрытие сделки.
+/// При наличии [projectId] реально переводит проект в «В работе», меняет статус
+/// откликов и создаёт чат с мастером (см. [MarketplaceLocalStore.selectMasterForProject]).
 class ContractConfirmScreen extends StatelessWidget {
   final String masterName;
   final String projectTitle;
+
+  /// Проект, по которому закрывается сделка. Без него экран просто фиксирует
+  /// договорённость (запасной путь без контекста проекта).
+  final String? projectId;
+  final String? masterId;
+
+  /// Конкретный отклик мастера (если выбор идёт из списка откликов).
+  final MasterBid? bid;
+
   final String? priceOffer;
   final String? durationOffer;
   final double? rating;
@@ -18,11 +32,67 @@ class ContractConfirmScreen extends StatelessWidget {
     super.key,
     required this.masterName,
     required this.projectTitle,
+    this.projectId,
+    this.masterId,
+    this.bid,
     this.priceOffer,
     this.durationOffer,
     this.rating,
     this.specialty,
   });
+
+  Future<void> _confirmDeal(BuildContext context) async {
+    final messenger = ScaffoldMessenger.maybeOf(context);
+    final navigator = Navigator.of(context);
+    final store = MarketplaceLocalStore.instance;
+    await store.ensureLoaded();
+
+    if (projectId == null) {
+      navigator.popUntil((r) => r.isFirst);
+      messenger?.showSnackBar(
+        SnackBar(content: Text('Договорённость с $masterName сохранена.')),
+      );
+      return;
+    }
+
+    // Находим отклик мастера: переданный, либо по masterId среди откликов проекта,
+    // либо синтетический (если выбор шёл из профиля без отклика).
+    MasterBid? resolved = bid;
+    if (resolved == null) {
+      for (final b in store.bidsForProject(projectId!)) {
+        if (masterId != null && b.masterId == masterId) {
+          resolved = b;
+          break;
+        }
+      }
+    }
+    resolved ??= MasterBid(
+      id: 'manual_${DateTime.now().millisecondsSinceEpoch}',
+      masterId: masterId ?? 'manual',
+      masterName: masterName,
+      specialty: specialty ?? '',
+      rating: rating ?? 5.0,
+      completedJobs: 0,
+      priceOffer: priceOffer ?? '',
+      durationOffer: durationOffer ?? '',
+      message: '',
+    );
+
+    await store.selectMasterForProject(
+      projectId: projectId!,
+      bid: resolved,
+      projectTitle: projectTitle,
+    );
+
+    navigator.popUntil((r) => r.isFirst);
+    messenger?.showSnackBar(
+      SnackBar(
+        content: Text(
+          '$masterName выбран. Проект «$projectTitle» в работе — чат открыт в «Сообщениях».',
+        ),
+      ),
+    );
+  }
 
   int? _parsePriceRub(String? raw) {
     if (raw == null) return null;
@@ -66,9 +136,9 @@ class ContractConfirmScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(14),
                   decoration: BoxDecoration(
-                    color: BrandColors.milk,
+                    color: BrandRuntime.card,
                     borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: BrandColors.borderSubtle),
+                    border: Border.all(color: BrandRuntime.border),
                   ),
                   child: Row(
                     children: [
@@ -87,7 +157,7 @@ class ContractConfirmScreen extends StatelessWidget {
                               masterName,
                               style: pochaevsk(
                                 fontSize: 18,
-                                color: BrandColors.tar,
+                                color: BrandRuntime.ink,
                                 height: 1,
                               ),
                             ),
@@ -108,7 +178,7 @@ class ContractConfirmScreen extends StatelessWidget {
                                       ].join(' · '),
                                       style: BrandUi.inter(
                                         fontSize: 12.5,
-                                        color: BrandColors.tar.withOpacity(0.65),
+                                        color: BrandRuntime.ink.withOpacity(0.65),
                                       ),
                                     ),
                                   ),
@@ -121,8 +191,8 @@ class ContractConfirmScreen extends StatelessWidget {
                       Container(
                         width: 30,
                         height: 30,
-                        decoration: const BoxDecoration(
-                          color: BrandColors.needles,
+                        decoration: BoxDecoration(
+                          color: BrandRuntime.needlesFill,
                           shape: BoxShape.circle,
                         ),
                         child: const Icon(
@@ -137,9 +207,9 @@ class ContractConfirmScreen extends StatelessWidget {
                 const SizedBox(height: 14),
                 Container(
                   decoration: BoxDecoration(
-                    color: BrandColors.milk,
+                    color: BrandRuntime.card,
                     borderRadius: BorderRadius.circular(18),
-                    border: Border.all(color: BrandColors.borderSubtle),
+                    border: Border.all(color: BrandRuntime.border),
                   ),
                   clipBehavior: Clip.antiAlias,
                   child: Column(
@@ -155,9 +225,9 @@ class ContractConfirmScreen extends StatelessWidget {
                             horizontal: 16,
                             vertical: 11,
                           ),
-                          decoration: const BoxDecoration(
+                          decoration: BoxDecoration(
                             border: Border(
-                              top: BorderSide(color: BrandColors.borderSubtle),
+                              top: BorderSide(color: BrandRuntime.border),
                             ),
                           ),
                           child: Row(
@@ -167,7 +237,7 @@ class ContractConfirmScreen extends StatelessWidget {
                                   conditions[i].$1,
                                   style: BrandUi.inter(
                                     fontSize: 14,
-                                    color: BrandColors.tar.withOpacity(0.65),
+                                    color: BrandRuntime.ink.withOpacity(0.65),
                                   ),
                                 ),
                               ),
@@ -185,9 +255,9 @@ class ContractConfirmScreen extends StatelessWidget {
                         Container(
                           padding: const EdgeInsets.fromLTRB(16, 15, 16, 15),
                           decoration: BoxDecoration(
-                            color: BrandColors.linen,
-                            border: const Border(
-                              top: BorderSide(color: BrandColors.borderSubtle),
+                            color: BrandRuntime.surface,
+                            border: Border(
+                              top: BorderSide(color: BrandRuntime.border),
                             ),
                           ),
                           child: Row(
@@ -200,7 +270,7 @@ class ContractConfirmScreen extends StatelessWidget {
                                       'Итоговая стоимость',
                                       style: BrandUi.inter(
                                         fontSize: 12,
-                                        color: BrandColors.needles,
+                                        color: BrandRuntime.needles,
                                       ),
                                     ),
                                     if (prepayLabel != null) ...[
@@ -209,7 +279,7 @@ class ContractConfirmScreen extends StatelessWidget {
                                         prepayLabel,
                                         style: BrandUi.inter(
                                           fontSize: 11.5,
-                                          color: BrandColors.tar.withOpacity(0.65),
+                                          color: BrandRuntime.ink.withOpacity(0.65),
                                         ),
                                       ),
                                     ],
@@ -220,7 +290,7 @@ class ContractConfirmScreen extends StatelessWidget {
                                 priceOffer!,
                                 style: pochaevsk(
                                   fontSize: 28,
-                                  color: BrandColors.needles,
+                                  color: BrandRuntime.needles,
                                   height: 1,
                                 ),
                               ),
@@ -276,17 +346,7 @@ class ContractConfirmScreen extends StatelessWidget {
                     width: double.infinity,
                     child: BrandAccentButton(
                       label: 'Подтвердить и оплатить',
-                      onPressed: () {
-                      final messenger = ScaffoldMessenger.maybeOf(context);
-                      Navigator.of(context).popUntil((r) => r.isFirst);
-                      messenger?.showSnackBar(
-                        SnackBar(
-                          content: Text(
-                            'Договор с $masterName сохранён в приложении. Сервер подключится позже.',
-                          ),
-                        ),
-                      );
-                    },
+                      onPressed: () => _confirmDeal(context),
                     ),
                   ),
                 ),

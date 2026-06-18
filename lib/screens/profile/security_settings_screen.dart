@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
-import '../../config/brand_colors.dart';
 import '../../core/theme/brand_ui.dart';
 
 class SecuritySettingsScreen extends StatefulWidget {
@@ -86,10 +86,10 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: BrandColors.linen.withOpacity(0.7),
+        color: BrandRuntime.surface.withOpacity(0.7),
         borderRadius: BorderRadius.circular(9),
       ),
-      child: Icon(icon, size: 17, color: BrandColors.needles),
+      child: Icon(icon, size: 17, color: BrandRuntime.needles),
     );
   }
 
@@ -105,8 +105,8 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: BrandColors.canvas,
-        foregroundColor: BrandColors.tar,
+        backgroundColor: BrandRuntime.canvas,
+        foregroundColor: BrandRuntime.ink,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -186,9 +186,9 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: BrandColors.milk,
+                  color: BrandRuntime.card,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: BrandColors.borderSubtle),
+                  border: Border.all(color: BrandRuntime.border),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -198,7 +198,7 @@ class _SecuritySettingsScreenState extends State<SecuritySettingsScreen> {
                       style: BrandUi.inter(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
-                        color: BrandColors.tar,
+                        color: BrandRuntime.ink,
                       ),
                     ),
                     const SizedBox(height: 12),

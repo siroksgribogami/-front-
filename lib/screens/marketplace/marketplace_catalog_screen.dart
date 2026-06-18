@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:intl/intl.dart';
 
 import '../../config/brand_colors.dart';
@@ -60,7 +61,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
     showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: BrandColors.milk,
+      backgroundColor: BrandRuntime.card,
       builder: (ctx) {
         return StatefulBuilder(
           builder: (ctx, setModal) => Padding(
@@ -77,7 +78,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                         width: 36,
                         height: 4,
                         decoration: BoxDecoration(
-                          color: BrandColors.borderSubtle,
+                          color: BrandRuntime.border,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -93,7 +94,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                     const SizedBox(height: 14),
                     DropdownButtonFormField<String>(
                       value: region,
-                      dropdownColor: BrandColors.milk,
+                      dropdownColor: BrandRuntime.card,
                       decoration: BrandUi.inputDecoration(hint: 'Регион'),
                       items: _regions
                           .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -103,7 +104,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: priceRange,
-                      dropdownColor: BrandColors.milk,
+                      dropdownColor: BrandRuntime.card,
                       decoration: BrandUi.inputDecoration(hint: 'Цена'),
                       items: _prices
                           .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -114,7 +115,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                     const SizedBox(height: 12),
                     DropdownButtonFormField<String>(
                       value: sortBy,
-                      dropdownColor: BrandColors.milk,
+                      dropdownColor: BrandRuntime.card,
                       decoration: BrandUi.inputDecoration(hint: 'Сортировка'),
                       items: _sorts
                           .map((e) => DropdownMenuItem(value: e, child: Text(e)))
@@ -188,7 +189,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
     final isEmpty = items.isEmpty;
 
     return ColoredBox(
-      color: BrandColors.canvas,
+      color: BrandRuntime.canvas,
       child: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -203,7 +204,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                   child: Icon(
                     Icons.tune_rounded,
                     size: 20,
-                    color: BrandColors.needles,
+                    color: BrandRuntime.needles,
                   ),
                 ),
                 onPressed: _openFilterSheet,
@@ -233,7 +234,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                       child: Text(
                         'Ничего не найдено по фильтрам',
                         style: BrandUi.inter(
-                          color: BrandColors.tar.withOpacity(0.55),
+                          color: BrandRuntime.ink.withOpacity(0.55),
                         ),
                       ),
                     )
@@ -342,13 +343,13 @@ class _CatalogCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final tagColor = isService ? BrandColors.needles : BrandColors.surik;
+    final tagColor = isService ? BrandRuntime.needles : BrandColors.surik;
 
     return Container(
       decoration: BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: BrandColors.borderSubtle),
+        border: Border.all(color: BrandRuntime.border),
       ),
       clipBehavior: Clip.antiAlias,
       child: Column(
@@ -406,7 +407,7 @@ class _CatalogCard extends StatelessWidget {
                           price,
                           style: pochaevsk(
                             fontSize: 16,
-                            color: BrandColors.needles,
+                            color: BrandRuntime.needles,
                             height: 1,
                           ),
                         ),
@@ -415,13 +416,13 @@ class _CatalogCard extends StatelessWidget {
                         width: 30,
                         height: 30,
                         decoration: BoxDecoration(
-                          color: BrandColors.linen,
+                          color: BrandRuntime.surface,
                           borderRadius: BorderRadius.circular(9),
                         ),
                         child: Icon(
                           Icons.add_rounded,
                           size: 18,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                         ),
                       ),
                     ],

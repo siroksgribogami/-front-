@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../models/app_marketplace_role.dart';
@@ -80,12 +81,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final textMain = isDark ? AppTheme.darkTextPrimary : MarketplaceColors.textPrimary;
     final textHintC = isDark ? AppTheme.darkTextHint : MarketplaceColors.textSecondary;
     return Scaffold(
-      backgroundColor: widget.embedded ? BrandColors.canvas : scaffoldBg,
+      backgroundColor: widget.embedded ? BrandRuntime.canvas : scaffoldBg,
       appBar: widget.embedded
           ? null
           : AppBar(
               title: const Text('Профиль'),
-              backgroundColor: BrandColors.canvas,
+              backgroundColor: BrandRuntime.canvas,
             ),
       body: Consumer<AuthProvider>(
         builder: (context, auth, _) {
@@ -204,9 +205,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: BrandColors.borderSubtle),
+        border: Border.all(color: BrandRuntime.border),
       ),
       child: Row(
         children: [
@@ -223,7 +224,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
               children: [
                 Text(
                   user.visibleName,
-                  style: pochaevsk(fontSize: 22, color: BrandColors.tar, height: 1),
+                  style: pochaevsk(fontSize: 22, color: BrandRuntime.ink, height: 1),
                 ),
                 if (subtitle != null && subtitle.isNotEmpty) ...[
                   const SizedBox(height: 5),
@@ -231,7 +232,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     subtitle,
                     style: BrandUi.inter(
                       fontSize: 13,
-                      color: BrandColors.tar.withOpacity(0.55),
+                      color: BrandRuntime.ink.withOpacity(0.55),
                     ),
                   ),
                 ],
@@ -239,7 +240,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                   decoration: BoxDecoration(
-                    color: BrandColors.linen.withOpacity(0.7),
+                    color: BrandRuntime.surface.withOpacity(0.7),
                     borderRadius: BorderRadius.circular(999),
                   ),
                   child: Row(
@@ -259,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         style: BrandUi.inter(
                           fontSize: 11.5,
                           fontWeight: FontWeight.w600,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                         ),
                       ),
                     ],
@@ -269,7 +270,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           BrandIconButton(
-            icon: Icon(Icons.edit_outlined, size: 18, color: BrandColors.needles),
+            icon: Icon(Icons.edit_outlined, size: 18, color: BrandRuntime.needles),
             onPressed: () {
               Navigator.of(context).push(
                 MaterialPageRoute<void>(
@@ -306,10 +307,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       width: 32,
       height: 32,
       decoration: BoxDecoration(
-        color: BrandColors.linen.withOpacity(0.7),
+        color: BrandRuntime.surface.withOpacity(0.7),
         borderRadius: BorderRadius.circular(9),
       ),
-      child: Icon(icon, size: 17, color: BrandColors.needles),
+      child: Icon(icon, size: 17, color: BrandRuntime.needles),
     );
   }
 
@@ -388,10 +389,10 @@ class _ProfileScreenState extends State<ProfileScreen> {
       child: Container(
         padding: const EdgeInsets.symmetric(vertical: 14),
         decoration: BoxDecoration(
-          color: BrandColors.milk,
+          color: BrandRuntime.card,
           borderRadius: BorderRadius.circular(14),
           border: Border.all(
-            color: BrandColors.chipBorder,
+            color: BrandRuntime.borderStrong,
             width: 1.5,
           ),
         ),

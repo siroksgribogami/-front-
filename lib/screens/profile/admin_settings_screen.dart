@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
@@ -63,8 +64,8 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: BrandColors.canvas,
-        foregroundColor: BrandColors.tar,
+        backgroundColor: BrandRuntime.canvas,
+        foregroundColor: BrandRuntime.ink,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -143,14 +144,14 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                                     style: BrandUi.inter(
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,
-                                      color: BrandColors.tar,
+                                      color: BrandRuntime.ink,
                                     ),
                                   ),
                                   Text(
                                     'Заявка мастера · электрика',
                                     style: BrandUi.inter(
                                       fontSize: 12,
-                                      color: BrandColors.tar.withOpacity(0.55),
+                                      color: BrandRuntime.ink.withOpacity(0.55),
                                     ),
                                   ),
                                 ],
@@ -163,7 +164,7 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                           children: [
                             Expanded(
                               child: Material(
-                                color: BrandColors.needles,
+                                color: BrandRuntime.needles,
                                 borderRadius: BorderRadius.circular(10),
                                 child: InkWell(
                                   onTap: () {},
@@ -186,11 +187,11 @@ class _AdminSettingsScreenState extends State<AdminSettingsScreen> {
                             const SizedBox(width: 8),
                             Expanded(
                               child: Material(
-                                color: BrandColors.milk,
+                                color: BrandRuntime.card,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(10),
-                                  side: const BorderSide(
-                                    color: BrandColors.chipBorder,
+                                  side: BorderSide(
+                                    color: BrandRuntime.borderStrong,
                                     width: 1.5,
                                   ),
                                 ),

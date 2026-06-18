@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 
-import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
 import '../../core/theme/brand_ui.dart';
 import '../../models/marketplace_project.dart';
@@ -36,16 +36,17 @@ class _MasterMyBidsScreenState extends State<MasterMyBidsScreen> {
   int get _activeCount =>
       _bids.where((b) => !_isDeclined(b.state)).length;
 
-  int get _inWorkCount => _bids
-      .where((b) => b.state.toLowerCase().contains('выбран'))
-      .length;
+  int get _inWorkCount => _bids.where((b) {
+        final s = b.state.toLowerCase();
+        return s.contains('выбран') && !s.contains('не выбран');
+      }).length;
 
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      return const ColoredBox(
-        color: BrandColors.canvas,
-        child: Center(child: CircularProgressIndicator()),
+      return ColoredBox(
+        color: BrandRuntime.canvas,
+        child: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -54,7 +55,7 @@ class _MasterMyBidsScreenState extends State<MasterMyBidsScreen> {
         : '$_activeCount активных · $_inWorkCount в работе';
 
     return ColoredBox(
-      color: BrandColors.canvas,
+      color: BrandRuntime.canvas,
       child: SafeArea(
         child: RefreshIndicator(
           onRefresh: _load,
@@ -76,7 +77,7 @@ class _MasterMyBidsScreenState extends State<MasterMyBidsScreen> {
                       'Пока нет откликов. Откройте ленту заказов и нажмите «Откликнуться».',
                       textAlign: TextAlign.center,
                       style: BrandUi.inter(
-                        color: BrandColors.tar.withOpacity(0.45),
+                        color: BrandRuntime.ink.withOpacity(0.45),
                         height: 1.4,
                       ),
                     ),
@@ -149,12 +150,12 @@ class _BidCard extends StatelessWidget {
     final footerHint = _footerHintFor(bid.state);
 
     return Material(
-      color: BrandColors.milk,
+      color: BrandRuntime.card,
       borderRadius: BorderRadius.circular(16),
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: BrandColors.borderSubtle),
+          border: Border.all(color: BrandRuntime.border),
         ),
         child: Padding(
           padding: const EdgeInsets.all(15),
@@ -172,7 +173,7 @@ class _BidCard extends StatelessWidget {
                           bid.projectTitle,
                           style: pochaevsk(
                             fontSize: 18,
-                            color: BrandColors.tar,
+                            color: BrandRuntime.ink,
                             height: 1,
                           ),
                         ),
@@ -185,9 +186,9 @@ class _BidCard extends StatelessWidget {
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.only(top: 12),
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   border: Border(
-                    top: BorderSide(color: BrandColors.borderSubtle),
+                    top: BorderSide(color: BrandRuntime.border),
                   ),
                 ),
                 child: Row(
@@ -197,7 +198,7 @@ class _BidCard extends StatelessWidget {
                         footerHint,
                         style: BrandUi.inter(
                           fontSize: 12.5,
-                          color: BrandColors.tar.withOpacity(0.55),
+                          color: BrandRuntime.ink.withOpacity(0.55),
                         ),
                       ),
                     ),
@@ -205,7 +206,7 @@ class _BidCard extends StatelessWidget {
                       bid.price,
                       style: pochaevsk(
                         fontSize: 18,
-                        color: BrandColors.needles,
+                        color: BrandRuntime.needles,
                         height: 1,
                       ),
                     ),

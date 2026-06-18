@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -372,6 +373,52 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
   }
 
   Widget _buildRoomsEditor({required bool isAfter}) {
+    return Column(
+      children: [
+        _buildAiDimsBar(),
+        Expanded(child: _buildRoomsEditorBody(isAfter: isAfter)),
+      ],
+    );
+  }
+
+  // Кнопка-мост: переносит размеры комнат из диалога с ИИ-прорабом в план.
+  Widget _buildAiDimsBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Material(
+        color: BrandColors.needlesLight.withOpacity(0.18),
+        borderRadius: BorderRadius.circular(12),
+        child: InkWell(
+          onTap: _applyDialogDimensions,
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+            child: Row(
+              children: [
+                const Icon(Icons.auto_awesome_rounded,
+                    size: 19, color: BrandColors.needlesDark),
+                const SizedBox(width: 10),
+                Expanded(
+                  child: Text(
+                    'Подтянуть размеры из диалога с ИИ-прорабом',
+                    style: BrandUi.inter(
+                      fontSize: 13,
+                      fontWeight: FontWeight.w600,
+                      color: BrandColors.needlesDark,
+                    ),
+                  ),
+                ),
+                const Icon(Icons.chevron_right,
+                    size: 20, color: BrandColors.needlesDark),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoomsEditorBody({required bool isAfter}) {
     final floors = _floorsForMode(isAfter: isAfter);
     final textPrimary = MarketplaceColors.textPrimaryFor(context);
     final textSecondary = MarketplaceColors.textSecondaryFor(context);
@@ -449,6 +496,74 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
     );
   }
 
+  void _toast(String message) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  // #3: размеры из диалога с ИИ (PremiseRoomsCatalog) → mapData['rooms'].
+  Future<void> _applyDialogDimensions() async {
+    final aiRooms = await PremiseRoomsCatalog.loadPersistedRooms() ??
+        const <Map<String, dynamic>>[];
+    final withDims = aiRooms.where((r) =>
+        r['width_m'] != null || r['length_m'] != null || r['area_sqm'] != null);
+    if (withDims.isEmpty) {
+      _toast('В диалоге с ИИ-прорабом пока нет размеров комнат');
+      return;
+    }
+
+    String keyOf(Map r) =>
+        (r['name'] ?? r['displayName'] ?? '').toString().toLowerCase().trim();
+
+    final current = (_project.mapData['rooms'] as List?)
+            ?.whereType<Map>()
+            .map((e) => e.cast<String, dynamic>())
+            .toList() ??
+        <Map<String, dynamic>>[];
+    final currentByName = {for (final r in current) keyOf(r): r};
+
+    void applyDims(Map<String, dynamic> target, Map<String, dynamic> ai) {
+      if (ai['width_m'] != null) target['width_m'] = ai['width_m'];
+      if (ai['length_m'] != null) target['length_m'] = ai['length_m'];
+      final a = ai['area_sqm'] ?? ai['area_m2'];
+      if (a != null) target['area_sqm'] = a;
+    }
+
+    var updated = 0;
+    var added = 0;
+    for (final ai in aiRooms) {
+      final key = keyOf(ai);
+      if (key.isEmpty) continue;
+      final existing = currentByName[key];
+      if (existing != null) {
+        applyDims(existing, ai.cast<String, dynamic>());
+        updated++;
+      } else {
+        final name = (ai['name'] ?? ai['displayName'] ?? 'Комната').toString();
+        final room = <String, dynamic>{
+          'id': ai['id']?.toString() ?? key,
+          'name': name,
+          'displayName': name,
+          'source': 'ai_foreman',
+        };
+        applyDims(room, ai.cast<String, dynamic>());
+        current.add(room);
+        currentByName[key] = room;
+        added++;
+      }
+    }
+
+    setState(() {
+      _project = _project.copyWith(
+        mapData: {..._project.mapData, 'rooms': current},
+      );
+    });
+    await _saveMap();
+    _toast('Размеры из ИИ применены — обновлено: $updated, добавлено: $added');
+  }
+
   Widget _buildRoomsList(
     List<Map<String, dynamic>> rooms, {
     required Color textPrimary,
@@ -474,6 +589,11 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
         final room = rooms[index];
         final name = (room['displayName'] ?? room['name'] ?? 'Комната').toString();
         final area = room['area_sqm'] ?? room['area'];
+        final w = room['width_m'];
+        final l = room['length_m'];
+        final dimText = (w != null && l != null) ? '$w × $l м' : null;
+        final areaText = area != null ? '$area м²' : null;
+        final subtitle = [dimText, areaText].whereType<String>().join(' · ');
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
@@ -505,10 +625,10 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
                         color: textPrimary,
                       ),
                     ),
-                    if (area != null) ...[
+                    if (subtitle.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(
-                        '$area м²',
+                        subtitle,
                         style: TextStyle(fontSize: 12, color: textSecondary),
                       ),
                     ],
@@ -559,7 +679,7 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
           if (!didPop) _back();
         },
         child: Scaffold(
-          backgroundColor: BrandColors.canvas,
+          backgroundColor: BrandRuntime.canvas,
           body: SafeArea(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -581,7 +701,7 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
     final previewAfter = _segIndex == 1;
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

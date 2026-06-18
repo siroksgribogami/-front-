@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:intl/intl.dart';
 
 import '../../config/brand_colors.dart';
@@ -9,6 +10,8 @@ import '../../services/marketplace_local_store.dart';
 import '../../widgets/marketplace_image_attachments.dart';
 import 'create_project_screen.dart';
 import 'customer_project_responses_screen.dart';
+import 'direct_chat_screen.dart';
+import 'master_public_profile_screen.dart';
 import 'project_map_editor_screen.dart';
 
 class CustomerProjectDetailScreen extends StatefulWidget {
@@ -30,16 +33,30 @@ class CustomerProjectDetailScreen extends StatefulWidget {
 
 class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScreen> {
   late ProjectSummary _project;
+  List<MasterBid> _bids = [];
 
   @override
   void initState() {
     super.initState();
     _project = widget.project;
+    _loadBids();
+  }
+
+  Future<void> _loadBids() async {
+    await MarketplaceLocalStore.instance.ensureLoaded();
+    if (!mounted) return;
+    setState(() {
+      _bids = MarketplaceLocalStore.instance.bidsForProject(_project.id);
+    });
   }
 
   bool get _isDraft => _project.status.trim().toLowerCase().contains('чернов');
   bool get _inWork => _project.status.trim().toLowerCase().contains('работ');
   bool get _hasMap => _project.mapData.isNotEmpty;
+
+  /// Единый источник числа откликов — реальный список, а не захардкоженное поле.
+  int get _responses =>
+      _bids.isNotEmpty ? _bids.length : _project.responsesCount;
 
   List<String> get _photoPaths {
     final raw = _project.mapData['photo_paths'];
@@ -70,8 +87,8 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
     if (_isDraft) {
       return 'Заполните ТЗ и опубликуйте на бирже';
     }
-    if (_project.responsesCount > 0) {
-      return '${_project.responsesCount} откликов · обновлено ${dateFmt.format(_project.updatedAt)}';
+    if (_responses > 0) {
+      return '$_responses откликов · обновлено ${dateFmt.format(_project.updatedAt)}';
     }
     return 'На бирже · ожидаем отклики';
   }
@@ -158,8 +175,8 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
     );
   }
 
-  void _openResponses() {
-    Navigator.of(context).push(
+  Future<void> _openResponses() async {
+    await Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => CustomerProjectResponsesScreen(
           projectId: _project.id,
@@ -167,13 +184,76 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
         ),
       ),
     );
+    if (!mounted) return;
+    // Заказчик мог выбрать мастера — подтянем свежий статус проекта и откликов.
+    await MarketplaceLocalStore.instance.ensureLoaded();
+    final fresh = MarketplaceLocalStore.instance.customerProjects
+        .where((p) => p.id == _project.id)
+        .firstOrNull;
+    if (fresh != null && mounted) {
+      setState(() => _project = fresh);
+      widget.onProjectUpdated?.call(fresh);
+    }
+    await _loadBids();
+  }
+
+  Future<void> _openProjectChat() async {
+    final thread = MarketplaceLocalStore.instance.chatForProject(_project.id);
+    if (thread != null) {
+      await Navigator.of(context).push(
+        MaterialPageRoute<void>(builder: (_) => DirectChatScreen(thread: thread)),
+      );
+      return;
+    }
+    // Чата ещё нет — ведём к откликам, где можно написать мастеру.
+    await _openResponses();
+  }
+
+  void _openSelectedMaster() {
+    final id = _project.selectedMasterId;
+    if (id == null) return;
+    Navigator.of(context).push(
+      MaterialPageRoute<void>(
+        builder: (_) => MasterPublicProfileScreen(
+          masterId: id,
+          projectId: _project.id,
+          projectTitleForContract: _project.title,
+        ),
+      ),
+    );
+  }
+
+  /// Чего не хватает для публикации (масторам нужны тип работ и описание).
+  String? _publishBlocker() {
+    final missing = <String>[];
+    if (_project.workType.trim().isEmpty) missing.add('тип работ');
+    if (_project.spec.trim().isEmpty) missing.add('описание');
+    if (missing.isEmpty) return null;
+    return 'Заполните ${missing.join(' и ')} — без этого мастера не поймут заказ.';
+  }
+
+  String get _districtLine {
+    final a = _project.address.trim();
+    return a.isEmpty ? 'Регион уточняется у заказчика' : a;
   }
 
   Future<void> _confirmPublish() async {
+    // #7 — реальная валидация перед публикацией.
+    final blocker = _publishBlocker();
+    if (blocker != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(blocker),
+          action: SnackBarAction(label: 'Заполнить', onPressed: _editBrief),
+        ),
+      );
+      return;
+    }
+
     final ok = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: BrandColors.milk,
+        backgroundColor: BrandRuntime.card,
         title: Text(
           'Опубликовать?',
           style: BrandUi.inter(fontWeight: FontWeight.w700),
@@ -182,7 +262,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
           'Заявка появится в ленте мастеров. Убедитесь, что заполнены описание и при необходимости карта объекта.',
           style: BrandUi.inter(
             fontSize: 14,
-            color: BrandColors.tar.withOpacity(0.65),
+            color: BrandRuntime.ink.withOpacity(0.65),
             height: 1.35,
           ),
         ),
@@ -207,11 +287,63 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
     );
     setState(() => _project = updated);
     widget.onProjectUpdated?.call(updated);
-    await MarketplaceLocalStore.instance.syncPublishedProject(updated);
+    await MarketplaceLocalStore.instance
+        .syncPublishedProject(updated, districtLine: _districtLine);
     widget.onPublishedNavigateToMasters?.call();
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Проект опубликован')),
+    );
+  }
+
+  /// Нижняя панель действий — видна всегда (в т.ч. для «В работе»).
+  Widget _buildBottomBar(double bottom) {
+    final hasChat =
+        MarketplaceLocalStore.instance.chatForProject(_project.id) != null;
+
+    final Widget secondary;
+    final Widget primary;
+
+    if (_inWork) {
+      secondary = BrandGhostButton(
+        label: 'Мастер',
+        onPressed:
+            _project.selectedMasterId != null ? _openSelectedMaster : null,
+      );
+      primary = BrandAccentButton(
+        label: 'Открыть чат',
+        onPressed: _openProjectChat,
+      );
+    } else if (_isDraft) {
+      secondary = const BrandGhostButton(label: 'Чат', onPressed: null);
+      primary = BrandAccentButton(
+        label: 'Опубликовать на биржу',
+        onPressed: _confirmPublish,
+      );
+    } else {
+      secondary = BrandGhostButton(
+        label: 'Чат',
+        onPressed: hasChat ? _openProjectChat : null,
+      );
+      primary = BrandAccentButton(
+        label: _responses > 0 ? 'Отклики · $_responses' : 'Проект опубликован',
+        onPressed: _responses > 0 ? _openResponses : null,
+      );
+    }
+
+    return Container(
+      padding: EdgeInsets.fromLTRB(16, 14, 16, bottom + 14),
+      decoration: BoxDecoration(
+        color: BrandRuntime.canvas,
+        border: Border(top: BorderSide(color: BrandRuntime.border)),
+      ),
+      child: Row(
+        children: [
+          secondary,
+          const SizedBox(width: 10),
+          Expanded(child: primary),
+        ],
+      ),
     );
   }
 
@@ -222,7 +354,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
     final statusKind = BrandStatus.fromProjectStatus(_project.status);
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
@@ -238,7 +370,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                     icon: Icon(
                       Icons.edit_outlined,
                       size: 18,
-                      color: BrandColors.needles,
+                      color: BrandRuntime.needles,
                     ),
                     onPressed: _editBrief,
                   ),
@@ -250,7 +382,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
                         decoration: BoxDecoration(
-                          color: BrandColors.linen.withOpacity(0.6),
+                          color: BrandRuntime.surface.withOpacity(0.6),
                           borderRadius: BorderRadius.circular(14),
                         ),
                         child: Row(
@@ -265,7 +397,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                                 _statusBannerText(dateFmt),
                                 style: BrandUi.inter(
                                   fontSize: 13,
-                                  color: BrandColors.needles,
+                                  color: BrandRuntime.needles,
                                 ),
                               ),
                             ),
@@ -277,7 +409,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                         icon: Icon(
                           Icons.description_outlined,
                           size: 18,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                         ),
                         title: 'Техническое задание',
                         subtitle: _briefSubtitle,
@@ -287,7 +419,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                         icon: Icon(
                           Icons.view_in_ar_outlined,
                           size: 18,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                         ),
                         title: 'Карта объекта',
                         subtitle: _hasMap
@@ -313,29 +445,31 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                         icon: Icon(
                           Icons.chat_bubble_outline_rounded,
                           size: 18,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                         ),
                         title: 'Отклики мастеров',
-                        subtitle: _project.responsesCount > 0
-                            ? '${_project.responsesCount} предложений'
+                        subtitle: _responses > 0
+                            ? '$_responses предложений'
                             : 'Пока никто не откликнулся',
-                        trailing: _project.responsesCount > 0
+                        trailing: _responses > 0
                             ? BrandStatus(
-                                label: '${_project.responsesCount} новых',
+                                label: '$_responses откл.',
                                 kind: BrandStatusKind.market,
                               )
                             : null,
                         onTap: _openResponses,
-                        child: _project.responsesCount > 0
+                        child: _bids.isNotEmpty
                             ? Padding(
                                 padding: const EdgeInsets.only(top: 12),
                                 child: Row(
                                   children: [
-                                    for (var i = 0; i < 3; i++)
+                                    for (var i = 0;
+                                        i < _bids.length && i < 3;
+                                        i++)
                                       Transform.translate(
                                         offset: Offset(i > 0 ? -10.0 * i : 0, 0),
                                         child: BrandAvatar(
-                                          name: ['Игорь М.', 'Сергей Д.', 'Рустам А.'][i],
+                                          name: _bids[i].masterName,
                                           size: 34,
                                           radius: 10,
                                           tone: i.isOdd
@@ -349,7 +483,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                                         'от ${_project.budget}',
                                         style: BrandUi.inter(
                                           fontSize: 13,
-                                          color: BrandColors.tar.withOpacity(0.55),
+                                          color: BrandRuntime.ink.withOpacity(0.55),
                                         ),
                                       ),
                                   ],
@@ -398,31 +532,7 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
                     ],
                   ),
                 ),
-                if (!_inWork)
-                  Container(
-                    padding: EdgeInsets.fromLTRB(16, 14, 16, bottom + 14),
-                    decoration: const BoxDecoration(
-                      color: BrandColors.canvas,
-                      border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
-                    ),
-                    child: Row(
-                      children: [
-                        const BrandGhostButton(
-                          label: 'Чат',
-                          onPressed: null,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: BrandAccentButton(
-                            label: _isDraft
-                                ? 'Опубликовать на биржу'
-                                : 'Проект опубликован',
-                            onPressed: _isDraft ? _confirmPublish : null,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                _buildBottomBar(bottom),
               ],
             ),
           ),
@@ -454,7 +564,7 @@ class _DetailSection extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: Material(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
           onTap: onTap,
@@ -463,7 +573,7 @@ class _DetailSection extends StatelessWidget {
             padding: const EdgeInsets.all(15),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: BrandColors.borderSubtle),
+              border: Border.all(color: BrandRuntime.border),
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -474,7 +584,7 @@ class _DetailSection extends StatelessWidget {
                       width: 34,
                       height: 34,
                       decoration: BoxDecoration(
-                        color: BrandColors.linen,
+                        color: BrandRuntime.surface,
                         borderRadius: BorderRadius.circular(10),
                       ),
                       child: Center(child: icon),
@@ -496,7 +606,7 @@ class _DetailSection extends StatelessWidget {
                             subtitle,
                             style: BrandUi.inter(
                               fontSize: 12,
-                              color: BrandColors.tar.withOpacity(0.55),
+                              color: BrandRuntime.ink.withOpacity(0.55),
                             ),
                           ),
                         ],
@@ -508,7 +618,7 @@ class _DetailSection extends StatelessWidget {
                       Icon(
                         Icons.chevron_right_rounded,
                         size: 20,
-                        color: BrandColors.tar.withOpacity(0.35),
+                        color: BrandRuntime.ink.withOpacity(0.35),
                       ),
                   ],
                 ),

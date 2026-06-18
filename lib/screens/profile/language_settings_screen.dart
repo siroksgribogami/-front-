@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math' as math;
 
@@ -53,8 +54,8 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: BrandColors.canvas,
-        foregroundColor: BrandColors.tar,
+        backgroundColor: BrandRuntime.canvas,
+        foregroundColor: BrandRuntime.ink,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -100,7 +101,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
               Container(
                 padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
                 decoration: BoxDecoration(
-                  color: BrandColors.linen.withOpacity(0.55),
+                  color: BrandRuntime.surface.withOpacity(0.55),
                   borderRadius: BorderRadius.circular(13),
                 ),
                 child: Row(
@@ -109,7 +110,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                     Icon(
                       Icons.info_outline_rounded,
                       size: 17,
-                      color: BrandColors.needles,
+                      color: BrandRuntime.needles,
                     ),
                     const SizedBox(width: 10),
                     Expanded(
@@ -117,7 +118,7 @@ class _LanguageSettingsScreenState extends State<LanguageSettingsScreen> {
                         'Язык приложения сменится сразу. Чаты и описания проектов остаются на языке оригинала.',
                         style: BrandUi.inter(
                           fontSize: 12.5,
-                          color: BrandColors.needles,
+                          color: BrandRuntime.needles,
                           height: 1.4,
                         ),
                       ),
@@ -160,8 +161,8 @@ class _LangRow extends StatelessWidget {
           decoration: BoxDecoration(
             border: last
                 ? null
-                : const Border(
-                    bottom: BorderSide(color: BrandColors.borderSubtle),
+                : Border(
+                    bottom: BorderSide(color: BrandRuntime.border),
                   ),
           ),
           child: Padding(
@@ -172,7 +173,7 @@ class _LangRow extends StatelessWidget {
                   width: 34,
                   height: 34,
                   decoration: BoxDecoration(
-                    color: BrandColors.canvas,
+                    color: BrandRuntime.canvas,
                     shape: BoxShape.circle,
                   ),
                   alignment: Alignment.center,
@@ -180,7 +181,7 @@ class _LangRow extends StatelessWidget {
                     flag,
                     style: pochaevsk(
                       fontSize: 15,
-                      color: BrandColors.needles,
+                      color: BrandRuntime.needles,
                     ),
                   ),
                 ),
@@ -194,7 +195,7 @@ class _LangRow extends StatelessWidget {
                         style: BrandUi.inter(
                           fontSize: 15,
                           fontWeight: FontWeight.w600,
-                          color: BrandColors.tar,
+                          color: BrandRuntime.ink,
                         ),
                       ),
                       const SizedBox(height: 1),
@@ -202,7 +203,7 @@ class _LangRow extends StatelessWidget {
                         sub,
                         style: BrandUi.inter(
                           fontSize: 12.5,
-                          color: BrandColors.tar.withOpacity(0.55),
+                          color: BrandRuntime.ink.withOpacity(0.55),
                         ),
                       ),
                     ],
@@ -213,11 +214,11 @@ class _LangRow extends StatelessWidget {
                   height: 24,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: selected ? BrandColors.needles : Colors.transparent,
+                    color: selected ? BrandRuntime.needles : Colors.transparent,
                     border: Border.all(
                       color: selected
-                          ? BrandColors.needles
-                          : BrandColors.chipBorder,
+                          ? BrandRuntime.needles
+                          : BrandRuntime.borderStrong,
                       width: 2,
                     ),
                   ),

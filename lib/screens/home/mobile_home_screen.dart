@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/brand_colors.dart';
@@ -103,7 +104,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
           ];
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(
         bottom: false,
         child: IndexedStack(
@@ -119,10 +120,10 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
       ),
       bottomNavigationBar: RepaintBoundary(
         child: DecoratedBox(
-          decoration: const BoxDecoration(
-            color: BrandColors.milk,
+          decoration: BoxDecoration(
+            color: BrandRuntime.card,
             border: Border(
-              top: BorderSide(color: BrandColors.borderSubtle),
+              top: BorderSide(color: BrandRuntime.border),
             ),
           ),
           child: Padding(
@@ -179,8 +180,8 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                   Icon(
                     isSelected ? selectedIcon : icon,
                     color: isSelected
-                        ? BrandColors.needles
-                        : BrandColors.inkFaint,
+                        ? BrandRuntime.needles
+                        : BrandRuntime.inkFaint,
                     size: 23,
                   ),
                   const SizedBox(height: 4),
@@ -192,7 +193,7 @@ class _MobileHomeScreenState extends State<MobileHomeScreen> {
                           isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected
                           ? BrandColors.needlesDark
-                          : BrandColors.inkFaint,
+                          : BrandRuntime.inkFaint,
                     ),
                   ),
                 ],

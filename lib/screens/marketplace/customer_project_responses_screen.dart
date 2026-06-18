@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 
 import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
@@ -61,18 +62,19 @@ class _CustomerProjectResponsesScreenState
       final loading = const Center(child: CircularProgressIndicator());
       if (widget.embedded) {
         return ColoredBox(
-          color: BrandColors.canvas,
+          color: BrandRuntime.canvas,
           child: SafeArea(top: false, child: loading),
         );
       }
       return Scaffold(
-        backgroundColor: BrandColors.canvas,
+        backgroundColor: BrandRuntime.canvas,
         body: SafeArea(child: loading),
       );
     }
 
     final bids = _bids;
     final bestId = _bestBidId(bids);
+    final hasSelected = bids.any((b) => b.isSelected);
     final subtitle = widget.projectTitle;
 
     final inner = bids.isEmpty
@@ -83,7 +85,7 @@ class _CustomerProjectResponsesScreenState
                 'На этот проект пока нет откликов. Опубликуйте заявку или подождите мастеров из ленты.',
                 textAlign: TextAlign.center,
                 style: BrandUi.inter(
-                  color: BrandColors.tar.withOpacity(0.55),
+                  color: BrandRuntime.ink.withOpacity(0.55),
                   height: 1.4,
                 ),
               ),
@@ -97,15 +99,17 @@ class _CustomerProjectResponsesScreenState
               final b = bids[i];
               return _BidTile(
                 bid: b,
+                projectId: widget.projectId,
                 projectTitle: widget.projectTitle,
-                isBest: b.id == bestId,
+                isBest: b.id == bestId && !hasSelected,
+                dealClosed: hasSelected,
                 index: i,
               );
             },
           );
 
     final body = ColoredBox(
-      color: BrandColors.canvas,
+      color: BrandRuntime.canvas,
       child: SafeArea(
         top: !widget.embedded,
         child: Column(
@@ -131,7 +135,7 @@ class _CustomerProjectResponsesScreenState
     if (widget.embedded) return body;
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: body,
     );
   }
@@ -139,14 +143,20 @@ class _CustomerProjectResponsesScreenState
 
 class _BidTile extends StatelessWidget {
   final MasterBid bid;
+  final String projectId;
   final String projectTitle;
   final bool isBest;
+
+  /// По проекту уже выбран мастер — остальные отклики блокируются.
+  final bool dealClosed;
   final int index;
 
   const _BidTile({
     required this.bid,
+    required this.projectId,
     required this.projectTitle,
     required this.isBest,
+    required this.dealClosed,
     required this.index,
   });
 
@@ -159,10 +169,10 @@ class _BidTile extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         borderRadius: BorderRadius.circular(18),
         border: Border.all(
-          color: isBest ? BrandColors.needles : BrandColors.borderSubtle,
+          color: isBest ? BrandRuntime.needles : BrandRuntime.border,
           width: isBest ? 1.5 : 1,
         ),
       ),
@@ -173,7 +183,7 @@ class _BidTile extends StatelessWidget {
           if (isBest)
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              color: BrandColors.needles,
+              color: BrandRuntime.needles,
               child: Row(
                 children: [
                   Icon(Icons.star_rounded, size: 13, color: BrandColors.dawn),
@@ -212,7 +222,7 @@ class _BidTile extends StatelessWidget {
                             bid.masterName,
                             style: pochaevsk(
                               fontSize: 17,
-                              color: BrandColors.tar,
+                              color: BrandRuntime.ink,
                               height: 1,
                             ),
                           ),
@@ -226,7 +236,7 @@ class _BidTile extends StatelessWidget {
                                   '${bid.rating.toStringAsFixed(1)} · ${bid.completedJobs} · ${bid.specialty}',
                                   style: BrandUi.inter(
                                     fontSize: 12.5,
-                                    color: BrandColors.tar.withOpacity(0.65),
+                                    color: BrandRuntime.ink.withOpacity(0.65),
                                   ),
                                   overflow: TextOverflow.ellipsis,
                                 ),
@@ -243,17 +253,17 @@ class _BidTile extends StatelessWidget {
                   bid.message,
                   style: BrandUi.inter(
                     fontSize: 13.5,
-                    color: BrandColors.tar.withOpacity(0.65),
+                    color: BrandRuntime.ink.withOpacity(0.65),
                     height: 1.45,
                   ),
                 ),
                 const SizedBox(height: 11),
                 Container(
                   padding: const EdgeInsets.symmetric(vertical: 11),
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     border: Border(
-                      top: BorderSide(color: BrandColors.borderSubtle),
-                      bottom: BorderSide(color: BrandColors.borderSubtle),
+                      top: BorderSide(color: BrandRuntime.border),
+                      bottom: BorderSide(color: BrandRuntime.border),
                     ),
                   ),
                   child: IntrinsicHeight(
@@ -267,7 +277,7 @@ class _BidTile extends StatelessWidget {
                                 'ЦЕНА',
                                 style: BrandUi.inter(
                                   fontSize: 11,
-                                  color: BrandColors.tar.withOpacity(0.45),
+                                  color: BrandRuntime.ink.withOpacity(0.45),
                                 ).copyWith(letterSpacing: 0.04 * 16),
                               ),
                               const SizedBox(height: 2),
@@ -275,7 +285,7 @@ class _BidTile extends StatelessWidget {
                                 bid.priceOffer,
                                 style: pochaevsk(
                                   fontSize: 22,
-                                  color: BrandColors.needles,
+                                  color: BrandRuntime.needles,
                                   height: 1,
                                 ),
                               ),
@@ -284,7 +294,7 @@ class _BidTile extends StatelessWidget {
                         ),
                         Container(
                           width: 1,
-                          color: BrandColors.borderSubtle,
+                          color: BrandRuntime.border,
                         ),
                         Expanded(
                           child: Padding(
@@ -296,7 +306,7 @@ class _BidTile extends StatelessWidget {
                                   'СРОК',
                                   style: BrandUi.inter(
                                     fontSize: 11,
-                                    color: BrandColors.tar.withOpacity(0.45),
+                                    color: BrandRuntime.ink.withOpacity(0.45),
                                   ).copyWith(letterSpacing: 0.04 * 16),
                                 ),
                                 const SizedBox(height: 2),
@@ -304,7 +314,7 @@ class _BidTile extends StatelessWidget {
                                   bid.durationOffer,
                                   style: pochaevsk(
                                     fontSize: 22,
-                                    color: BrandColors.tar,
+                                    color: BrandRuntime.ink,
                                     height: 1,
                                   ),
                                 ),
@@ -326,6 +336,7 @@ class _BidTile extends StatelessWidget {
                           MaterialPageRoute<void>(
                             builder: (_) => MasterPublicProfileScreen(
                               masterId: bid.masterId,
+                              projectId: projectId,
                               projectTitleForContract: projectTitle,
                             ),
                           ),
@@ -333,20 +344,7 @@ class _BidTile extends StatelessWidget {
                       },
                     ),
                     const SizedBox(width: 10),
-                    Expanded(
-                      child: isBest
-                          ? SizedBox(
-                              width: double.infinity,
-                              child: BrandAccentButton(
-                                label: 'Выбрать мастера',
-                                onPressed: () => _chooseMaster(context),
-                              ),
-                            )
-                          : BrandPrimaryButton(
-                              label: 'Выбрать мастера',
-                              onPressed: () => _chooseMaster(context),
-                            ),
-                    ),
+                    Expanded(child: _actionForStatus(context)),
                   ],
                 ),
               ],
@@ -357,11 +355,58 @@ class _BidTile extends StatelessWidget {
     );
   }
 
+  Widget _actionForStatus(BuildContext context) {
+    if (bid.isSelected) {
+      return Container(
+        height: 44,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: BrandRuntime.needlesFill,
+          borderRadius: BrandUi.buttonRadius,
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.check_circle_rounded,
+                size: 18, color: BrandRuntime.needles),
+            const SizedBox(width: 7),
+            Text(
+              'Выбран · в работе',
+              style: BrandUi.inter(
+                fontWeight: FontWeight.w600,
+                color: BrandRuntime.needles,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    if (dealClosed) {
+      return const BrandGhostButton(label: 'Не выбран', onPressed: null);
+    }
+    return isBest
+        ? SizedBox(
+            width: double.infinity,
+            child: BrandAccentButton(
+              label: 'Выбрать мастера',
+              onPressed: () => _chooseMaster(context),
+            ),
+          )
+        : BrandPrimaryButton(
+            label: 'Выбрать мастера',
+            onPressed: () => _chooseMaster(context),
+          );
+  }
+
   void _chooseMaster(BuildContext context) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
         builder: (_) => ContractConfirmScreen(
           masterName: bid.masterName,
+          projectId: projectId,
+          masterId: bid.masterId,
+          bid: bid,
           projectTitle: projectTitle,
           priceOffer: bid.priceOffer,
           durationOffer: bid.durationOffer,

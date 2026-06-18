@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
@@ -6,6 +7,8 @@ import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
 import '../../core/theme/brand_ui.dart';
 import '../../core/theme/marketplace_colors.dart';
+import 'object_card_screen.dart';
+import 'style_swipe_screen.dart';
 import 'widgets/foreman_scene_workspace.dart';
 import '../../data/premise_rooms_catalog.dart';
 import '../../models/ai_responses.dart';
@@ -46,6 +49,8 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
   Map<String, dynamic> _objectCard = {};
   final List<String> _pendingPhotoPaths = [];
   String? _selectedRoomChip;
+  String _stage = 'goal';
+  bool _estimateReady = false;
 
   static const _roomChips = [
     'Кухня',
@@ -54,6 +59,38 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
     'Спальня',
     '+ Своя',
   ];
+
+  // Быстрые ответы для Шага 0 (цель) — точка входа диалога.
+  static const _goalChips = [
+    'Ремонт с нуля',
+    'Обновить отделку',
+    'Перепланировка',
+    'Собрать мебель',
+    'Просто совет',
+  ];
+
+  // Бэкенд-этап → шаг 0…5 (Диана). rooms складывается в «Объект».
+  static const _stepLabels = ['Цель', 'Объект', 'Сейчас', 'Хочу', 'Бюджет', 'Готово'];
+
+  int get _stepIndex {
+    switch (_stage) {
+      case 'goal':
+        return 0;
+      case 'discovery':
+      case 'rooms':
+        return 1;
+      case 'before':
+        return 2;
+      case 'after':
+        return 3;
+      case 'estimate':
+        return 4;
+      case 'done':
+        return 5;
+      default:
+        return 0;
+    }
+  }
 
   final List<_ChatMessage> _messages = [
     _ChatMessage(
@@ -186,6 +223,14 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
       if (result.objectCard.isNotEmpty) {
         _objectCard = result.objectCard;
       }
+      if (result.stage.isNotEmpty) {
+        _stage = result.stage;
+      }
+      if (result.estimateReady) {
+        _estimateReady = true;
+      }
+      // Размеры из диалога → общий стор комнат, чтобы редактор карты их подхватил.
+      await _syncRoomsToMap(result);
 
       var replyText = result.text.isNotEmpty ? result.text : '';
       if (replyText.isEmpty) {
@@ -220,6 +265,64 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
     }
 
     _scrollToEnd();
+  }
+
+  // Переносит размеры комнат из ответа ИИ (project_map_data / object_card.rooms)
+  // в общий стор PremiseRoomsCatalog — мост к редактору карты и Unity.
+  Future<void> _syncRoomsToMap(AiForemanChatResult result) async {
+    final pmd = result.projectMapData;
+    final rooms = (pmd?['rooms'] as List?) ??
+        (result.objectCard['rooms'] as List?) ??
+        const [];
+    final aiRooms = rooms.whereType<Map>().toList();
+    if (aiRooms.isEmpty) return;
+
+    final existing = await PremiseRoomsCatalog.loadPersistedRooms() ??
+        <Map<String, dynamic>>[];
+    String keyOf(Map r) =>
+        (r['name'] ?? r['displayName'] ?? '').toString().toLowerCase().trim();
+    final byName = {for (final r in existing) keyOf(r): r};
+
+    var changed = false;
+    for (final raw in aiRooms) {
+      final name = (raw['name'] ?? '').toString().trim();
+      if (name.isEmpty) continue;
+      final key = name.toLowerCase();
+      final w = raw['width_m'];
+      final l = raw['length_m'];
+      final a = raw['area_m2'] ?? raw['area_sqm'];
+      if (w == null && l == null && a == null) continue;
+
+      final target = byName[key];
+      if (target != null) {
+        if (w != null) target['width_m'] = w;
+        if (l != null) target['length_m'] = l;
+        if (a != null) target['area_sqm'] = a;
+        target['source'] = 'ai_foreman';
+        changed = true;
+      } else {
+        final room = <String, dynamic>{
+          'id': raw['id']?.toString() ?? key,
+          'roomId': raw['id']?.toString() ?? key,
+          'name': name,
+          'displayName': name,
+          'source': 'ai_foreman',
+          'confirmed': true,
+          if (w != null) 'width_m': w,
+          if (l != null) 'length_m': l,
+          if (a != null) 'area_sqm': a,
+        };
+        existing.add(room);
+        byName[key] = room;
+        changed = true;
+      }
+    }
+
+    if (changed) {
+      await PremiseRoomsCatalog.persistRoomsJson(
+        existing.map((e) => Map<String, dynamic>.from(e)).toList(),
+      );
+    }
   }
 
   void _replaceThinkingWith(_ChatMessage message) {
@@ -292,7 +395,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
 
   Widget _buildSplitForeman(BuildContext context) {
     return ColoredBox(
-      color: BrandColors.canvas,
+      color: BrandRuntime.canvas,
       child: Column(
         children: [
           if (widget.showHeader) const ForemanSplitAppBar(),
@@ -338,12 +441,14 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
     final pad = split ? BrandColors.screenPadding : 12.0;
 
     return ColoredBox(
-      color: split ? BrandColors.canvas : MarketplaceColors.cardFor(context),
+      color: split ? BrandRuntime.canvas : MarketplaceColors.cardFor(context),
       child: Column(
         children: [
           if (split) _buildSceneCaptionRow(),
+          _buildStageStepper(pad),
           Expanded(child: _buildMessageList(context, horizontal: pad)),
-          _buildRoomChips(pad),
+          if (_estimateReady) _buildObjectCardCta(pad),
+          _buildQuickChips(pad),
           SizedBox(height: split ? 6 : 4),
           if (_pendingPhotoPaths.isNotEmpty)
             Padding(
@@ -378,7 +483,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
               fontFamily: 'monospace',
               fontSize: 10,
               letterSpacing: 0.6,
-              color: BrandColors.tar.withOpacity(0.5),
+              color: BrandRuntime.ink.withOpacity(0.5),
             ),
           ),
           const Spacer(),
@@ -388,12 +493,193 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
               fontFamily: 'Inter',
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: BrandColors.needles,
+              color: BrandRuntime.needles,
             ),
           ),
         ],
       ),
     );
+  }
+
+  // Индикатор шага: «Шаг N · Метка» + сегментированный прогресс 0…5.
+  Widget _buildStageStepper(double pad) {
+    final idx = _stepIndex;
+    return Padding(
+      padding: EdgeInsets.fromLTRB(pad, 8, pad, 4),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Text(
+                'Шаг $idx',
+                style: BrandUi.inter(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w700,
+                  color: BrandColors.clay,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '· ${_stepLabels[idx]}',
+                style: BrandUi.inter(
+                  fontSize: 12.5,
+                  color: BrandRuntime.ink.withOpacity(0.55),
+                ),
+              ),
+              const Spacer(),
+              Text(
+                '$idx/5',
+                style: BrandUi.inter(
+                  fontSize: 11.5,
+                  color: BrandRuntime.ink.withOpacity(0.4),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: List.generate(6, (i) {
+              final active = i <= idx;
+              return Expanded(
+                child: Container(
+                  margin: EdgeInsets.only(right: i < 5 ? 4 : 0),
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: active ? BrandColors.clay : BrandRuntime.border,
+                    borderRadius: BorderRadius.circular(2),
+                  ),
+                ),
+              );
+            }),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // Смета готова → карточку объекта можно открыть и опубликовать на бирже.
+  Widget _buildObjectCardCta(double pad) {
+    return Padding(
+      padding: EdgeInsets.fromLTRB(pad, 4, pad, 4),
+      child: Material(
+        color: BrandRuntime.needles,
+        borderRadius: BorderRadius.circular(14),
+        child: InkWell(
+          onTap: () => ObjectCardScreen.open(
+            context,
+            objectCard: _objectCard,
+            projectId: widget.projectId,
+          ),
+          borderRadius: BorderRadius.circular(14),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+            child: Row(
+              children: [
+                const Icon(Icons.check_circle_rounded,
+                    color: BrandColors.dawn, size: 22),
+                const SizedBox(width: 11),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Карточка проекта готова',
+                        style: BrandUi.inter(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w700,
+                          color: BrandRuntime.card,
+                        ),
+                      ),
+                      Text(
+                        'Открыть и опубликовать на бирже',
+                        style: BrandUi.inter(
+                          fontSize: 12,
+                          color: BrandColors.dawn.withOpacity(0.82),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.arrow_forward_rounded,
+                    color: BrandColors.dawn, size: 20),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // На Шаге 0 — кнопки цели, дальше — кнопки комнат.
+  Widget _buildQuickChips(double pad) {
+    if (_stage == 'goal') return _buildGoalChips(pad);
+    return _buildRoomChips(pad);
+  }
+
+  Widget _buildGoalChips(double pad) {
+    return SizedBox(
+      height: 40,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        padding: EdgeInsets.symmetric(horizontal: pad),
+        children: _goalChips.map((label) {
+          return Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: GestureDetector(
+              onTap: () => _sendQuickReply(label),
+              child: Container(
+                alignment: Alignment.center,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                decoration: BoxDecoration(
+                  color: BrandRuntime.needlesFill,
+                  borderRadius: BorderRadius.circular(BrandColors.radiusChip),
+                  border: Border.all(color: BrandRuntime.needles, width: 1.2),
+                ),
+                child: Text(
+                  label,
+                  style: BrandUi.inter(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    color: BrandColors.needlesDark,
+                  ),
+                ),
+              ),
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  void _sendQuickReply(String text) {
+    if (text.trim().isEmpty) return;
+    _messageController.text = text;
+    _sendMessage();
+  }
+
+  // «Тиндер» вдохновения → object_card.design.references + сообщение ИИ.
+  Future<void> _openStyleSwipe() async {
+    final refs = await StyleSwipeScreen.open(context);
+    if (refs == null || refs.isEmpty || !mounted) return;
+
+    final design = (_objectCard['design'] as Map?)?.cast<String, dynamic>() ??
+        <String, dynamic>{};
+    final existing = (design['references'] as List?) ?? const [];
+    design['references'] = [...existing, ...refs];
+    _objectCard = {..._objectCard, 'design': design};
+
+    final styles =
+        refs.map((r) => r['style']).whereType<String>().toList();
+    final tags = refs
+        .expand<String>(
+            (r) => (r['tags'] as List?)?.whereType<String>() ?? const <String>[])
+        .toSet()
+        .toList();
+    final extra =
+        tags.isNotEmpty ? ' Ключевое: ${tags.take(6).join(', ')}.' : '';
+    final msg = 'Мне нравятся стили: ${styles.join(', ')}.$extra';
+    _sendQuickReply(msg);
   }
 
   Widget _buildRoomChips(double pad) {
@@ -402,7 +688,43 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
       child: ListView(
         scrollDirection: Axis.horizontal,
         padding: EdgeInsets.symmetric(horizontal: pad),
-        children: _roomChips.map(_buildRoomChip).toList(),
+        children: [
+          _buildInspirationChip(),
+          ..._roomChips.map(_buildRoomChip),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInspirationChip() {
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: GestureDetector(
+        onTap: _openStyleSwipe,
+        child: Container(
+          alignment: Alignment.center,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+          decoration: BoxDecoration(
+            color: BrandRuntime.needlesFill,
+            borderRadius: BorderRadius.circular(BrandColors.radiusChip),
+            border: Border.all(color: BrandRuntime.needles, width: 1.2),
+          ),
+          child: Row(
+            children: [
+              const Icon(Icons.auto_awesome_rounded,
+                  size: 15, color: BrandColors.needlesDark),
+              const SizedBox(width: 5),
+              Text(
+                'Вдохновение',
+                style: BrandUi.inter(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                  color: BrandColors.needlesDark,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }
@@ -426,10 +748,10 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
           decoration: BoxDecoration(
-            color: selected ? BrandColors.needles : BrandColors.milk,
+            color: selected ? BrandRuntime.needles : BrandRuntime.card,
             borderRadius: BorderRadius.circular(BrandColors.radiusChip),
             border: Border.all(
-              color: selected ? BrandColors.needles : BrandColors.chipBorder,
+              color: selected ? BrandRuntime.needles : BrandRuntime.borderStrong,
               width: 1.5,
             ),
           ),
@@ -439,7 +761,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
               fontFamily: 'Inter',
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: selected ? BrandColors.onNeedles : BrandColors.tar,
+              color: selected ? BrandColors.onNeedles : BrandRuntime.ink,
             ),
           ),
         ),
@@ -457,7 +779,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
     return Container(
       padding: EdgeInsets.fromLTRB(pad, 8, pad, compact ? 12 : 16),
       decoration: BoxDecoration(
-        color: BrandColors.milk,
+        color: BrandRuntime.card,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.06),
@@ -471,18 +793,18 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
         children: [
           IconButton(
             onPressed: _pickPhotos,
-            icon: const Icon(
+            icon: Icon(
               Icons.attach_file_outlined,
-              color: BrandColors.tar,
+              color: BrandRuntime.ink,
             ),
             tooltip: 'Фото',
           ),
           Expanded(
             child: Container(
               decoration: BoxDecoration(
-                color: BrandColors.milk,
+                color: BrandRuntime.card,
                 borderRadius: BorderRadius.circular(BrandColors.radiusButton),
-                border: Border.all(color: BrandColors.chipBorder),
+                border: Border.all(color: BrandRuntime.borderStrong),
               ),
               child: TextField(
                 controller: _messageController,
@@ -496,7 +818,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
                 ),
                 decoration: InputDecoration(
                   filled: true,
-                  fillColor: BrandColors.milk,
+                  fillColor: BrandRuntime.card,
                   hintText: 'Опишите задачу…',
                   hintStyle: TextStyle(
                     fontFamily: 'Inter',
@@ -560,7 +882,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
       ),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isUser ? BrandColors.needles : BrandColors.milk,
+        color: isUser ? BrandRuntime.needles : BrandRuntime.card,
         borderRadius: BorderRadius.only(
           topLeft: const Radius.circular(16),
           topRight: const Radius.circular(16),
@@ -569,7 +891,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
         ),
         border: isUser
             ? null
-            : Border.all(color: BrandColors.borderSubtle),
+            : Border.all(color: BrandRuntime.border),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -584,7 +906,7 @@ class _AiForemanChatTabState extends State<AiForemanChatTab>
               style: BrandUi.inter(
                 fontSize: 14.5,
                 height: 1.45,
-                color: isUser ? BrandColors.onNeedles : BrandColors.tar,
+                color: isUser ? BrandColors.onNeedles : BrandRuntime.ink,
               ),
             ),
           const SizedBox(height: 4),
@@ -649,10 +971,10 @@ class _ForemanChatHeader extends StatelessWidget {
     final canPop = Navigator.canPop(context);
 
     return DecoratedBox(
-      decoration: const BoxDecoration(
-        color: BrandColors.milk,
+      decoration: BoxDecoration(
+        color: BrandRuntime.card,
         border: Border(
-          bottom: BorderSide(color: BrandColors.borderSubtle),
+          bottom: BorderSide(color: BrandRuntime.border),
         ),
       ),
       child: Padding(
@@ -673,7 +995,7 @@ class _ForemanChatHeader extends StatelessWidget {
                     'ИИ-прораб',
                     style: pochaevsk(
                       fontSize: 17,
-                      color: BrandColors.tar,
+                      color: BrandRuntime.ink,
                       height: 1.05,
                     ),
                   ),
@@ -693,7 +1015,7 @@ class _ForemanChatHeader extends StatelessWidget {
                         'составляет смету',
                         style: BrandUi.inter(
                           fontSize: 12,
-                          color: BrandColors.inkSoft,
+                          color: BrandRuntime.inkSoft,
                         ),
                       ),
                     ],
@@ -735,7 +1057,7 @@ class ForemanAvatar extends StatelessWidget {
       height: size,
       child: DecoratedBox(
         decoration: BoxDecoration(
-          color: BrandColors.needles,
+          color: BrandRuntime.needlesFill,
           borderRadius: BorderRadius.circular(r),
           boxShadow: [
             BoxShadow(

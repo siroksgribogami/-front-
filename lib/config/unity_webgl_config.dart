@@ -7,6 +7,6 @@ class UnityWebGlConfig {
 
   static const String buildUrl = String.fromEnvironment(
     'UNITY_WEBGL_BUILD_URL',
-    defaultValue: 'https://dry-bar-50f6.andreym67764.workers.dev/',
+    defaultValue: 'https://home-map.website.yandexcloud.net/',
   );
 }

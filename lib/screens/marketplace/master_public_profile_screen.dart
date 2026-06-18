@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:image_picker/image_picker.dart';
 
 import '../../config/brand_colors.dart';
@@ -12,18 +13,30 @@ import '../../services/marketplace_local_store.dart';
 import '../../services/master_profile_local_store.dart';
 import '../profile/master_portfolio_screen.dart';
 import 'contract_confirm_screen.dart';
+import 'direct_chat_screen.dart';
 
 class MasterPublicProfileScreen extends StatefulWidget {
   final String masterId;
   final String? projectTitleForContract;
+
+  /// Проект, по которому идёт выбор / переписка (если открыт из проекта).
+  final String? projectId;
+
   /// Без AppBar/Scaffold — для встраивания в сплит-панель (поиск мастеров).
   final bool embedded;
+
+  /// Можно ли редактировать профиль (фото, сертификаты, отзывы).
+  /// По умолчанию ВЫКЛ: заказчик видит чужой профиль только для чтения и
+  /// не может прикреплять фото / менять данные мастера.
+  final bool editable;
 
   const MasterPublicProfileScreen({
     super.key,
     required this.masterId,
     this.projectTitleForContract,
+    this.projectId,
     this.embedded = false,
+    this.editable = false,
   });
 
   @override
@@ -158,6 +171,25 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
     await _store.saveReviews(widget.masterId, next);
   }
 
+  Future<void> _openChat(BuildContext context, MasterProfile p) async {
+    final navigator = Navigator.of(context);
+    final title = widget.projectTitleForContract?.trim().isNotEmpty == true
+        ? widget.projectTitleForContract!
+        : 'Обсуждение работ';
+    final thread = await MarketplaceLocalStore.instance.ensureChatThread(
+      masterId: widget.masterId,
+      peerName: p.name,
+      projectTitle: title,
+      projectId: widget.projectId,
+    );
+    if (!mounted) return;
+    navigator.push(
+      MaterialPageRoute<void>(
+        builder: (_) => DirectChatScreen(thread: thread),
+      ),
+    );
+  }
+
   void _openPortfolio(MasterProfile p) {
     Navigator.of(context).push(
       MaterialPageRoute<void>(
@@ -174,14 +206,14 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
     final p = MarketplaceLocalStore.instance.profileById(widget.masterId);
     if (!_loaded) {
       if (widget.embedded) {
-        return const ColoredBox(
-          color: BrandColors.canvas,
-          child: Center(child: CircularProgressIndicator()),
+        return ColoredBox(
+          color: BrandRuntime.canvas,
+          child: const Center(child: CircularProgressIndicator()),
         );
       }
-      return const Scaffold(
-        backgroundColor: BrandColors.canvas,
-        body: Center(child: CircularProgressIndicator()),
+      return Scaffold(
+        backgroundColor: BrandRuntime.canvas,
+        body: const Center(child: CircularProgressIndicator()),
       );
     }
 
@@ -227,9 +259,9 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                   mainAxisSpacing: 8,
                   childAspectRatio: 1,
                 ),
-                itemCount: portfolioCount + 1,
+                itemCount: portfolioCount + (widget.editable ? 1 : 0),
                 itemBuilder: (_, i) {
-                  if (i == 0) {
+                  if (widget.editable && i == 0) {
                     return InkWell(
                       onTap: _addPortfolioPhoto,
                       borderRadius: BorderRadius.circular(12),
@@ -240,7 +272,7 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                       ),
                     );
                   }
-                  final photoIndex = i - 1;
+                  final photoIndex = i - (widget.editable ? 1 : 0);
                   if (photoIndex < _portfolioPhotos.length) {
                     return ClipRRect(
                       borderRadius: BorderRadius.circular(12),
@@ -264,7 +296,7 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                   p.about,
                   style: BrandUi.inter(
                     fontSize: 13.5,
-                    color: BrandColors.tar.withOpacity(0.65),
+                    color: BrandRuntime.ink.withOpacity(0.65),
                     height: 1.5,
                   ),
                 ),
@@ -283,7 +315,7 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                           Icon(
                             Icons.verified_outlined,
                             size: 20,
-                            color: BrandColors.needles,
+                            color: BrandRuntime.needles,
                           ),
                           const SizedBox(width: 8),
                           Expanded(
@@ -300,51 +332,55 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                   ),
                 ),
               ],
-              const SizedBox(height: 8),
-              SizedBox(
-                height: 96,
-                child: ListView(
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    InkWell(
-                      onTap: _addCertificatePhoto,
-                      child: SizedBox(
-                        width: 96,
-                        child: BrandStripedPlaceholder(
-                          label: 'серт',
-                          height: 96,
-                          radius: 12,
+              if (widget.editable || _certPhotos.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                SizedBox(
+                  height: 96,
+                  child: ListView(
+                    scrollDirection: Axis.horizontal,
+                    children: [
+                      if (widget.editable)
+                        InkWell(
+                          onTap: _addCertificatePhoto,
+                          child: SizedBox(
+                            width: 96,
+                            child: BrandStripedPlaceholder(
+                              label: 'серт',
+                              height: 96,
+                              radius: 12,
+                            ),
+                          ),
+                        ),
+                      ..._certPhotos.map(
+                        (path) => Container(
+                          width: 96,
+                          margin: const EdgeInsets.only(left: 8),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: _imageByPath(path),
+                          ),
                         ),
                       ),
-                    ),
-                    ..._certPhotos.map(
-                      (path) => Container(
-                        width: 96,
-                        margin: const EdgeInsets.only(left: 8),
-                        child: ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: _imageByPath(path),
-                        ),
-                      ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-              ),
+              ],
               const SizedBox(height: 16),
               Row(
                 children: [
                   const BrandKicker('Отзывы'),
                   const Spacer(),
-                  TextButton(
-                    onPressed: () => _addOrEditReview(),
-                    child: const Text('Добавить'),
-                  ),
+                  if (widget.editable)
+                    TextButton(
+                      onPressed: () => _addOrEditReview(),
+                      child: const Text('Добавить'),
+                    ),
                 ],
               ),
               if (topReview != null)
                 _ReviewCard(
                   review: topReview,
-                  onEdit: _reviews.length == 1
+                  onEdit: widget.editable && _reviews.length == 1
                       ? () => _addOrEditReview(index: 0)
                       : null,
                 ),
@@ -355,8 +391,8 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                   padding: const EdgeInsets.only(top: 10),
                   child: _ReviewCard(
                     review: r,
-                    onEdit: () => _addOrEditReview(index: idx),
-                    onDelete: () => _deleteReview(idx),
+                    onEdit: widget.editable ? () => _addOrEditReview(index: idx) : null,
+                    onDelete: widget.editable ? () => _deleteReview(idx) : null,
                   ),
                 );
               }),
@@ -366,8 +402,8 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
         if (widget.projectTitleForContract != null || !widget.embedded)
           DecoratedBox(
             decoration: BoxDecoration(
-              color: BrandColors.canvas,
-              border: Border(top: BorderSide(color: BrandColors.borderSubtle)),
+              color: BrandRuntime.canvas,
+              border: Border(top: BorderSide(color: BrandRuntime.border)),
             ),
             child: Padding(
               padding: const EdgeInsets.fromLTRB(16, 14, 16, 36),
@@ -375,11 +411,7 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                 children: [
                   BrandGhostButton(
                     label: 'Написать',
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(content: Text('Чат с мастером')),
-                      );
-                    },
+                    onPressed: () => _openChat(context, p),
                   ),
                   const SizedBox(width: 10),
                   Expanded(
@@ -390,16 +422,14 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                                 MaterialPageRoute<void>(
                                   builder: (_) => ContractConfirmScreen(
                                     masterName: p.name,
+                                    projectId: widget.projectId,
+                                    masterId: widget.masterId,
                                     projectTitle: widget.projectTitleForContract!,
                                   ),
                                 ),
                               );
                             }
-                          : () {
-                              ScaffoldMessenger.of(context).showSnackBar(
-                                SnackBar(content: Text('Нанять ${p.name}')),
-                              );
-                            },
+                          : () => _openChat(context, p),
                       style: FilledButton.styleFrom(
                         backgroundColor: BrandColors.clay,
                         foregroundColor: BrandColors.onClay,
@@ -412,7 +442,7 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                       child: Text(
                         widget.projectTitleForContract != null
                             ? 'Выбрать для проекта'
-                            : 'Нанять мастера',
+                            : 'Написать мастеру',
                       ),
                     ),
                   ),
@@ -425,13 +455,13 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
 
     if (widget.embedded) {
       return ColoredBox(
-        color: BrandColors.canvas,
+        color: BrandRuntime.canvas,
         child: SafeArea(top: false, child: body),
       );
     }
 
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: SafeArea(bottom: false, child: body),
     );
   }
@@ -441,18 +471,18 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
       return Image.network(
         path,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const ColoredBox(
-          color: BrandColors.linen,
-          child: Center(child: Icon(Icons.broken_image_outlined)),
+        errorBuilder: (_, __, ___) => ColoredBox(
+          color: BrandRuntime.surface,
+          child: const Center(child: Icon(Icons.broken_image_outlined)),
         ),
       );
     }
     return Image.file(
       File(path),
       fit: BoxFit.cover,
-      errorBuilder: (_, __, ___) => const ColoredBox(
-        color: BrandColors.linen,
-        child: Center(child: Icon(Icons.broken_image_outlined)),
+      errorBuilder: (_, __, ___) => ColoredBox(
+        color: BrandRuntime.surface,
+        child: const Center(child: Icon(Icons.broken_image_outlined)),
       ),
     );
   }
@@ -697,7 +727,7 @@ class _ReviewCard extends StatelessWidget {
                 'НЕДАВНО',
                 style: BrandUi.monoLabel(
                   fontSize: 10,
-                  color: BrandColors.tar.withOpacity(0.35),
+                  color: BrandRuntime.ink.withOpacity(0.35),
                 ),
               ),
             ],
@@ -707,7 +737,7 @@ class _ReviewCard extends StatelessWidget {
             '«${review.text}»',
             style: BrandUi.inter(
               fontSize: 13.5,
-              color: BrandColors.tar.withOpacity(0.65),
+              color: BrandRuntime.ink.withOpacity(0.65),
               height: 1.5,
             ),
           ),

@@ -32,8 +32,17 @@ flutter:
   uses-material-design: true
   assets:
     - picture/
+    - picture/brand/frame_vertical.png
+    - picture/brand/logo_pri_dele.svg
+    - picture/brand/logo_pri_dele_stack.svg
     - assets/data/work_price_catalog.json
   fonts:
+    - family: RuslanDisplay
+      fonts:
+        - asset: fonts/RuslanDisplay-Regular.ttf
+          weight: 400
+        - asset: fonts/RuslanDisplay-Regular.ttf
+          weight: 700
     - family: Pochaevsk
       fonts:
         - asset: fonts/Pochaevsk-Regular.otf

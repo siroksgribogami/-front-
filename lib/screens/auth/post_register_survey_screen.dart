@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/brand_colors.dart';
@@ -18,23 +19,6 @@ class PostRegisterSurveyScreen extends StatefulWidget {
       _PostRegisterSurveyScreenState();
 }
 
-class _RoomFieldState {
-  _RoomFieldState({required this.id, required this.label});
-
-  final String id;
-  final String label;
-  bool selected = false;
-  final TextEditingController areaCtrl = TextEditingController();
-  final TextEditingController lengthCtrl = TextEditingController();
-  final TextEditingController widthCtrl = TextEditingController();
-
-  void dispose() {
-    areaCtrl.dispose();
-    lengthCtrl.dispose();
-    widthCtrl.dispose();
-  }
-}
-
 class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   int _step = 1;
   bool _isForward = true;
@@ -48,11 +32,15 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   // ——— Заказчик ———
   final Set<String> _workCategoryIds = {};
   String? _premiseKind;
-  String? _houseFloors;
-  final _totalAreaCtrl = TextEditingController();
+  /// Этажность/уровни объекта (квартира, дом, офис) — необязательно.
+  String? _floors;
+  /// Примерная площадь — выбор диапазона, без ручного ввода цифр.
+  String? _areaRangeId;
   String? _timelineId;
   final _customerCityCtrl = TextEditingController();
-  final Map<String, _RoomFieldState> _roomsById = {};
+  /// Каталог типовых комнат для выбранного типа объекта.
+  final List<({String id, String label})> _roomCatalog = [];
+  final Set<String> _selectedRoomIds = {};
 
   // ——— Мастер ———
   final Set<String> _specIds = {};
@@ -81,12 +69,33 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
     {'id': 'browsing', 'label': 'Просто смотрю пока'},
   ];
 
-  static const _houseFloorOptions = <Map<String, String>>[
-    {'id': '1', 'label': '1 этаж'},
-    {'id': '2', 'label': '2 этажа'},
-    {'id': '3', 'label': '3 этажа'},
-    {'id': '4+', 'label': '4 и больше'},
+  /// Диапазоны площади (без ручного ввода). id совпадает с `_approxAreaSqm`.
+  static const _areaRanges = <Map<String, String>>[
+    {'id': 'area_xs', 'label': 'До 40 м²'},
+    {'id': 'area_s', 'label': '40–60 м²'},
+    {'id': 'area_m', 'label': '60–90 м²'},
+    {'id': 'area_l', 'label': '90–130 м²'},
+    {'id': 'area_xl', 'label': 'Больше 130 м²'},
+    {'id': 'area_unknown', 'label': 'Пока не знаю'},
   ];
+
+  /// Вопрос об этажности зависит от типа объекта.
+  String get _floorsQuestion => switch (_premiseKind) {
+        'apartment' => 'Сколько уровней в квартире?',
+        'office' => 'Сколько этажей занимает офис?',
+        _ => 'Сколько этажей в доме?',
+      };
+
+  /// Варианты этажности: для квартиры — «уровни», иначе — «этажи».
+  List<({String id, String label})> get _floorOptions {
+    final apt = _premiseKind == 'apartment';
+    return [
+      (id: '1', label: apt ? '1 уровень' : '1 этаж'),
+      (id: '2', label: apt ? '2 уровня' : '2 этажа'),
+      (id: '3', label: apt ? '3 уровня' : '3 этажа'),
+      (id: '4+', label: '4 и больше'),
+    ];
+  }
 
   static const _experience = <Map<String, String>>[
     {'id': 'lt1', 'label': 'Меньше года'},
@@ -113,18 +122,8 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   @override
   void dispose() {
     _cityCtrl.dispose();
-    _totalAreaCtrl.dispose();
     _customerCityCtrl.dispose();
-    for (final room in _roomsById.values) {
-      room.dispose();
-    }
     super.dispose();
-  }
-
-  double? get _parsedTotalArea {
-    final raw = _totalAreaCtrl.text.trim().replaceAll(',', '.');
-    if (raw.isEmpty) return null;
-    return double.tryParse(raw);
   }
 
   bool get _canProceed {
@@ -135,17 +134,12 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
         return _specIds.isNotEmpty;
       case 2:
         if (_role == OnboardingRole.customer) {
-          final area = _parsedTotalArea;
-          final baseOk =
-              _premiseKind != null && area != null && area > 0 && area <= 2000;
-          if (_premiseKind == 'house') {
-            return baseOk && _houseFloors != null;
-          }
-          return baseOk;
+          // Этажность и площадь — необязательны; нужен только тип объекта.
+          return _premiseKind != null;
         }
         return _experienceId != null;
       case 3:
-        if (_role == OnboardingRole.customer) return _roomsSelectionValid;
+        if (_role == OnboardingRole.customer) return _selectedRoomIds.isNotEmpty;
         return _cityCtrl.text.trim().length >= 2;
       case 4:
         if (_role == OnboardingRole.customer) {
@@ -160,38 +154,12 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
     }
   }
 
-  bool get _roomsSelectionValid {
-    final selected = _roomsById.values.where((r) => r.selected);
-    if (selected.isEmpty) return false;
-    return selected.every((r) {
-      final area = double.tryParse(
-        r.areaCtrl.text.trim().replaceAll(',', '.'),
-      );
-      return area != null && area > 0;
-    });
-  }
-
+  /// Выбранные комнаты — только id + название. Точные размеры пользователь
+  /// потом задаёт в рисовальщике карты, в опросе цифры не спрашиваем.
   List<Map<String, dynamic>> get _roomsDetailPayload {
-    return _roomsById.values
-        .where((r) => r.selected)
-        .map((r) {
-          final area = double.parse(
-            r.areaCtrl.text.trim().replaceAll(',', '.'),
-          );
-          final len = double.tryParse(
-            r.lengthCtrl.text.trim().replaceAll(',', '.'),
-          );
-          final wid = double.tryParse(
-            r.widthCtrl.text.trim().replaceAll(',', '.'),
-          );
-          return <String, dynamic>{
-            'id': r.id,
-            'label': r.label,
-            'area_sqm': area,
-            if (len != null && len > 0) 'length_m': len,
-            if (wid != null && wid > 0) 'width_m': wid,
-          };
-        })
+    return _roomCatalog
+        .where((r) => _selectedRoomIds.contains(r.id))
+        .map((r) => <String, dynamic>{'id': r.id, 'label': r.label})
         .toList();
   }
 
@@ -228,8 +196,9 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
         role: OnboardingRole.customer,
         workCategoryIds: _workCategoryIds.toList(),
         premiseKind: _premiseKind,
-        houseFloors: _houseFloors,
-        totalAreaSqm: _parsedTotalArea,
+        houseFloors: _floors,
+        areaApproxId:
+            _areaRangeId == 'area_unknown' ? null : _areaRangeId,
         roomsDetail: _roomsDetailPayload,
         city: _customerCityCtrl.text,
         startTimelineId: _timelineId,
@@ -277,8 +246,8 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
     if (_role == OnboardingRole.customer) {
       return switch (_step) {
         1 => 'Можно выбрать несколько категорий',
-        2 => 'Тип объекта и общая площадь',
-        3 => 'Отметьте помещения и укажите примерные размеры',
+        2 => 'Тип объекта и примерная площадь',
+        3 => 'Просто отметьте — размеры зададите позже на карте',
         4 => 'Укажите город — подберём мастеров и цены в вашем регионе',
         5 => 'Можно изменить позже в профиле',
         _ => null,
@@ -295,7 +264,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: BrandColors.canvas,
+      backgroundColor: BrandRuntime.canvas,
       body: Column(
         children: [
           _buildHeader(),
@@ -352,7 +321,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
 
   Widget _buildHeader() {
     return ColoredBox(
-      color: BrandColors.needles,
+      color: BrandRuntime.needles,
       child: Stack(
         children: [
           Positioned.fill(
@@ -455,12 +424,12 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
               builder: (_, auth, __) {
                 final enabled = _canProceed && !auth.isLoading;
                 if (auth.isLoading && isLast) {
-                  return const Center(
+                  return Center(
                     child: SizedBox(
                       width: 30,
                       height: 20,
                       child: BarLoader(
-                        color: BrandColors.needles,
+                        color: BrandRuntime.needles,
                         barWidth: 3,
                         baseHeight: 12,
                         tallHeight: 18,
@@ -490,7 +459,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
           textAlign: TextAlign.center,
           style: BrandUi.inter(
             fontSize: 16,
-            color: BrandColors.tar.withOpacity(0.75),
+            color: BrandRuntime.ink.withOpacity(0.75),
           ),
         ),
       );
@@ -522,8 +491,8 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   void _resetBranchState() {
     _workCategoryIds.clear();
     _premiseKind = null;
-    _houseFloors = null;
-    _totalAreaCtrl.clear();
+    _floors = null;
+    _areaRangeId = null;
     _timelineId = null;
     _customerCityCtrl.clear();
     _clearRoomCatalog();
@@ -533,19 +502,17 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
   }
 
   void _clearRoomCatalog() {
-    for (final room in _roomsById.values) {
-      room.dispose();
-    }
-    _roomsById.clear();
+    _roomCatalog.clear();
+    _selectedRoomIds.clear();
   }
 
   void _syncRoomCatalog(String premiseKind) {
-    if (_roomsById.isNotEmpty) return;
+    if (_roomCatalog.isNotEmpty) return;
     final labels = PremiseRoomsCatalog.suggestedRoomLabels(premiseKind);
+    final mapRooms = PremiseRoomsCatalog.roomsForMap(premiseKind);
     for (var i = 0; i < labels.length; i++) {
-      final label = labels[i];
-      final id = PremiseRoomsCatalog.roomsForMap(premiseKind)[i]['id'] as String;
-      _roomsById[id] = _RoomFieldState(id: id, label: label);
+      final id = mapRooms[i]['id'] as String;
+      _roomCatalog.add((id: id, label: labels[i]));
     }
   }
 
@@ -559,7 +526,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
           style: BrandUi.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 12),
@@ -597,7 +564,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
           style: BrandUi.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 12),
@@ -616,61 +583,64 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
                   _clearRoomCatalog();
                 }
                 _premiseKind = id;
-                if (id != 'house') _houseFloors = null;
               }),
             );
           }).toList(),
         ),
-        if (_premiseKind == 'house') ...[
+        if (_premiseKind != null) ...[
           const SizedBox(height: 26),
           Text(
-            'Сколько этажей в доме?',
+            _floorsQuestion,
             style: BrandUi.inter(
               fontSize: 13,
               fontWeight: FontWeight.w600,
-              color: BrandColors.tar.withOpacity(0.55),
+              color: BrandRuntime.ink.withOpacity(0.55),
             ),
           ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 9,
             runSpacing: 9,
-            children: _houseFloorOptions.map((f) {
-              final id = f['id']!;
-              final label = f['label']!;
-              final sel = _houseFloors == id;
+            children: _floorOptions.map((f) {
+              final sel = _floors == f.id;
               return BrandChip(
-                label: label,
+                label: f.label,
                 selected: sel,
-                onTap: () => setState(() => _houseFloors = id),
+                onTap: () => setState(() => _floors = f.id),
               );
             }).toList(),
           ),
         ],
         const SizedBox(height: 26),
         Text(
-          'Общая площадь, м²',
+          'Примерная площадь',
           style: BrandUi.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
-        const SizedBox(height: 10),
-        _surveyTextField(
-          controller: _totalAreaCtrl,
-          hint: 'Например: 62',
-          keyboardType: const TextInputType.numberWithOptions(decimal: true),
-          onChanged: (_) => setState(() {}),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 9,
+          runSpacing: 9,
+          children: _areaRanges.map((a) {
+            final id = a['id']!;
+            final label = a['label']!;
+            final sel = _areaRangeId == id;
+            return BrandChip(
+              label: label,
+              selected: sel,
+              onTap: () => setState(() => _areaRangeId = id),
+            );
+          }).toList(),
         ),
       ],
     );
   }
 
-  // ─── Заказчик: комнаты и размеры ────────────────────────────────────────
+  // ─── Заказчик: какие помещения (только выбор, без размеров) ───────────────
   Widget _stepCustomerRooms() {
-    final rooms = _roomsById.values.toList();
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -679,73 +649,49 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
           style: BrandUi.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 12),
         Wrap(
           spacing: 9,
           runSpacing: 9,
-          children: rooms.map((room) {
-            final sel = room.selected;
+          children: _roomCatalog.map((room) {
+            final sel = _selectedRoomIds.contains(room.id);
             return BrandChip(
               label: room.label,
               selected: sel,
-              onTap: () => setState(() => room.selected = !room.selected),
+              onTap: () => setState(() {
+                if (sel) {
+                  _selectedRoomIds.remove(room.id);
+                } else {
+                  _selectedRoomIds.add(room.id);
+                }
+              }),
             );
           }).toList(),
         ),
-        const SizedBox(height: 20),
-        ...rooms.where((r) => r.selected).map(_roomSizeFields),
-      ],
-    );
-  }
-
-  Widget _roomSizeFields(_RoomFieldState room) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            room.label,
-            style: pochaevsk(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
-              color: BrandColors.tar,
+        const SizedBox(height: 16),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Icon(Icons.draw_outlined,
+                size: 18, color: BrandRuntime.ink.withOpacity(0.4)),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'Точные размеры и форму комнат зададите потом на карте — '
+                'нарисуете план пальцем.',
+                style: BrandUi.inter(
+                  fontSize: 12.5,
+                  color: BrandRuntime.ink.withOpacity(0.5),
+                  height: 1.45,
+                ),
+              ),
             ),
-          ),
-          const SizedBox(height: 8),
-          _surveyTextField(
-            controller: room.areaCtrl,
-            hint: 'Площадь, м²',
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(
-                child: _surveyTextField(
-                  controller: room.lengthCtrl,
-                  hint: 'Длина, м (необяз.)',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _surveyTextField(
-                  controller: room.widthCtrl,
-                  hint: 'Ширина, м (необяз.)',
-                  keyboardType:
-                      const TextInputType.numberWithOptions(decimal: true),
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
+          ],
+        ),
+      ],
     );
   }
 
@@ -762,8 +708,8 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
       keyboardType: keyboardType,
       textCapitalization: textCapitalization,
       textAlign: TextAlign.start,
-      style: BrandUi.inter(fontSize: 15, color: BrandColors.tar),
-      cursorColor: BrandColors.needles,
+      style: BrandUi.inter(fontSize: 15, color: BrandRuntime.ink),
+      cursorColor: BrandRuntime.needles,
       decoration: BrandUi.inputDecoration(hint: hint),
     );
   }
@@ -796,10 +742,10 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
-                  color: sel ? BrandColors.milk : BrandColors.canvas,
+                  color: sel ? BrandRuntime.card : BrandRuntime.canvas,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: sel ? BrandColors.needles : BrandColors.borderSubtle,
+                    color: sel ? BrandRuntime.needles : BrandRuntime.border,
                     width: sel ? 2 : 1.5,
                   ),
                 ),
@@ -809,7 +755,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
                   style: BrandUi.inter(
                     fontSize: 15,
                     fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                    color: sel ? BrandColors.needles : BrandColors.tar,
+                    color: sel ? BrandRuntime.needles : BrandRuntime.ink,
                   ),
                 ),
               ),
@@ -862,7 +808,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
           style: BrandUi.inter(
             fontSize: 13,
             fontWeight: FontWeight.w600,
-            color: BrandColors.tar.withOpacity(0.55),
+            color: BrandRuntime.ink.withOpacity(0.55),
           ),
         ),
         const SizedBox(height: 12),
@@ -909,10 +855,10 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
                 padding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
                 decoration: BoxDecoration(
-                  color: sel ? BrandColors.milk : BrandColors.canvas,
+                  color: sel ? BrandRuntime.card : BrandRuntime.canvas,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: sel ? BrandColors.needles : BrandColors.borderSubtle,
+                    color: sel ? BrandRuntime.needles : BrandRuntime.border,
                     width: sel ? 2 : 1.5,
                   ),
                 ),
@@ -922,7 +868,7 @@ class _PostRegisterSurveyScreenState extends State<PostRegisterSurveyScreen> {
                   style: BrandUi.inter(
                     fontSize: 15,
                     fontWeight: sel ? FontWeight.w700 : FontWeight.w500,
-                    color: sel ? BrandColors.needles : BrandColors.tar,
+                    color: sel ? BrandRuntime.needles : BrandRuntime.ink,
                   ),
                 ),
               ),

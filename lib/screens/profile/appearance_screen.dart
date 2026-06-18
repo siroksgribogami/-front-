@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../../core/theme/brand_runtime.dart';
 import 'package:provider/provider.dart';
 
 import '../../config/brand_colors.dart';
@@ -16,8 +17,8 @@ class AppearanceScreen extends StatelessWidget {
       appBar: AppBar(
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: BrandColors.canvas,
-        foregroundColor: BrandColors.tar,
+        backgroundColor: BrandRuntime.canvas,
+        foregroundColor: BrandRuntime.ink,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
@@ -44,7 +45,7 @@ class AppearanceScreen extends StatelessWidget {
                   style: BrandUi.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: BrandColors.tar.withOpacity(0.4),
+                    color: BrandRuntime.ink.withOpacity(0.4),
                   ).copyWith(letterSpacing: 0.6),
                 ),
               ),
@@ -54,9 +55,9 @@ class AppearanceScreen extends StatelessWidget {
                     child: _ThemePreviewCard(
                       name: 'Светлая',
                       selected: themeProv.themeMode == ThemeMode.light,
-                      bg: BrandColors.milk,
-                      fg: BrandColors.tar,
-                      accent: BrandColors.needles,
+                      bg: BrandRuntime.card,
+                      fg: BrandRuntime.ink,
+                      accent: BrandRuntime.needles,
                       onTap: () => themeProv.setThemeMode(ThemeMode.light),
                     ),
                   ),
@@ -66,7 +67,7 @@ class AppearanceScreen extends StatelessWidget {
                       name: 'Тёмная',
                       selected: themeProv.themeMode == ThemeMode.dark,
                       bg: BrandColors.needlesDeep,
-                      fg: BrandColors.milk,
+                      fg: BrandRuntime.card,
                       accent: BrandColors.dawn,
                       onTap: () => themeProv.setThemeMode(ThemeMode.dark),
                     ),
@@ -76,13 +77,13 @@ class AppearanceScreen extends StatelessWidget {
                     child: _ThemePreviewCard(
                       name: 'Системная',
                       selected: themeProv.themeMode == ThemeMode.system,
-                      gradient: const LinearGradient(
+                      gradient: LinearGradient(
                         begin: Alignment.topLeft,
                         end: Alignment.bottomRight,
-                        stops: [0.5, 0.5],
-                        colors: [BrandColors.milk, BrandColors.needlesDeep],
+                        stops: const [0.5, 0.5],
+                        colors: [BrandRuntime.card, BrandColors.needlesDeep],
                       ),
-                      fg: BrandColors.tar.withOpacity(0.55),
+                      fg: BrandRuntime.ink.withOpacity(0.55),
                       accent: BrandColors.gilded,
                       onTap: () => themeProv.setThemeMode(ThemeMode.system),
                     ),
@@ -96,16 +97,16 @@ class AppearanceScreen extends StatelessWidget {
                   style: BrandUi.inter(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
-                    color: BrandColors.tar.withOpacity(0.4),
+                    color: BrandRuntime.ink.withOpacity(0.4),
                   ).copyWith(letterSpacing: 0.6),
                 ),
               ),
               Container(
                 padding: const EdgeInsets.fromLTRB(16, 18, 16, 18),
                 decoration: BoxDecoration(
-                  color: BrandColors.milk,
+                  color: BrandRuntime.card,
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: BrandColors.borderSubtle),
+                  border: Border.all(color: BrandRuntime.border),
                 ),
                 child: Column(
                   children: [
@@ -116,21 +117,21 @@ class AppearanceScreen extends StatelessWidget {
                           'А',
                           style: BrandUi.inter(
                             fontSize: 13,
-                            color: BrandColors.tar.withOpacity(0.55),
+                            color: BrandRuntime.ink.withOpacity(0.55),
                           ),
                         ),
                         Text(
                           'Ремонт под ключ',
                           style: pochaevsk(
                             fontSize: 22 * themeProv.fontScale,
-                            color: BrandColors.tar,
+                            color: BrandRuntime.ink,
                           ),
                         ),
                         Text(
                           'А',
                           style: BrandUi.inter(
                             fontSize: 22,
-                            color: BrandColors.tar.withOpacity(0.55),
+                            color: BrandRuntime.ink.withOpacity(0.55),
                           ),
                         ),
                       ],
@@ -138,10 +139,10 @@ class AppearanceScreen extends StatelessWidget {
                     const SizedBox(height: 14),
                     SliderTheme(
                       data: SliderThemeData(
-                        activeTrackColor: BrandColors.needles,
-                        inactiveTrackColor: BrandColors.borderSubtle,
-                        thumbColor: BrandColors.milk,
-                        overlayColor: BrandColors.needles.withOpacity(0.1),
+                        activeTrackColor: BrandRuntime.needles,
+                        inactiveTrackColor: BrandRuntime.border,
+                        thumbColor: BrandRuntime.card,
+                        overlayColor: BrandRuntime.needles.withOpacity(0.1),
                         trackHeight: 6,
                         thumbShape: const RoundSliderThumbShape(
                           enabledThumbRadius: 11,
@@ -161,7 +162,7 @@ class AppearanceScreen extends StatelessWidget {
                       style: BrandUi.inter(
                         fontSize: 13,
                         fontWeight: FontWeight.w500,
-                        color: BrandColors.needles,
+                        color: BrandRuntime.needles,
                       ),
                     ),
                   ],
@@ -207,7 +208,7 @@ class _ThemePreviewCard extends StatelessWidget {
               gradient: gradient,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: selected ? BrandColors.clay : BrandColors.borderSubtle,
+                color: selected ? BrandColors.clay : BrandRuntime.border,
                 width: selected ? 2 : 1,
               ),
             ),
@@ -278,8 +279,8 @@ class _ThemePreviewCard extends StatelessWidget {
               fontSize: 13,
               fontWeight: FontWeight.w600,
               color: selected
-                  ? BrandColors.tar
-                  : BrandColors.tar.withOpacity(0.55),
+                  ? BrandRuntime.ink
+                  : BrandRuntime.ink.withOpacity(0.55),
             ),
           ),
         ],
