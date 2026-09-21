@@ -4,6 +4,9 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/marketplace_seed_catalog.dart';
 import '../models/marketplace_project.dart';
+import 'api_service.dart';
+import 'backend_health_service.dart';
+import 'marketplace_api_service.dart';
 
 /// Локальное хранилище маркетплейса (SharedPreferences). Работает без бэкенда;
 /// при появлении API можно синхронизировать или заменить источник данных.
@@ -20,6 +23,29 @@ class MarketplaceLocalStore {
   static const _kMessages = 'mkt_v2_chat_messages';
 
   bool _loaded = false;
+
+  /// Клиент бэка биржи и кэш «онлайн?» на сессию.
+  final MarketplaceApiService _api = MarketplaceApiService();
+  bool? _onlineCache;
+
+  /// Доступен ли бэкенд и авторизован ли пользователь. Если токена нет
+  /// (офлайн-демо) — сразу false, без сетевого запроса. Результат кэшируется,
+  /// чтобы не пинговать сервер на каждом экране.
+  Future<bool> isOnline() async {
+    if (_onlineCache != null) return _onlineCache!;
+    try {
+      final token = await ApiService().getToken();
+      if (token == null || token.isEmpty) {
+        return _onlineCache = false;
+      }
+      return _onlineCache = await BackendHealthService.ping();
+    } catch (_) {
+      return _onlineCache = false;
+    }
+  }
+
+  /// Сбросить кэш «онлайн?» (например, после логина/логаута).
+  void resetOnlineCache() => _onlineCache = null;
 
   List<ProjectSummary> _projects = [];
   List<OrderFeedItem> _orderFeed = [];
@@ -78,6 +104,90 @@ class MarketplaceLocalStore {
   /// и счётчиков (чтобы не расходилось с самим списком откликов).
   int responsesCountFor(String projectId) => _bids[projectId]?.length ?? 0;
 
+  // ---------------- Синхронизация с бэком (онлайн → иначе локально) ----------------
+
+  /// Подтянуть проекты заказчика с сервера (если онлайн).
+  Future<void> refreshProjects() async {
+    await ensureLoaded();
+    if (!await isOnline()) return;
+    try {
+      _projects = await _api.getMyProjects();
+      await _persistProjects();
+    } catch (_) {/* остаёмся на локальной копии */}
+  }
+
+  /// Подтянуть ленту заказов (все районы; фильтрация — на экране).
+  Future<void> refreshOrders() async {
+    await ensureLoaded();
+    if (!await isOnline()) return;
+    try {
+      _orderFeed = await _api.getOrders();
+      await _persistOrderFeed();
+    } catch (_) {}
+  }
+
+  /// Отклики по проекту: онлайн — с сервера в кэш, иначе локальные.
+  Future<List<MasterBid>> loadBids(String projectId) async {
+    await ensureLoaded();
+    if (await isOnline() && int.tryParse(projectId) != null) {
+      try {
+        final list = await _api.getProjectBids(projectId);
+        _bids[projectId] = list;
+        await _persistBids();
+        return List.from(list);
+      } catch (_) {}
+    }
+    return bidsForProject(projectId);
+  }
+
+  /// «Мои отклики» мастера.
+  Future<void> refreshMyBids() async {
+    await ensureLoaded();
+    if (!await isOnline()) return;
+    try {
+      _myBids = await _api.getMyBids();
+      await _persistMyBids();
+    } catch (_) {}
+  }
+
+  /// Список диалогов.
+  Future<void> refreshChats() async {
+    await ensureLoaded();
+    if (!await isOnline()) return;
+    try {
+      _directChats = await _api.getChats();
+      await _persistChats();
+    } catch (_) {}
+  }
+
+  /// Сообщения диалога: онлайн — с сервера, иначе локальные.
+  Future<List<ChatMessage>> loadMessages(String threadId) async {
+    await ensureLoaded();
+    if (await isOnline() && int.tryParse(threadId) != null) {
+      try {
+        final list = await _api.getMessages(threadId);
+        _messages[threadId] = list;
+        await _persistMessages();
+        return List.from(list);
+      } catch (_) {}
+    }
+    return messagesForThread(threadId);
+  }
+
+  /// Создать проект: онлайн — на сервере (с серверным id), иначе локально.
+  Future<ProjectSummary> createProject(ProjectSummary draft) async {
+    await ensureLoaded();
+    var created = draft;
+    if (await isOnline()) {
+      try {
+        created = await _api.createProject(draft);
+      } catch (_) {}
+    }
+    _projects.insert(0, created);
+    await _persistProjects();
+    return created;
+  }
+
   Future<void> saveCustomerProjects(List<ProjectSummary> list) async {
     await ensureLoaded();
     _projects = List.from(list);
@@ -91,6 +201,21 @@ class MarketplaceLocalStore {
   }) async {
     await ensureLoaded();
     if (project.status != 'Опубликован') return;
+
+    // Онлайн: публикацию делает сервер (draft → published).
+    if (await isOnline() && int.tryParse(project.id) != null) {
+      try {
+        await _api.publishProject(
+          project.id,
+          district: districtLine,
+          address: project.address,
+        );
+        await refreshProjects();
+        await refreshOrders();
+        return;
+      } catch (_) {/* откат на локальную ленту */}
+    }
+
     final exists = _orderFeed.any((e) => e.id == project.id);
     if (exists) return;
     _orderFeed.insert(
@@ -116,6 +241,22 @@ class MarketplaceLocalStore {
     required String projectTitleForMyBids,
   }) async {
     await ensureLoaded();
+
+    // Онлайн: отклик создаёт сервер из цены/срока/сообщения.
+    if (await isOnline() && int.tryParse(orderId) != null) {
+      try {
+        await _api.submitBid(
+          orderId,
+          priceOffer: bid.priceOffer,
+          durationOffer: bid.durationOffer,
+          message: bid.message,
+        );
+        await refreshMyBids();
+        await loadBids(orderId);
+        return;
+      } catch (_) {/* откат на локальное сохранение */}
+    }
+
     _bids.putIfAbsent(orderId, () => []);
     _bids[orderId]!.add(bid);
 
@@ -162,6 +303,19 @@ class MarketplaceLocalStore {
     required String projectTitle,
   }) async {
     await ensureLoaded();
+
+    // Онлайн: сервер атомарно закрывает сделку и возвращает чат.
+    if (await isOnline() &&
+        int.tryParse(projectId) != null &&
+        int.tryParse(bid.id) != null) {
+      try {
+        final thread = await _api.selectMaster(projectId, bid.id);
+        await refreshProjects();
+        await loadBids(projectId);
+        await refreshChats();
+        return thread;
+      } catch (_) {/* откат на локальное закрытие сделки */}
+    }
 
     // 1. Проект → «В работе» + кто выбран.
     final pi = _projects.indexWhere((p) => p.id == projectId);
@@ -227,6 +381,17 @@ class MarketplaceLocalStore {
     String? projectId,
   }) async {
     await ensureLoaded();
+
+    // Онлайн: диалог создаёт/находит сервер (идемпотентно).
+    if (await isOnline() && int.tryParse(masterId) != null) {
+      try {
+        final thread =
+            await _api.openChat(masterId: masterId, projectId: projectId);
+        await refreshChats();
+        return thread;
+      } catch (_) {/* откат на локальный чат */}
+    }
+
     final thread = _ensureThread(
       masterId: masterId,
       peerName: peerName,
@@ -304,6 +469,21 @@ class MarketplaceLocalStore {
   /// BACKEND: `POST /chats/{threadId}/messages`.
   Future<void> appendMessage(String threadId, ChatMessage message) async {
     await ensureLoaded();
+
+    // Онлайн: отправляем на сервер и подтягиваем серверную историю.
+    if (await isOnline() && int.tryParse(threadId) != null) {
+      try {
+        await _api.sendMessage(
+          threadId,
+          text: message.text,
+          image: message.imagePath,
+        );
+        await loadMessages(threadId);
+        await refreshChats();
+        return;
+      } catch (_) {/* откат на локальное сохранение */}
+    }
+
     final list = _messages.putIfAbsent(threadId, () => []);
     list.add(message);
 

@@ -31,4 +31,20 @@ abstract final class BackendRoutes {
 
   /// Корневой health вне версии API — `GET {baseUrl}/health` (см. `app/main.py`).
   static const health = '/health';
+
+  // --- Биржа (marketplace): реализовано на ARThouse-backend ---
+  static const projects = '/projects';
+  static const projectsMy = '/projects/my';
+  static const orders = '/orders';
+  static const ordersDistricts = '/orders/districts';
+
+  /// Отклики: `/projects/{id}/bids`, `/bids/my`, `/projects/{id}/select-master`.
+  static const bidsMy = '/bids/my';
+
+  /// Чаты: `/chats/my`, `/chats`, `/chats/{threadId}/messages`.
+  static const chatsMy = '/chats/my';
+  static const chats = '/chats';
+
+  /// ИИ-зрение (фото → мебель): `POST /ai-vision/detect-furniture`.
+  static const aiVisionDetectFurniture = '/ai-vision/detect-furniture';
 }

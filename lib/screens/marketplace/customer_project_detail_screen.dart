@@ -43,11 +43,10 @@ class _CustomerProjectDetailScreenState extends State<CustomerProjectDetailScree
   }
 
   Future<void> _loadBids() async {
-    await MarketplaceLocalStore.instance.ensureLoaded();
+    // Онлайн — отклики с сервера, иначе локальные.
+    final bids = await MarketplaceLocalStore.instance.loadBids(_project.id);
     if (!mounted) return;
-    setState(() {
-      _bids = MarketplaceLocalStore.instance.bidsForProject(_project.id);
-    });
+    setState(() => _bids = bids);
   }
 
   bool get _isDraft => _project.status.trim().toLowerCase().contains('чернов');

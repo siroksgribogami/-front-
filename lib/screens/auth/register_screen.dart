@@ -679,9 +679,9 @@ class _RegisterScreenState extends State<RegisterScreen>
         hint: label,
         suffix: suffixIcon,
       ).copyWith(
-        errorBorder: OutlineInputBorder(
+        errorBorder: const OutlineInputBorder(
           borderRadius: BrandUi.buttonRadius,
-          borderSide: const BorderSide(color: BrandColors.surik),
+          borderSide: BorderSide(color: BrandColors.surik),
         ),
       ),
       validator: validator,

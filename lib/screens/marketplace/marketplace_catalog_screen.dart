@@ -6,8 +6,9 @@ import '../../config/brand_colors.dart';
 import '../../config/text_theme.dart';
 import '../../core/theme/brand_ui.dart';
 import '../../models/services_furniture.dart';
+import '../map/editor/room_editor_screen.dart';
 
-/// Раздел каталога маркетплейса: услуги и мебель отдельно от переписок.
+/// Каталог маркетплейса томских производителей.
 class MarketplaceCatalogScreen extends StatefulWidget {
   const MarketplaceCatalogScreen({super.key});
 
@@ -20,16 +21,14 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
   late final TextEditingController _searchController;
 
   int _tabIndex = 0;
-  String _region = 'Все регионы';
+  String _region = 'Томск';
   String _sortBy = 'Рейтинг';
   String _priceRange = 'Любая';
 
   static const _regions = [
     'Все регионы',
-    'Москва',
-    'Московская область',
-    'Санкт-Петербург',
-    'Казань',
+    'Томск',
+    'Томская область',
   ];
 
   static const _sorts = ['Рейтинг', 'Цена ↑', 'Цена ↓'];
@@ -185,7 +184,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
   Widget build(BuildContext context) {
     final services = _filteredServices();
     final furniture = _filteredFurniture();
-    final items = _tabIndex == 0 ? services : furniture;
+    final items = _tabIndex == 0 ? furniture : services;
     final isEmpty = items.isEmpty;
 
     return ColoredBox(
@@ -216,7 +215,7 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   BrandSegmentedControl(
-                    labels: const ['Услуги', 'Мебель'],
+                    labels: const ['Товары', 'Производители'],
                     index: _tabIndex,
                     onChanged: (i) => setState(() => _tabIndex = i),
                   ),
@@ -244,27 +243,30 @@ class _MarketplaceCatalogScreenState extends State<MarketplaceCatalogScreen> {
                         crossAxisCount: 2,
                         crossAxisSpacing: 12,
                         mainAxisSpacing: 12,
-                        mainAxisExtent: 210,
+                        mainAxisExtent: 232,
                       ),
                       itemCount: items.length,
                       itemBuilder: (context, index) {
                         if (_tabIndex == 0) {
-                          final s = services[index];
+                          final f = furniture[index];
                           return _CatalogCard(
-                            title: s.name,
-                            price: s.priceRange,
-                            tag: 'Услуга',
-                            label: _serviceLabel(s),
-                            isService: true,
+                            title: f.name,
+                            price: 'от ${NumberFormat('#,###', 'ru').format(f.price.round()).replaceAll(',', ' ')} ₽',
+                            tag: 'Товар',
+                            label: _furnitureLabel(f),
+                            manufacturer: f.manufacturer,
+                            modelFile: f.modelFile,
+                            isService: false,
                           );
                         }
-                        final f = furniture[index];
+                        final s = services[index];
                         return _CatalogCard(
-                          title: f.name,
-                          price: 'от ${NumberFormat('#,###', 'ru').format(f.price.round()).replaceAll(',', ' ')} ₽',
-                          tag: 'Мебель',
-                          label: _furnitureLabel(f),
-                          isService: false,
+                          title: s.name,
+                          price: s.priceRange,
+                          tag: 'Производитель',
+                          label: _serviceLabel(s),
+                          manufacturer: s.category,
+                          isService: true,
                         );
                       },
                     ),
@@ -332,6 +334,8 @@ class _CatalogCard extends StatelessWidget {
     required this.price,
     required this.tag,
     required this.label,
+    this.manufacturer = '',
+    this.modelFile,
     required this.isService,
   });
 
@@ -339,6 +343,8 @@ class _CatalogCard extends StatelessWidget {
   final String price;
   final String tag;
   final String label;
+  final String manufacturer;
+  final String? modelFile;
   final bool isService;
 
   @override
@@ -385,7 +391,7 @@ class _CatalogCard extends StatelessWidget {
           ),
           Expanded(
             child: Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 13),
+              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -403,28 +409,61 @@ class _CatalogCard extends StatelessWidget {
                   Row(
                     children: [
                       Expanded(
-                        child: Text(
-                          price,
-                          style: pochaevsk(
-                            fontSize: 16,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              price,
+                              style: pochaevsk(
+                                fontSize: 16,
+                                color: BrandRuntime.needles,
+                                height: 1,
+                              ),
+                            ),
+                            if (manufacturer.isNotEmpty)
+                              Text(
+                                manufacturer,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: BrandUi.inter(
+                                  fontSize: 10.5,
+                                  color: BrandRuntime.ink.withOpacity(0.55),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (modelFile != null)
+                        IconButton(
+                          tooltip: 'Открыть модель в AR',
+                          visualDensity: VisualDensity.compact,
+                          onPressed: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) => const RoomEditorScreen(),
+                              ),
+                            );
+                          },
+                          icon: Icon(
+                            Icons.view_in_ar_rounded,
+                            size: 21,
                             color: BrandRuntime.needles,
-                            height: 1,
+                          ),
+                        )
+                      else
+                        Container(
+                          width: 30,
+                          height: 30,
+                          decoration: BoxDecoration(
+                            color: BrandRuntime.surface,
+                            borderRadius: BorderRadius.circular(9),
+                          ),
+                          child: Icon(
+                            Icons.storefront_rounded,
+                            size: 18,
+                            color: BrandRuntime.needles,
                           ),
                         ),
-                      ),
-                      Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: BrandRuntime.surface,
-                          borderRadius: BorderRadius.circular(9),
-                        ),
-                        child: Icon(
-                          Icons.add_rounded,
-                          size: 18,
-                          color: BrandRuntime.needles,
-                        ),
-                      ),
                     ],
                   ),
                 ],

@@ -90,7 +90,7 @@ class PridelApp extends StatelessWidget {
               textScaler: TextScaler.linear(themeProv.fontScale),
             ),
             child: MaterialApp(
-              title: 'Приделе',
+              title: 'Томские товары',
               debugShowCheckedModeBanner: false,
               theme: AppTheme.lightTheme,
               darkTheme: AppTheme.darkTheme,

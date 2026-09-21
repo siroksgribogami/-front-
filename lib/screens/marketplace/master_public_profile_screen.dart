@@ -265,7 +265,7 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                     return InkWell(
                       onTap: _addPortfolioPhoto,
                       borderRadius: BorderRadius.circular(12),
-                      child: BrandStripedPlaceholder(
+                      child: const BrandStripedPlaceholder(
                         label: 'добавить',
                         height: 88,
                         radius: 12,
@@ -342,7 +342,7 @@ class _MasterPublicProfileScreenState extends State<MasterPublicProfileScreen> {
                       if (widget.editable)
                         InkWell(
                           onTap: _addCertificatePhoto,
-                          child: SizedBox(
+                          child: const SizedBox(
                             width: 96,
                             child: BrandStripedPlaceholder(
                               label: 'серт',
@@ -525,7 +525,7 @@ class _HeroHeader extends StatelessWidget {
                 children: [
                   BrandBackButton(onPressed: onBack!, onDark: true),
                   const Spacer(),
-                  BrandIconButton(
+                  const BrandIconButton(
                     onDark: true,
                     icon: Icon(
                       Icons.ios_share_rounded,
@@ -563,7 +563,7 @@ class _HeroHeader extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 7),
-                          Icon(
+                          const Icon(
                             Icons.verified_rounded,
                             size: 17,
                             color: BrandColors.dawn,
@@ -621,7 +621,7 @@ class _HeroHeader extends StatelessWidget {
                       label: 'на сервисе',
                       showBorder: true,
                     ),
-                    _HeroStat(
+                    const _HeroStat(
                       value: '2 года',
                       label: 'гарантия',
                       showBorder: true,

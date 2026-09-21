@@ -75,6 +75,61 @@ class AiVisionDetectResult {
   }
 }
 
+/// Результат «геометрии с фото»: размеры комнаты + карта с реальными позициями.
+///
+/// Бэкенд: `POST /ai-vision/geometry-from-photo` (YOLO + метрическая глубина +
+/// маскировка окон + снап коллизий, см. docs/room-geometry-rnd-ru.md).
+class AiGeometryResult {
+  const AiGeometryResult({
+    required this.unityMap,
+    required this.geometry,
+    this.detected = 0,
+    this.placed = 0,
+    this.snapped = 0,
+  });
+
+  /// Готовая карта комнаты (формат unity_map: rooms[].furniture[] с gridPosition).
+  final Map<String, dynamic> unityMap;
+
+  /// Оценки размеров: far_wall_m, visible_width_m, suggested_min_gridSize и т.п.
+  final Map<String, dynamic> geometry;
+
+  final int detected;
+  final int placed;
+  final int snapped;
+
+  Map<String, dynamic>? get room {
+    final rooms = (unityMap['rooms'] as List?) ?? const [];
+    return rooms.isNotEmpty ? (rooms.first as Map).cast<String, dynamic>() : null;
+  }
+
+  List<Map<String, dynamic>> get furniture {
+    final r = room;
+    final raw = (r?['furniture'] as List?) ?? const [];
+    return raw.whereType<Map>().map((e) => e.cast<String, dynamic>()).toList();
+  }
+
+  /// «≈ Ш×Г м» по gridSize (клетка 0.5 м) — для подписи в UI.
+  String get sizeLabel {
+    final grid = (room?['gridSize'] as Map?)?.cast<String, dynamic>();
+    if (grid == null) return '';
+    final w = ((grid['x'] as num?) ?? 0) * 0.5;
+    final d = ((grid['y'] as num?) ?? 0) * 0.5;
+    return '≈ ${w.toStringAsFixed(1)} × ${d.toStringAsFixed(1)} м (не меньше)';
+  }
+
+  factory AiGeometryResult.fromJson(Map<String, dynamic> json) =>
+      AiGeometryResult(
+        unityMap: (json['unity_map'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{},
+        geometry: (json['geometry'] as Map?)?.cast<String, dynamic>() ??
+            const <String, dynamic>{},
+        detected: (json['detected'] as num?)?.toInt() ?? 0,
+        placed: (json['placed'] as num?)?.toInt() ?? 0,
+        snapped: (json['snapped'] as num?)?.toInt() ?? 0,
+      );
+}
+
 /// ИИ-2: фото → объекты мебели + room_hint.
 class AiVisionService {
   AiVisionService({http.Client? client}) : _client = client ?? http.Client();
@@ -126,6 +181,74 @@ class AiVisionService {
     final request = await _buildRequest(roomHint: roomHint, forceLlm: forceLlm);
     request.fields['image_url'] = imageUrl;
     return _send(request);
+  }
+
+  /// Геометрия комнаты и позиции мебели по фото (нейросеть глубины —
+  /// дольше обычного распознавания, до ~20 с на CPU сервера).
+  static const Duration _geometryTimeout = Duration(seconds: 90);
+
+  Future<AiGeometryResult> geometryFromPhoto(
+    List<int> bytes, {
+    String filename = 'room.jpg',
+    String mime = 'image/jpeg',
+    String? roomId,
+    double? fov,
+  }) async {
+    final uri = Uri.parse(
+      '${ApiConfig.apiBaseUrl}/ai-vision/geometry-from-photo',
+    );
+    final request = http.MultipartRequest('POST', uri);
+    final token = await _storage.read(key: ApiConfig.tokenKey);
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    request.headers['Accept'] = 'application/json';
+    if (roomId != null && roomId.isNotEmpty) {
+      request.fields['room_id'] = roomId;
+    }
+    if (fov != null) {
+      request.fields['fov'] = fov.toString();
+    }
+    request.files.add(
+      http.MultipartFile.fromBytes(
+        'file',
+        bytes,
+        filename: filename,
+        contentType: _parseMime(mime),
+      ),
+    );
+
+    try {
+      final streamed = await _client.send(request).timeout(_geometryTimeout);
+      final response = await http.Response.fromStream(streamed);
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data is Map<String, dynamic>) {
+          return AiGeometryResult.fromJson(data);
+        }
+        throw ApiException(
+          statusCode: response.statusCode,
+          message: 'Некорректный ответ анализа фото',
+        );
+      }
+      String message = 'Не удалось построить комнату по фото';
+      try {
+        final data = jsonDecode(utf8.decode(response.bodyBytes));
+        if (data is Map && data['detail'] is String) {
+          message = data['detail'].toString();
+        }
+      } catch (_) {}
+      throw ApiException(statusCode: response.statusCode, message: message);
+    } on TimeoutException {
+      throw ApiException(
+        statusCode: 0,
+        message: 'Анализ фото занял слишком долго — попробуйте ещё раз.',
+      );
+    } on SocketException {
+      throw ApiException(statusCode: 0, message: 'Сервер недоступен.');
+    } on http.ClientException {
+      throw ApiException(statusCode: 0, message: 'Сервер недоступен.');
+    }
   }
 
   Future<http.MultipartRequest> _buildRequest({

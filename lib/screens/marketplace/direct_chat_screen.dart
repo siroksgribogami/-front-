@@ -42,8 +42,9 @@ class _DirectChatScreenState extends State<DirectChatScreen> {
   Future<void> _loadMessages() async {
     final store = MarketplaceLocalStore.instance;
     await store.ensureLoaded();
-    var msgs = store.messagesForThread(widget.thread.id);
-    if (msgs.isEmpty) {
+    // Онлайн — история с сервера; иначе локальная.
+    var msgs = await store.loadMessages(widget.thread.id);
+    if (msgs.isEmpty && !await store.isOnline()) {
       // Демо-диалог без истории — засеваем первые реплики (один раз) и сохраняем.
       msgs = [
         ChatMessage(

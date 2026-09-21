@@ -310,7 +310,7 @@ class ContractConfirmScreen extends StatelessWidget {
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.shield_outlined,
                         size: 18,
                         color: BrandColors.surik,

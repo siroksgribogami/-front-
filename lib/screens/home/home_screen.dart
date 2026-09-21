@@ -170,7 +170,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Expanded(
                     child: Text(
-                      'Приделе',
+                      'Томские товары',
                       style: pochaevsk(
                         fontSize: 26,
                         color: BrandColors.needlesDark,

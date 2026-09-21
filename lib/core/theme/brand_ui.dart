@@ -1705,15 +1705,15 @@ class _FloorStagePainter extends CustomPainter {
     canvas.drawRect(
       rect,
       Paint()
-        ..shader = RadialGradient(
-          center: const Alignment(0, -0.68),
+        ..shader = const RadialGradient(
+          center: Alignment(0, -0.68),
           radius: 1.2,
           colors: [
             BrandColors.needlesLight,
             BrandColors.needles,
             BrandColors.needlesDeep,
           ],
-          stops: const [0, 0.46, 1],
+          stops: [0, 0.46, 1],
         ).createShader(rect),
     );
 

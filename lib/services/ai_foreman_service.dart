@@ -54,7 +54,10 @@ class AiForemanChatResult {
       raw.map((k, v) => MapEntry(k.toString(), v));
 }
 
-/// ИИ-1 Прораб: `/ai-foreman/chat` → object_card + unity_map_patch.
+/// ИИ-1 Прораб: `/ai-foreman/chat` → object_card + project_map_data.
+/// Карта/3D берутся из `project_map_data` (бэк отдаёт именно его). Поля
+/// `unity_map`/`unity_map_patch` прораб НЕ возвращает — они живут в Smart Vision
+/// Map (`ai_map_service.dart`); здесь остаются опциональными (всегда null).
 class AiForemanService {
   final ApiService _api;
 

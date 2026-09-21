@@ -19,6 +19,7 @@ import '../../services/ai_vision_service.dart';
 import '../../services/api_service.dart';
 import '../../services/marketplace_local_store.dart';
 import '../../services/project_service.dart';
+import '../map/room_from_photo_screen.dart';
 import '../map/sketch/sketch_plan_wizard.dart';
 import '../map/unity/hosted_unity_webgl_screen.dart';
 
@@ -66,6 +67,23 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
 
   void _setViewMode(int mode) {
     setState(() => _viewMode = mode);
+  }
+
+  /// «Комната по фото»: ИИ строит комнату по снимку (размеры + мебель
+  /// в реальных позициях) и сохраняет в `map_data.before`.
+  Future<void> _openRoomFromPhoto() async {
+    final updated = await Navigator.of(context).push<ProjectSummary>(
+      MaterialPageRoute(
+        builder: (_) => RoomFromPhotoScreen(
+          projectId: _project.id,
+          initialMapData: _project.mapData,
+        ),
+      ),
+    );
+    if (updated != null && mounted) {
+      setState(() => _project = updated);
+      widget.onMapSaved?.call();
+    }
   }
 
   void _startEditingBefore() => _setViewMode(2);
@@ -740,6 +758,15 @@ class _ProjectMapEditorScreenState extends State<ProjectMapEditorScreen> {
                         ],
                       ),
                     ),
+                    IconButton(
+                      tooltip: 'Комната по фото (ИИ)',
+                      onPressed: _openRoomFromPhoto,
+                      icon: const Icon(
+                        Icons.camera_enhance_outlined,
+                        color: BrandColors.onNeedles,
+                      ),
+                    ),
+                    const SizedBox(width: 4),
                     Material(
                       color: BrandColors.clay,
                       borderRadius: BorderRadius.circular(999),

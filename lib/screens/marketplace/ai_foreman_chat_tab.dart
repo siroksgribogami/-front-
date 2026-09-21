@@ -1023,7 +1023,7 @@ class _ForemanChatHeader extends StatelessWidget {
                 ],
               ),
             ),
-            BrandIconButton(
+            const BrandIconButton(
               icon: Icon(
                 Icons.view_in_ar_outlined,
                 size: 18,

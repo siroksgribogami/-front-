@@ -25,7 +25,8 @@ class _MasterMyBidsScreenState extends State<MasterMyBidsScreen> {
   }
 
   Future<void> _load() async {
-    await MarketplaceLocalStore.instance.ensureLoaded();
+    // Онлайн — отклики с сервера, иначе локальные.
+    await MarketplaceLocalStore.instance.refreshMyBids();
     if (!mounted) return;
     setState(() {
       _bids = List.from(MarketplaceLocalStore.instance.myMasterBids);

@@ -39,10 +39,11 @@ class _CustomerProjectResponsesScreenState
   }
 
   Future<void> _load() async {
-    await MarketplaceLocalStore.instance.ensureLoaded();
+    // Онлайн — отклики с сервера, иначе локальные.
+    final bids = await MarketplaceLocalStore.instance.loadBids(widget.projectId);
     if (!mounted) return;
     setState(() {
-      _bids = MarketplaceLocalStore.instance.bidsForProject(widget.projectId);
+      _bids = bids;
       _loading = false;
     });
   }
@@ -59,7 +60,7 @@ class _CustomerProjectResponsesScreenState
   @override
   Widget build(BuildContext context) {
     if (_loading) {
-      final loading = const Center(child: CircularProgressIndicator());
+      const loading = Center(child: CircularProgressIndicator());
       if (widget.embedded) {
         return ColoredBox(
           color: BrandRuntime.canvas,
@@ -186,7 +187,7 @@ class _BidTile extends StatelessWidget {
               color: BrandRuntime.needles,
               child: Row(
                 children: [
-                  Icon(Icons.star_rounded, size: 13, color: BrandColors.dawn),
+                  const Icon(Icons.star_rounded, size: 13, color: BrandColors.dawn),
                   const SizedBox(width: 7),
                   Text(
                     'РЕКОМЕНДАЦИЯ ПРОРАБА · ЛУЧШАЯ ЦЕНА/РЕЙТИНГ',

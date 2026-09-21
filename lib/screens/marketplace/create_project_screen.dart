@@ -305,7 +305,7 @@ class _CreateProjectScreenState extends State<CreateProjectScreen> {
                 'Адрес объекта',
                 _addressCtrl,
                 hint: 'Район, улица',
-                prefix: Icon(
+                prefix: const Icon(
                   Icons.place_outlined,
                   color: BrandColors.clay,
                   size: 20,

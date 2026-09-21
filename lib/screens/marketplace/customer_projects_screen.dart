@@ -9,7 +9,6 @@ import '../../core/theme/brand_ui.dart';
 import '../../models/marketplace_project.dart';
 import '../../providers/auth_provider.dart';
 import '../../services/marketplace_local_store.dart';
-import '../../services/project_service.dart';
 import 'create_project_screen.dart';
 import 'customer_project_detail_screen.dart';
 import 'foreman_intro_screen.dart';
@@ -34,13 +33,8 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
   }
 
   Future<void> _reload() async {
-    try {
-      final fromApi = await ProjectService().getMyProjects();
-      if (fromApi.isNotEmpty) {
-        await MarketplaceLocalStore.instance.saveCustomerProjects(fromApi);
-      }
-    } catch (_) {}
-    await MarketplaceLocalStore.instance.ensureLoaded();
+    // Онлайн — подтянет проекты с сервера, иначе остаётся локальная копия.
+    await MarketplaceLocalStore.instance.refreshProjects();
     if (!mounted) return;
     setState(() {
       _projects = List.from(MarketplaceLocalStore.instance.customerProjects);
@@ -88,10 +82,13 @@ class _CustomerProjectsScreenState extends State<CustomerProjectsScreen> {
       MaterialPageRoute(builder: (_) => const CreateProjectScreen()),
     );
     if (draft == null || !mounted) return;
-    final project = _fromDraft(draft);
-    setState(() => _projects.insert(0, project));
-    await _persist();
+    // Онлайн — создаст проект на сервере (с серверным id), иначе локально.
+    final project =
+        await MarketplaceLocalStore.instance.createProject(_fromDraft(draft));
     if (!mounted) return;
+    setState(() {
+      _projects = List.from(MarketplaceLocalStore.instance.customerProjects);
+    });
     await _openProject(project);
   }
 
@@ -378,7 +375,7 @@ class _ProjectCard extends StatelessWidget {
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    SizedBox(
+                    const SizedBox(
                       width: 74,
                       height: 74,
                       child: BrandStripedPlaceholder(

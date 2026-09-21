@@ -34,7 +34,8 @@ class _MessagesHubScreenState extends State<MessagesHubScreen> {
   }
 
   Future<void> _load() async {
-    await MarketplaceLocalStore.instance.ensureLoaded();
+    // Онлайн — диалоги с сервера, иначе локальные.
+    await MarketplaceLocalStore.instance.refreshChats();
     if (!mounted) return;
     setState(() {
       _threads = List.from(MarketplaceLocalStore.instance.directChats);

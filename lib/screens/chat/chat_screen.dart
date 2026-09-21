@@ -614,7 +614,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                     child: MediaQuery(
                       data: MediaQuery.of(context).copyWith(
-                        textScaler: TextScaler.linear(1.0),
+                        textScaler: const TextScaler.linear(1.0),
                       ),
                       child: TextField(
                         controller: _messageController,
@@ -1057,7 +1057,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   Expanded(
                     child: MediaQuery(
                       data: MediaQuery.of(context).copyWith(
-                        textScaler: TextScaler.linear(1.0),
+                        textScaler: const TextScaler.linear(1.0),
                       ),
                       child: TextField(
                         controller: _messageController,

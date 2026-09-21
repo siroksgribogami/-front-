@@ -33,7 +33,8 @@ class _MasterOrdersFeedScreenState extends State<MasterOrdersFeedScreen> {
   }
 
   Future<void> _reload() async {
-    await MarketplaceLocalStore.instance.ensureLoaded();
+    // Онлайн — подтянет ленту с сервера, иначе локальная.
+    await MarketplaceLocalStore.instance.refreshOrders();
     if (!mounted) return;
     setState(() {
       _orderFeed = List.from(MarketplaceLocalStore.instance.orderFeed);

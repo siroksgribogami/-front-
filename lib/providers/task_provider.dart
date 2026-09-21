@@ -31,7 +31,7 @@ class TaskProvider with ChangeNotifier {
       final rawTasks = await _taskService.getTasks();
       _tasks = rawTasks.map((json) => TaskItem.fromJson(json)).toList();
       _offlineMode = false;
-    } on ApiException catch (e) {
+    } on ApiException {
       // Backend tasks могут быть временно недоступны — работаем локально.
       _offlineMode = true;
       _error = 'Задачи backend временно недоступны, включен локальный режим';
