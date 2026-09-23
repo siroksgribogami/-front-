@@ -21,6 +21,11 @@ import 'screens/auth/register_screen.dart';
 import 'screens/auth/welcome_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/home/mobile_home_screen.dart';
+import 'screens/marketplace/pridel_marketplace_shell.dart';
+
+// Маркетплейс остаётся единственным доменом приложения, но стартуем через
+// фирменный экран «При деле», как в макете.
+const bool marketplaceOnlyMode = false;
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -143,7 +148,12 @@ class _AppRootState extends State<AppRoot> {
 
         // Показываем загрузку только до завершения первичной инициализации,
         // чтобы ошибки входа не сбрасывали пользователя в стартовый auth-экран.
-        if (!auth.isInitialized) {
+        if (marketplaceOnlyMode) {
+          screenKey = 'marketplace';
+          screen = kIsWeb
+              ? const HomeScreen(key: ValueKey('marketplace'))
+              : const MobileHomeScreen(key: ValueKey('marketplace'));
+        } else if (!auth.isInitialized) {
           screenKey = 'loading';
           screen = const Scaffold(
             key: ValueKey('loading'),
@@ -200,10 +210,7 @@ class _AppRootState extends State<AppRoot> {
         } else if (auth.isAuthenticated) {
           // Если авторизован - показываем главный экран
           screenKey = 'home';
-          // Web → sidebar, Android/мобиль → нижняя навигация
-          screen = kIsWeb
-              ? const HomeScreen(key: ValueKey('home'))
-              : const MobileHomeScreen(key: ValueKey('home'));
+          screen = const PridelMarketplaceShell(key: ValueKey('home'));
         } else {
           // Иначе - показываем экран авторизации
           screenKey = 'auth';

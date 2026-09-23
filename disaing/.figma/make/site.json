@@ -1,0 +1,10 @@
+{
+  "description": "Explore a user-friendly platform for furniture and renovation design, featuring AR visualization to enhance shopping experiences for homeowners.",
+  "robots": {
+    "index": false
+  },
+  "accessibility": {
+    "addBypassLinks": false,
+    "ignoreReducedMotion": false
+  }
+}

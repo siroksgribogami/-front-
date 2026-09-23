@@ -1,0 +1,51 @@
+@import url('https://fonts.googleapis.com/css2?family=Golos+Text:wght@400;500;600;700&family=Yeseva+One&display=swap');
+@import 'tailwindcss';
+
+@font-face { font-family: 'Inter:Regular'; font-style: normal; font-weight: 400; src: url('https://static.figma.com/font/Inter_1') format('woff2'); }
+@font-face { font-family: 'Pochaevsk:Regular'; font-style: normal; font-weight: 400; src: url('https://static.figma.com/font/Pochaevsk-Regular_1') format('woff2'); }
+
+:root {
+  --background: #f5efdf;
+  --foreground: #243d31;
+  --card: #fbf7ec;
+  --card-foreground: #243d31;
+  --primary: #9b3b1c;
+  --primary-foreground: #fff7e8;
+  --secondary: #ded0b1;
+  --secondary-foreground: #243d31;
+  --muted: #e9deca;
+  --muted-foreground: #756b5d;
+  --accent: #d99057;
+  --accent-foreground: #243d31;
+  --border: #d8cbb5;
+  --ring: #c65c2c;
+  --radius: 1rem;
+}
+
+@theme inline { --font-sans: 'Golos Text', sans-serif; --font-display: 'Yeseva One', serif; }
+
+html { scroll-behavior: smooth; }
+body { margin: 0; font-family: 'Golos Text', sans-serif; background: var(--background); }
+button, a { -webkit-tap-highlight-color: transparent; }
+.font-display { font-family: 'Yeseva One', serif; }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.woodline { background-image: linear-gradient(90deg, #7e2f17 0 10%, #b8532a 10% 19%, #6d2a15 19% 28%, #a54422 28% 38%, #762c17 38% 50%, #c05d31 50% 61%, #792b16 61% 70%, #ae4825 70% 82%, #712814 82%); }
+.hero-house { background-image: repeating-linear-gradient(90deg, transparent 0 34px, rgba(255,245,220,.12) 35px 37px), linear-gradient(135deg, transparent 32%, rgba(255,245,220,.22) 32% 33%, transparent 33%), linear-gradient(45deg, rgba(255,245,220,.18) 25%, transparent 25%); background-size: auto, 90px 90px, 36px 36px; }
+
+.welcome-screen { min-height: 100dvh; background: #325d3c; color: #f5efdf; display: grid; grid-template-columns: minmax(0, 1fr); overflow: hidden; }
+.welcome-panel { min-height: 100dvh; position: relative; isolation: isolate; overflow: hidden; }
+.welcome-paper { position: absolute; z-index: -3; left: max(9.3vw, calc(50% - 152px)); right: max(13.3vw, calc(50% - 152px)); top: 128px; height: 526px; background: #f5efdf; }
+.welcome-frame { position: absolute; z-index: -1; width: 374px; height: 748px; object-fit: fill; left: 50%; top: 28px; transform: translateX(-50%); pointer-events: none; }
+.welcome-copy { position: absolute; top: 142px; left: 50%; width: 252px; transform: translateX(-50%); color: #325d3c; text-align: center; }
+.welcome-copy h1 { margin: 0; font-family: 'Pochaevsk:Regular', serif; font-size: 96px; line-height: .85; letter-spacing: -.05em; background: linear-gradient(#325d3c 50%, #899389); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.welcome-copy p { margin: 26px 0 0; font-family: 'Inter:Regular', sans-serif; font-size: 12px; line-height: 1.25; color: #325d3c; }
+.welcome-rule { height: 2px; width: 88%; margin: 22px auto 0; background: #efc9ab; }
+.welcome-actions { position: absolute; top: 427px; left: 50%; width: 244px; transform: translateX(-50%); display: grid; gap: 16px; }
+.carved-button { font-family: 'Inter:Regular', sans-serif; font-size: 20px; line-height: .85; min-height: 42px; cursor: pointer; position: relative; border: 2px solid #45120a; border-radius: 999px; box-shadow: inset 0 0 0 3px #ae4a2c, 0 2px 0 #45120a; transition: transform .2s ease, filter .2s ease; }
+.carved-button::before, .carved-button::after { content: '◆'; position: absolute; top: 50%; transform: translateY(-50%); font-size: 14px; color: #ae4a2c; text-shadow: 1px 0 #45120a, -1px 0 #45120a; }
+.carved-button::before { left: -13px; }.carved-button::after { right: -13px; }
+.carved-button:hover { transform: translateY(-2px); filter: brightness(1.04); }.carved-button:active { transform: translateY(1px); }
+.carved-button.light { background: #f5efdf; color: #111; }.carved-button.dark { background: #9b3b1c; color: #fff; }
+.welcome-side { display: none; }
+@media (min-width: 760px) { .welcome-screen { grid-template-columns: minmax(520px, 1fr) minmax(360px, .72fr); } .welcome-panel { min-height: 100dvh; } .welcome-frame { width: 520px; height: min(88vh, 1040px); top: 5vh; } .welcome-paper { left: 50%; right: auto; width: 320px; height: min(61vh, 700px); transform: translateX(-50%); top: 18.5vh; } .welcome-copy { top: 25.5vh; width: 280px; } .welcome-copy h1 { font-size: 96px; } .welcome-copy p { font-size: 14px; } .welcome-actions { top: 56.5vh; width: 260px; } .welcome-side { display: flex; flex-direction: column; justify-content: center; position: relative; padding: 10vw 9vw 10vw 4vw; background: #243d31; } .welcome-side::before { content:''; position:absolute; inset: 7% 8% auto; height: 1px; background:#d99057; }.welcome-star { color:#e1a26c; font-size:2.1rem; }.eyebrow { margin: 32px 0 14px; color:#e1a26c; font-size:10px; font-weight:700; letter-spacing:.17em; text-transform:uppercase; }.welcome-side h2 { margin:0; font-family:'Pochaevsk:Regular', serif; font-size:clamp(3rem,5vw,5.5rem); line-height:.9; font-weight:400; }.welcome-side h2 i { color:#e7c292; font-style:normal; }.welcome-lead { max-width:310px; margin:28px 0 0; color:#dcd4bd; font-size:15px; line-height:1.6; }.side-ornament { margin-top:50px; color:#e1a26c; font-size:20px; letter-spacing:.16em; } }

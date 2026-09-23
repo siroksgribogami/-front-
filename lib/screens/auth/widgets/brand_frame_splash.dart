@@ -3,7 +3,6 @@ import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../../config/brand_assets.dart';
 import '../../../core/theme/app_text_style.dart';
-import '../../../core/theme/brand_runtime.dart';
 
 /// Рамка с логотипом и кнопками «Вход» / «Регистрация» внутри.
 /// По нажатию кнопки — увеличение и растворение, затем действие.
@@ -92,74 +91,156 @@ class _BrandFrameSplashState extends State<BrandFrameSplash>
             frameHeight = frameWidth / frameAspect;
           }
 
+          final frame = _buildFrame(frameWidth, frameHeight);
+          if (availableW < 760) return frame;
+
           return SizedBox(
             height: frameHeight,
-            width: frameWidth,
-            child: Stack(
-              fit: StackFit.expand,
-              alignment: Alignment.center,
+            width: availableW,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Image.asset(
-                  BrandAssets.frameVertical,
-                  fit: BoxFit.contain,
-                  filterQuality: FilterQuality.high,
+                frame,
+                SizedBox(
+                  width: (availableW - frameWidth).clamp(300.0, 560.0),
+                  child: const _WelcomeSidePanel(),
                 ),
-                Padding(
-                  padding: EdgeInsets.fromLTRB(
-                    frameWidth * 0.18,
-                    frameHeight * 0.26,
-                    frameWidth * 0.18,
-                    frameHeight * 0.20,
-                  ),
-                  child: Column(
-                    children: [
-                      Expanded(
-                        flex: 4,
-                        child: Align(
+              ],
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Widget _buildFrame(double frameWidth, double frameHeight) {
+    return SizedBox(
+      height: frameHeight,
+      width: frameWidth,
+      child: Stack(
+        fit: StackFit.expand,
+        alignment: Alignment.center,
+        children: [
+          Image.asset(
+            BrandAssets.frameVertical,
+            fit: BoxFit.contain,
+            filterQuality: FilterQuality.high,
+          ),
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+              frameWidth * 0.18,
+              frameHeight * 0.26,
+              frameWidth * 0.18,
+              frameHeight * 0.20,
+            ),
+            child: Column(
+              children: [
+                Expanded(
+                  flex: 4,
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Transform.translate(
+                      offset: Offset(0, -frameHeight * 0.055),
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(
+                          horizontal: frameWidth * 0.02,
+                        ),
+                        child: SvgPicture.asset(
+                          BrandAssets.logoPriDeleStack,
+                          fit: BoxFit.contain,
                           alignment: Alignment.topCenter,
-                          child: Transform.translate(
-                            offset: Offset(0, -frameHeight * 0.055),
-                            child: Padding(
-                              padding: EdgeInsets.symmetric(
-                                horizontal: frameWidth * 0.02,
-                              ),
-                              child: SvgPicture.asset(
-                                BrandAssets.logoPriDeleStack,
-                                fit: BoxFit.contain,
-                                alignment: Alignment.topCenter,
-                              ),
-                            ),
-                          ),
                         ),
                       ),
-                      const SizedBox(height: 4),
-                      Expanded(
-                        flex: 5,
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            _FramePillButton(
-                              label: 'Вход',
-                              enabled: !_exiting,
-                              onTap: () => _exitThen(widget.onLogin),
-                            ),
-                            const SizedBox(height: 8),
-                            _FramePillButton(
-                              label: 'Регистрация',
-                              outlined: true,
-                              enabled: !_exiting && widget.onRegister != null,
-                              onTap: () => _exitThen(widget.onRegister),
-                            ),
-                          ],
-                        ),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Expanded(
+                  flex: 5,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      _FramePillButton(
+                        label: 'Вход',
+                        enabled: !_exiting,
+                        onTap: () => _exitThen(widget.onLogin),
+                      ),
+                      const SizedBox(height: 8),
+                      _FramePillButton(
+                        label: 'Регистрация',
+                        outlined: true,
+                        enabled: !_exiting && widget.onRegister != null,
+                        onTap: () => _exitThen(widget.onRegister),
                       ),
                     ],
                   ),
                 ),
               ],
             ),
-          );
-        },
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _WelcomeSidePanel extends StatelessWidget {
+  const _WelcomeSidePanel();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(36, 20, 48, 20),
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(height: 1, color: const Color(0xFFD99057)),
+          const SizedBox(height: 46),
+          const Text(
+            '✦',
+            style: TextStyle(color: Color(0xFFE1A26C), fontSize: 30),
+          ),
+          const SizedBox(height: 28),
+          const Text(
+            'МАРКЕТПЛЕЙС ДОМА',
+            style: TextStyle(
+              color: Color(0xFFE1A26C),
+              fontSize: 11,
+              fontWeight: FontWeight.w700,
+              letterSpacing: 2,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'Своё место.\nСвои вещи.',
+            style: TextStyle(
+              color: Color(0xFFFAF7F0),
+              fontFamily: AppTextStyle.fontFamily,
+              fontSize: 52,
+              height: 0.95,
+              fontWeight: FontWeight.w400,
+            ),
+          ),
+          const SizedBox(height: 26),
+          const Text(
+            'Томское ремесло, современный быт\nи примерка вещей в вашем интерьере.',
+            style: TextStyle(
+              color: Color(0xFFDCD4BD),
+              fontSize: 15,
+              height: 1.55,
+            ),
+          ),
+          const SizedBox(height: 44),
+          const Text(
+            '◇  —  ✦  —  ◇',
+            style: TextStyle(
+              color: Color(0xFFE1A26C),
+              fontSize: 20,
+              letterSpacing: 3,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -184,37 +265,76 @@ class _FramePillButton extends StatelessWidget {
       opacity: enabled ? 1 : 0.5,
       child: GestureDetector(
         onTap: enabled ? onTap : null,
-        child: Container(
-          width: double.infinity,
-          constraints: const BoxConstraints(minHeight: 48),
-          padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
-          decoration: BoxDecoration(
-            color: outlined ? Colors.transparent : Colors.white,
-            borderRadius: BorderRadius.circular(100),
-            border: outlined
-                ? Border.all(color: Colors.white.withOpacity(0.55), width: 1.5)
-                : null,
-            boxShadow: outlined
-                ? null
-                : [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.12),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-          ),
+        child: Stack(
           alignment: Alignment.center,
-          child: Text(
-            label,
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-              color: outlined ? Colors.white : BrandRuntime.needles,
-              fontFamily: AppTextStyle.uiFontFamily,
-              letterSpacing: 0.3,
-              height: 1.1,
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: double.infinity,
+              constraints: const BoxConstraints(minHeight: 54),
+              margin: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(vertical: 15, horizontal: 12),
+              decoration: BoxDecoration(
+                color: outlined ? const Color(0xFF9B3B1C) : const Color(0xFFFAF7F0),
+                borderRadius: BorderRadius.circular(22),
+                border: Border.all(color: const Color(0xFF45120A), width: 3),
+                boxShadow: const [
+                  BoxShadow(
+                    color: Color(0xFF45120A),
+                    blurRadius: 0,
+                    offset: Offset(0, 3),
+                  ),
+                ],
+              ),
+              alignment: Alignment.center,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w800,
+                  color: outlined ? Colors.white : const Color(0xFF111111),
+                  fontFamily: AppTextStyle.uiFontFamily,
+                  letterSpacing: 0.3,
+                  height: 1.1,
+                ),
+              ),
             ),
+            const Positioned(left: -12, child: _ButtonOrnament()),
+            const Positioned(right: -12, child: _ButtonOrnament()),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ButtonOrnament extends StatelessWidget {
+  const _ButtonOrnament();
+
+  @override
+  Widget build(BuildContext context) {
+    return Transform.rotate(
+      angle: 0.785,
+      child: Container(
+        width: 25,
+        height: 25,
+        decoration: BoxDecoration(
+          color: const Color(0xFFAE4A2C),
+          border: Border.all(color: const Color(0xFF45120A), width: 3),
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0xFF7E2F17),
+              blurRadius: 0,
+              spreadRadius: -5,
+            ),
+          ],
+        ),
+        child: Transform.rotate(
+          angle: -0.785,
+          child: const Icon(
+            Icons.diamond_outlined,
+            size: 11,
+            color: Color(0xFFE8A36E),
           ),
         ),
       ),
